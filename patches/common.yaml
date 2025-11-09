@@ -1,9 +1,0 @@
-machine:
-  install:
-    disk: /dev/nvme0n1
-cluster:
-  network:
-    cni:
-      name: none
-  proxy:
-    disabled: true

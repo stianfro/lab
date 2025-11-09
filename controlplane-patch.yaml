@@ -4,8 +4,8 @@ cluster:
       name: custom
       urls:
         - https://raw.githubusercontent.com/stianfro/lab/refs/heads/main/manifests/cilium.yaml
-    proxy:
-      disabled: true
+  proxy:
+    disabled: true
   install:
     disk: /dev/nvme0n1
   allowSchedulingOnControlPlanes: true

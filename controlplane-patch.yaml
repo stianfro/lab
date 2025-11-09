@@ -1,0 +1,17 @@
+cluster:
+  network:
+    cni:
+      name: custom
+      urls:
+        - https://raw.githubusercontent.com/stianfro/lab/refs/heads/main/manifests/cilium.yaml
+    proxy:
+      disabled: true
+  install:
+    disk: /dev/nvme0n1
+  allowSchedulingOnControlPlanes: true
+machine:
+  install:
+    disk: /dev/nvme0n1
+  nodeLabels:
+    node.kubernetes.io/exclude-from-external-load-balancers:
+      $patch: delete

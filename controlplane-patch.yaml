@@ -6,8 +6,6 @@ cluster:
         - https://raw.githubusercontent.com/stianfro/lab/refs/heads/main/manifests/cilium.yaml
   proxy:
     disabled: true
-  install:
-    disk: /dev/nvme0n1
   allowSchedulingOnControlPlanes: true
 machine:
   install:

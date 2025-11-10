@@ -10,6 +10,8 @@ machine:
   certSANs: []
   kubelet:
     image: ghcr.io/siderolabs/kubelet:v1.34.1
+    extraArgs:
+      rotate-server-certificates: "true"
     defaultRuntimeSeccompProfileEnabled: true
     disableManifestsDirectory: true
   network: {}

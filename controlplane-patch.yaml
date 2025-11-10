@@ -13,3 +13,6 @@ machine:
   nodeLabels:
     node.kubernetes.io/exclude-from-external-load-balancers:
       $patch: delete
+  kubelet:
+    extraArgs:
+      rotate-server-certificates: true

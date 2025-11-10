@@ -1,0 +1,5 @@
+resources:
+  - https://github.com/prometheus-operator/prometheus-operator/releases/download/v0.86.2/bundle.yaml
+  - namespace.yaml
+
+namespace: monitoring

@@ -2,6 +2,8 @@
 
 My new homelab running Talos Linux.
 
+![lab](https://github.com/user-attachments/assets/7610c388-37d5-419e-9917-5a834fe79f1c)
+
 ## Hardware
 
 - 3x Minisforum UM790 Pro Mini-PC

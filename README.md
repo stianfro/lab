@@ -22,3 +22,9 @@ talos.froystein.jp  IN  A  192.168.1.100
 talos.froystein.jp  IN  A  192.168.1.101
 talos.froystein.jp  IN  A  192.168.1.102
 ```
+
+## Machineconfig
+
+```fish
+talosctl patch machineconfig --patch @patches/extra-manifests.yaml --endpoints $CP_IPS --nodes $CP_IPS
+```

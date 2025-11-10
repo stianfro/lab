@@ -2,7 +2,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: apps
-  namespace: default
+  namespace: argocd
 spec:
   syncPolicy:
     preserveResourcesOnDeletion: true

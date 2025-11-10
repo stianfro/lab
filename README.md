@@ -23,8 +23,14 @@ talos.froystein.jp  IN  A  192.168.1.101
 talos.froystein.jp  IN  A  192.168.1.102
 ```
 
-## Machineconfig
+## Bootstrap
 
-```fish
-talosctl patch machineconfig --patch @patches/extra-manifests.yaml --endpoints $CP_IPS --nodes $CP_IPS
+After cluster installation, bootstrap Argo CD:
+
+```bash
+# install argo
+just bootstrap
+
+# create applicationset
+just bootstrap-app
 ```

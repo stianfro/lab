@@ -9,12 +9,14 @@ spec:
     chart: kube-prometheus-stack
     repoURL: https://prometheus-community.github.io/helm-charts
     targetRevision: 79.4.1
+    helm:
+      releaseName: kube-prometheus
   destination:
     namespace: kube-prometheus
     server: https://kubernetes.default.svc
   syncPolicy:
     automated:
-      enabled: true
-      selfHeal: true
+      enabled: false
+      selfHeal: false
     syncOptions:
       - CreateNamespace=true

@@ -1,4 +1,3 @@
 resources:
-  - https://github.com/cert-manager/cert-manager/releases/download/v1.19.1/cert-manager.yaml
+  - chart.yaml
   - clusterissuer.yaml
-  # - namespace.yaml

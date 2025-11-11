@@ -11,6 +11,7 @@ spec:
     targetRevision: 79.4.1
     helm:
       releaseName: kube-prom-stack
+      # TODO: add grafana values
   destination:
     namespace: monitoring
     server: https://kubernetes.default.svc

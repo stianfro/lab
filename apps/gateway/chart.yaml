@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: envoy-gateway
+  namespace: argocd
+spec:
+  project: default
+  source:
+    chart: gateway-helm
+    repoURL: docker.io/envoyproxy
+    targetRevision: v1.5.4
+    helm:
+      parameters:
+        # - name: config.envoyGateway.gateway.controllerName
+        #   value: gateway.envoyproxy.io/z1-gatewayclass-controller
+        - name: config.envoyGateway.extensionApis.enableBackend
+          value: "true"
+  destination:
+    namespace: envoy-gateway-system
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated:
+      enabled: true
+      selfHeal: true

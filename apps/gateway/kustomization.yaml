@@ -1,0 +1,4 @@
+resources:
+  - chart.yaml
+  - namespace.yaml
+  - gateway.yaml

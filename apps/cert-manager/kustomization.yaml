@@ -1,0 +1,3 @@
+resources:
+  - clusterissuer.yaml
+  - namespace.yaml

@@ -11,7 +11,33 @@ spec:
     targetRevision: 79.4.1
     helm:
       releaseName: kube-prom-stack
-      # TODO: add grafana values
+      values: |
+        prometheus:
+          prometheusSpec:
+            storageSpec:
+              volumeClaimTemplate:
+                spec:
+                  storageClassName: longhorn
+                  accessModes: ["ReadWriteOnce"]
+                  resources:
+                    requests:
+                      storage: 50Gi
+
+        grafana:
+          persistence:
+            enabled: true
+            type: pvc
+            storageClassName: longhorn
+            accessModes:
+              - ReadWriteOnce
+            size: 10Gi
+            finalizers:
+              - kubernetes.io/pvc-protection
+
+          grafana.ini:
+            server:
+              protocol: http
+              root_url: https://grafana.talos.froystein.jp
   destination:
     namespace: monitoring
     server: https://kubernetes.default.svc

@@ -22,3 +22,5 @@ spec:
     automated:
       enabled: true
       selfHeal: true
+    syncOptions:
+      - ServerSideApply=true

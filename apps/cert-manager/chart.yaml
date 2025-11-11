@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cert-manager-chart
+  namespace: argocd
+spec:
+  project: default
+  source:
+    chart: cert-manager
+    repoURL: quay.io/jetstack/charts
+    targetRevision: v1.19.1
+    helm:
+      parameters:
+        - name: config.apiVersion
+          value: "controller.config.cert-manager.io/v1alpha1"
+        - name: config.kind
+          value: "ControllerConfiguration"
+        - name: config.enableGatewayAPI
+          value: "true"
+  destination:
+    namespace: cert-manager
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated:
+      enabled: true
+      selfHeal: true

@@ -1,3 +1,4 @@
 resources:
   - chart.yaml
   - namespace.yaml
+  - etcd-metrics.yaml

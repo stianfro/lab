@@ -31,7 +31,7 @@ spec:
             type: pvc
             storageClassName: longhorn
             accessModes:
-              - ReadWriteOnce
+              - ReadWriteMany
             size: 10Gi
             finalizers:
               - kubernetes.io/pvc-protection

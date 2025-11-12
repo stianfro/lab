@@ -1,0 +1,38 @@
+- op: add
+  path: /cluster/controlPlane/endpoint
+  value: https://talos.froystein.jp:6443
+
+- op: add
+  path: /cluster/etcd/extraArgs
+  value:
+    listen-metrics-urls: http://0.0.0.0:2381
+
+- op: replace
+  path: /cluster/extraManifests
+  value:
+    # serving cert approver and metrics server
+    - https://raw.githubusercontent.com/alex1989hu/kubelet-serving-cert-approver/main/deploy/standalone-install.yaml
+    - https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+    # metallb
+    - https://raw.githubusercontent.com/metallb/metallb/v0.15.2/config/manifests/metallb-native.yaml
+
+- op: replace
+  path: /machine/kubelet/extraMounts
+  value:
+    - destination: /var/lib/longhorn
+      type: bind
+      source: /var/lib/longhorn
+      options:
+        - bind
+        - rshared
+        - rw
+
+- op: replace
+  path: /machine/sysctls/vm.nr_hugepages
+  value: "1024"
+
+- op: replace
+  path: /machine/kernel/modules
+  value:
+    - name: nvme_tcp
+    - name: vfio_pci

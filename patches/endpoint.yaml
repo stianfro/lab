@@ -1,3 +1,0 @@
-- op: replace
-  path: /cluster/controlPlane/endpoint
-  value: https://talos.froystein.jp:6443

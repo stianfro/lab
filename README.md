@@ -25,6 +25,20 @@ talos.froystein.jp  IN  A  192.168.1.101
 talos.froystein.jp  IN  A  192.168.1.102
 ```
 
+## Installation
+
+Image used: [link](https://factory.talos.dev/?arch=amd64&cmdline-set=true&extensions=-&extensions=siderolabs%2Famdgpu&extensions=siderolabs%2Famd-ucode&extensions=siderolabs%2Fiscsi-tools&extensions=siderolabs%2Futil-linux-tools&platform=metal&target=metal&version=1.11.5)
+
+```yaml
+customization:
+  systemExtensions:
+    officialExtensions:
+      - siderolabs/amd-ucode
+      - siderolabs/amdgpu
+      - siderolabs/iscsi-tools
+      - siderolabs/util-linux-tools
+```
+
 ## Bootstrap
 
 After cluster installation, bootstrap Argo CD:

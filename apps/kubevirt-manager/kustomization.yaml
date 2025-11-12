@@ -1,7 +1,0 @@
-resources:
-  - https://github.com/kubevirt-manager/kubevirt-manager/releases/download/v1.5.3/bundled-v1.5.3.yaml
-
-labels:
-  - includeSelectors: true
-    pairs:
-      kubevirt-manager.io/version: v1.5.3

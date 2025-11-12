@@ -1,0 +1,51 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: cilium-envoy
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: cilium-envoy
+    app.kubernetes.io/part-of: cilium
+spec:
+  selector:
+    matchLabels:
+      k8s-app: cilium-envoy
+  endpoints:
+    - port: envoy-metrics
+      interval: 30s
+      path: /metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: cilium-operator
+  namespace: kube-system
+  labels:
+    io.cilium/app: operator
+    app.kubernetes.io/part-of: cilium
+spec:
+  selector:
+    matchLabels:
+      io.cilium/app: operator
+  podMetricsEndpoints:
+    - port: prometheus
+      interval: 30s
+      path: /metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: cilium-agent
+  namespace: kube-system
+  labels:
+    k8s-app: cilium
+    app.kubernetes.io/part-of: cilium
+spec:
+  selector:
+    matchLabels:
+      k8s-app: cilium
+  podMetricsEndpoints:
+    - port: prometheus
+      interval: 30s
+      path: /metrics

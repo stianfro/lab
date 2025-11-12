@@ -32,6 +32,8 @@ spec:
           value: "7445"
         - name: hubble.enabled
           value: "true"
+        - name: hubble.ui.enabled
+          value: "true"
         - name: hubble.relay.enabled
           value: "true"
         - name: hubble.enableOpenMetrics

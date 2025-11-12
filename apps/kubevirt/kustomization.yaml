@@ -1,0 +1,2 @@
+resources:
+  - https://github.com/kubevirt/kubevirt/releases/download/v1.6.3/virtctl-v1.6.3-linux-amd64

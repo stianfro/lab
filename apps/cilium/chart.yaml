@@ -59,3 +59,7 @@ spec:
       name: hubble-server-certs
       jsonPointers:
         - /data
+    - kind: Secret
+      name: hubble-relay-client-certs
+      jsonPointers:
+        - /data

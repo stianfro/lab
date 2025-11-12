@@ -45,7 +45,12 @@ spec:
     server: https://kubernetes.default.svc
   syncPolicy:
     automated:
-      enabled: true
-      selfHeal: true
+      enabled: false
+      selfHeal: false
     syncOptions:
       - ServerSideApply=true
+  ignoreDifferences:
+    - kind: Secret
+      name: kube-prom-stack-grafana
+      jsonPointers:
+        - /data

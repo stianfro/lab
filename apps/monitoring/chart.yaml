@@ -24,6 +24,32 @@ spec:
                   resources:
                     requests:
                       storage: 50Gi
+            additionalScrapeConfigs:
+              - job_name: 'etcd'
+                static_configs:
+                  - targets:
+                      - 192.168.1.100:2381
+                      - 192.168.1.101:2381
+                      - 192.168.1.102:2381
+                    labels:
+                      job: etcd
+                relabel_configs:
+                  - source_labels: [__address__]
+                    regex: '([^:]+):\d+'
+                    target_label: instance
+                    replacement: '$1'
+                  - source_labels: [__address__]
+                    regex: '192\.168\.1\.100:.*'
+                    target_label: node
+                    replacement: 'talos-0'
+                  - source_labels: [__address__]
+                    regex: '192\.168\.1\.101:.*'
+                    target_label: node
+                    replacement: 'talos-1'
+                  - source_labels: [__address__]
+                    regex: '192\.168\.1\.102:.*'
+                    target_label: node
+                    replacement: 'talos-2'
 
         grafana:
           persistence:

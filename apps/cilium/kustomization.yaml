@@ -1,2 +1,3 @@
 resources:
   - chart.yaml
+  - httproute.yaml

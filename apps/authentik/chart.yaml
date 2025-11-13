@@ -1,0 +1,85 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: authentik
+  namespace: argocd
+spec:
+  project: default
+  source:
+    chart: authentik
+    repoURL: https://charts.goauthentik.io
+    targetRevision: 2024.12.3
+    helm:
+      values: |
+        authentik:
+          # Disable built-in PostgreSQL since we're using CloudNativePG
+          postgresql:
+            enabled: false
+
+          # Configure Redis (required by Authentik)
+          redis:
+            enabled: true
+
+          # Environment variables for Authentik configuration
+          env:
+            - name: AUTHENTIK_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: authentik-secrets
+                  key: secret-key
+            - name: AUTHENTIK_POSTGRESQL__HOST
+              valueFrom:
+                secretKeyRef:
+                  name: authentik-pg-app
+                  key: host
+            - name: AUTHENTIK_POSTGRESQL__PORT
+              valueFrom:
+                secretKeyRef:
+                  name: authentik-pg-app
+                  key: port
+            - name: AUTHENTIK_POSTGRESQL__NAME
+              valueFrom:
+                secretKeyRef:
+                  name: authentik-pg-app
+                  key: dbname
+            - name: AUTHENTIK_POSTGRESQL__USER
+              valueFrom:
+                secretKeyRef:
+                  name: authentik-pg-app
+                  key: username
+            - name: AUTHENTIK_POSTGRESQL__PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: authentik-pg-app
+                  key: password
+
+        # Disable built-in PostgreSQL
+        postgresql:
+          enabled: false
+
+        # Persistent storage for media files using Longhorn
+        server:
+          persistence:
+            enabled: true
+            storageClass: longhorn
+            accessMode: ReadWriteOnce
+            size: 10Gi
+
+        worker:
+          persistence:
+            enabled: true
+            storageClass: longhorn
+            accessMode: ReadWriteOnce
+            size: 10Gi
+
+        # Disable ingress as we're using Gateway API
+        ingress:
+          enabled: false
+
+  destination:
+    namespace: authentik
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated:
+      enabled: false
+      selfHeal: false

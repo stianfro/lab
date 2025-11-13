@@ -1,0 +1,15 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: authentik
+  namespace: authentik
+spec:
+  parentRefs:
+    - name: eg
+      namespace: envoy-gateway-system
+  hostnames:
+    - "authentik.talos.froystein.jp"
+  rules:
+    - backendRefs:
+        - name: authentik-server
+          port: 80

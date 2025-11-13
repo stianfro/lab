@@ -1,0 +1,4 @@
+resources:
+  - chart.yaml
+  - namespace.yaml
+  - httproute.yaml

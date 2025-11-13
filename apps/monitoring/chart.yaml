@@ -56,7 +56,7 @@ spec:
                   - targets:
                       - 192.168.1.10:9100
                     labels:
-                      job: nasse
+                      job: node-exporter
                 relabel_configs:
                   - source_labels: [__address__]
                     regex: '([^:]+):\d+'

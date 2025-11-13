@@ -13,6 +13,9 @@ spec:
         values: |
           preUpgradeChecker:
             jobEnabled: false
+          defaultSettings:
+            backupTarget: nfs://192.168.1.10:/mnt/user/backup/longhorn
+            backupTargetCredentialSecret: ""
   destination:
     server: https://kubernetes.default.svc
     namespace: longhorn-system

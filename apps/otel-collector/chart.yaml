@@ -27,9 +27,15 @@ spec:
         config:
           receivers:
             k8s_events:
-              namespaces: [virtualmachines]
+              # Watch all namespaces for VirtualMachineInstance events
 
           processors:
+            # Filter to only VirtualMachineInstance and VirtualMachineInstanceMigration events
+            filter/kubevirt:
+              logs:
+                log_record:
+                  - 'IsMatch(resource.attributes["k8s.object.kind"], "VirtualMachineInstance.*")'
+
             batch:
               timeout: 10s
               send_batch_size: 1024
@@ -54,7 +60,7 @@ spec:
             pipelines:
               logs:
                 receivers: [k8s_events]
-                processors: [resource, batch]
+                processors: [filter/kubevirt, resource, batch]
                 exporters: [debug, otlphttp]
 
         # RBAC for reading events cluster-wide

@@ -39,19 +39,26 @@ This document describes the setup for capturing and storing KubeVirt VM migratio
 
 ### 1. OpenTelemetry Collector (`apps/otel-collector/`)
 
-**Purpose**: Collect Kubernetes events from the `virtualmachines` namespace and forward them to Loki.
+**Purpose**: Collect Kubernetes events for VirtualMachineInstance resources across all namespaces and forward them to Loki.
 
 **Key Features**:
 - Uses `otel/opentelemetry-collector-contrib` image
-- `k8s_events` receiver watches only the `virtualmachines` namespace
-- Filters and batches events before sending to Loki
+- `k8s_events` receiver watches all namespaces
+- Filters events to only VirtualMachineInstance and VirtualMachineInstanceMigration resources
+- Batches events before sending to Loki
 - RBAC configured to read cluster-wide events
 
 **Configuration Highlights**:
 ```yaml
 receivers:
   k8s_events:
-    namespaces: [virtualmachines]
+    # Watch all namespaces
+
+processors:
+  filter/kubevirt:
+    logs:
+      log_record:
+        - 'IsMatch(resource.attributes["k8s.object.kind"], "VirtualMachineInstance.*")'
 
 exporters:
   otlphttp:
@@ -322,7 +329,8 @@ You can create a Grafana dashboard to visualize VM migrations:
 
 ## Performance Considerations
 
-- **Event Volume**: Currently only watching `virtualmachines` namespace to reduce event volume
+- **Event Volume**: Watches all namespaces but filters to only VirtualMachineInstance events, reducing noise
+- **Resource Filtering**: Filter processor ensures only KubeVirt VM events are processed and stored
 - **Batch Processing**: Events are batched (up to 1024 events or 10s timeout) before sending to Loki
 - **Storage**: 50Gi with 7-day retention should be sufficient for typical homelab usage
 - **Resource Limits**:
@@ -336,10 +344,10 @@ Potential improvements to consider:
 1. **Add metrics collection**: Scrape KubeVirt Prometheus metrics for migration duration, success rate
 2. **Alerting**: Set up Loki ruler for alerts on migration failures
 3. **Extended retention**: Increase to 30 or 90 days if needed
-4. **Watch all namespaces**: Expand event collection to all namespaces for comprehensive cluster observability
-5. **Traces**: Add distributed tracing for complete observability stack
-6. **Log filtering**: Add processors to filter out noisy events
-7. **Multi-tenancy**: Enable Loki auth for separate log streams per team/namespace
+4. **Traces**: Add distributed tracing for complete observability stack
+5. **Additional resource filters**: Extend filtering to capture other KubeVirt resources (DataVolumes, etc.)
+6. **Multi-tenancy**: Enable Loki auth for separate log streams per team/namespace
+7. **Structured log parsing**: Parse event messages into structured fields for better querying
 
 ## References
 

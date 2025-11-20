@@ -20,7 +20,7 @@ spec:
 
         presets:
           kubernetesAttributes:
-            enabled: true
+            enabled: false  # Disabled - interferes with k8seventsreceiver resource attributes
           kubeletMetrics:
             enabled: false
 
@@ -36,7 +36,7 @@ spec:
             filter/kubevirt:
               logs:
                 log_record:
-                  - 'IsMatch(attributes["k8s.object.kind"], "^VirtualMachineInstance")'
+                  - 'IsMatch(resource.attributes["k8s.object.kind"], "^VirtualMachineInstance")'
 
             batch:
               timeout: 10s

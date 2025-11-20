@@ -11,9 +11,9 @@ patches:
     target:
       kind: ConfigMap
       name: argocd-rbac-cm
-  - path: argocd-server-deployment-patch.yaml
+  - path: argocd-cmd-params-cm-patch.yaml
     target:
-      kind: Deployment
-      name: argocd-server
+      kind: ConfigMap
+      name: argocd-cmd-params-cm
 
 namespace: argocd

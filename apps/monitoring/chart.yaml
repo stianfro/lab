@@ -102,9 +102,6 @@ spec:
     namespace: monitoring
     server: https://kubernetes.default.svc
   syncPolicy:
-    automated:
-      enabled: false
-      selfHeal: false
     syncOptions:
       - ServerSideApply=true
   ignoreDifferences:

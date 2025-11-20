@@ -5,6 +5,7 @@ metadata:
   namespace: argocd
 data:
   url: https://argo.talos.froystein.jp
+  admin.enabled: "false"
   oidc.config: |
     name: Authentik
     issuer: https://authentik.talos.froystein.jp/application/o/argocd/

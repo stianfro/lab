@@ -62,7 +62,7 @@ spec:
             pipelines:
               logs:
                 receivers: [k8s_events]
-                processors: [filter/kubevirt, resource, batch]
+                processors: [resource, batch]  # Filter disabled for debugging
                 exporters: [debug, otlphttp]
 
         # RBAC for reading events cluster-wide

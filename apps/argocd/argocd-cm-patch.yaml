@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cm
+  namespace: argocd
+data:
+  url: https://argo.talos.froystein.jp
+  oidc.config: |
+    name: Authentik
+    issuer: https://authentik.talos.froystein.jp/application/o/argocd/
+    clientID: dk25Fe3HtwPHs4Ys3m0qKOYoRuxsNS32vbWv9D38
+    clientSecret: $argocd-oidc-secret:clientSecret
+    requestedScopes:
+      - openid
+      - profile
+      - email
+      - groups
+    requestedIDTokenClaims:
+      groups:
+        essential: true

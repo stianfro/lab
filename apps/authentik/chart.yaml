@@ -20,7 +20,13 @@ spec:
           redis:
             enabled: true
 
-          # Environment variables for Authentik configuration
+        # Disable built-in PostgreSQL
+        postgresql:
+          enabled: false
+
+        # Persistent storage for media files using Longhorn
+        server:
+          # Environment variables for Authentik server
           env:
             - name: AUTHENTIK_SECRET_KEY
               valueFrom:
@@ -52,13 +58,6 @@ spec:
                 secretKeyRef:
                   name: authentik-pg-app
                   key: password
-
-        # Disable built-in PostgreSQL
-        postgresql:
-          enabled: false
-
-        # Persistent storage for media files using Longhorn
-        server:
           persistence:
             enabled: true
             storageClass: longhorn
@@ -69,6 +68,38 @@ spec:
             enabled: false
 
         worker:
+          # Environment variables for Authentik worker
+          env:
+            - name: AUTHENTIK_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: authentik-secrets
+                  key: secret-key
+            - name: AUTHENTIK_POSTGRESQL__HOST
+              valueFrom:
+                secretKeyRef:
+                  name: authentik-pg-app
+                  key: host
+            - name: AUTHENTIK_POSTGRESQL__PORT
+              valueFrom:
+                secretKeyRef:
+                  name: authentik-pg-app
+                  key: port
+            - name: AUTHENTIK_POSTGRESQL__NAME
+              valueFrom:
+                secretKeyRef:
+                  name: authentik-pg-app
+                  key: dbname
+            - name: AUTHENTIK_POSTGRESQL__USER
+              valueFrom:
+                secretKeyRef:
+                  name: authentik-pg-app
+                  key: username
+            - name: AUTHENTIK_POSTGRESQL__PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: authentik-pg-app
+                  key: password
           persistence:
             enabled: true
             storageClass: longhorn

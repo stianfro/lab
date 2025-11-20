@@ -114,7 +114,19 @@ grafana:
       type: loki
       access: proxy
       url: http://loki-gateway.loki.svc.cluster.local
+      isDefault: false
+      editable: false
+      orgId: 1
+      version: 1
+      jsonData:
+        maxLines: 1000
 ```
+
+**Required Fields**:
+- `orgId: 1` - Organization ID (required by kube-prometheus-stack)
+- `version: 1` - Datasource schema version
+- `editable: false` - Prevent manual modification (recommended for GitOps)
+- `isDefault: false` - Only one datasource can be default (Prometheus is default)
 
 ## Deployment
 
@@ -151,10 +163,21 @@ The applications will be automatically detected by the existing ApplicationSet. 
    kubectl get pods -n loki
    kubectl logs -n loki -l app.kubernetes.io/name=loki
 
-   # Check Grafana datasource (should show Loki)
+   # Check that Loki datasource ConfigMap is created
+   kubectl get configmap -n monitoring kube-prom-stack-grafana-datasource -o yaml | grep -A 10 Loki
+
+   # Restart Grafana to pick up the new datasource
+   kubectl rollout restart deployment/kube-prom-stack-grafana -n monitoring
+
+   # Wait for Grafana to be ready
+   kubectl rollout status deployment/kube-prom-stack-grafana -n monitoring
+
+   # Verify Loki datasource is available in Grafana
    kubectl exec -n monitoring deploy/kube-prom-stack-grafana -- \
      wget -q -O - http://localhost:3000/api/datasources | grep -i loki
    ```
+
+   **Note**: After updating the datasource configuration, you may need to restart Grafana for changes to take effect.
 
 ## Testing VM Migrations
 

@@ -33,10 +33,11 @@ spec:
 
           processors:
             # Filter to only VirtualMachineInstance and VirtualMachineInstanceMigration events
+            # Note: Filter DROPS events that match the condition, so we use NOT to invert
             filter/kubevirt:
               logs:
                 log_record:
-                  - 'IsMatch(resource.attributes["k8s.object.kind"], "^VirtualMachineInstance")'
+                  - 'not IsMatch(resource.attributes["k8s.object.kind"], "^VirtualMachineInstance")'
 
             batch:
               timeout: 10s

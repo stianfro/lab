@@ -28,6 +28,8 @@ spec:
           receivers:
             k8s_events:
               # Watch all namespaces for VirtualMachineInstance events
+              auth_type: serviceAccount
+              namespaces: []  # Empty array = watch all namespaces
 
           processors:
             # Filter to only VirtualMachineInstance and VirtualMachineInstanceMigration events

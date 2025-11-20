@@ -9,7 +9,7 @@ data:
     name: Authentik
     issuer: https://authentik.talos.froystein.jp/application/o/argocd/
     clientID: dk25Fe3HtwPHs4Ys3m0qKOYoRuxsNS32vbWv9D38
-    clientSecret: $argocd-oidc-secret:clientSecret
+    clientSecret: $oidc.authentik.clientSecret
     requestedScopes:
       - openid
       - profile

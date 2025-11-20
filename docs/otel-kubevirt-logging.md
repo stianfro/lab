@@ -75,6 +75,7 @@ exporters:
 **Purpose**: Store and query VM migration event logs.
 
 **Key Features**:
+- Loki Helm chart v6.46.0 (latest stable release)
 - Single-binary deployment (simpler for homelab)
 - 50Gi Longhorn persistent storage
 - 7-day log retention

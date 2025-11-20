@@ -105,13 +105,11 @@ spec:
               access: proxy
               url: http://loki-gateway.loki.svc.cluster.local
               isDefault: false
+              editable: false
+              orgId: 1
+              version: 1
               jsonData:
                 maxLines: 1000
-                derivedFields:
-                  - datasourceUid: prometheus
-                    matcherRegex: "traceID=(\\w+)"
-                    name: TraceID
-                    url: "$${__value.raw}"
   destination:
     namespace: monitoring
     server: https://kubernetes.default.svc

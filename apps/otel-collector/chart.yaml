@@ -1,0 +1,91 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: otel-collector
+  namespace: argocd
+spec:
+  project: default
+  source:
+    chart: opentelemetry-collector
+    repoURL: https://open-telemetry.github.io/opentelemetry-helm-charts
+    targetRevision: 0.115.2
+    helm:
+      releaseName: otel-collector
+      values: |
+        mode: deployment
+
+        image:
+          repository: otel/opentelemetry-collector-contrib
+          tag: 0.119.0
+
+        presets:
+          kubernetesAttributes:
+            enabled: true
+          kubeletMetrics:
+            enabled: false
+
+        config:
+          receivers:
+            k8s_events:
+              namespaces: [virtualmachines]
+
+          processors:
+            batch:
+              timeout: 10s
+              send_batch_size: 1024
+
+            # Add resource attributes for better filtering
+            resource:
+              attributes:
+                - key: service.name
+                  value: kubevirt-events
+                  action: insert
+
+          exporters:
+            debug:
+              verbosity: detailed
+
+            otlphttp:
+              endpoint: http://loki-gateway.loki.svc.cluster.local/otlp
+              tls:
+                insecure: true
+
+          service:
+            pipelines:
+              logs:
+                receivers: [k8s_events]
+                processors: [resource, batch]
+                exporters: [debug, otlphttp]
+
+        # RBAC for reading events cluster-wide
+        clusterRole:
+          create: true
+          rules:
+            - apiGroups: [""]
+              resources: ["events"]
+              verbs: ["get", "list", "watch"]
+            - apiGroups: [""]
+              resources: ["namespaces", "pods"]
+              verbs: ["get", "list", "watch"]
+
+        service:
+          enabled: true
+          type: ClusterIP
+
+        resources:
+          limits:
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+
+  destination:
+    namespace: otel-collector
+    server: https://kubernetes.default.svc
+
+  syncPolicy:
+    automated:
+      enabled: false
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

@@ -1,0 +1,110 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: loki
+  namespace: argocd
+spec:
+  project: default
+  source:
+    chart: loki
+    repoURL: https://grafana.github.io/helm-charts
+    targetRevision: 6.22.0
+    helm:
+      releaseName: loki
+      values: |
+        deploymentMode: SingleBinary
+
+        loki:
+          auth_enabled: false
+
+          commonConfig:
+            replication_factor: 1
+
+          storage:
+            type: filesystem
+
+          schemaConfig:
+            configs:
+              - from: "2024-01-01"
+                store: tsdb
+                object_store: filesystem
+                schema: v13
+                index:
+                  prefix: loki_index_
+                  period: 24h
+
+          limits_config:
+            retention_period: 168h  # 7 days
+            max_query_series: 100000
+            max_query_lookback: 168h
+
+          rulerConfig:
+            storage:
+              type: local
+              local:
+                directory: /var/loki/rules
+
+          compactor:
+            retention_enabled: true
+            delete_request_store: filesystem
+            working_directory: /var/loki/compactor
+
+        singleBinary:
+          replicas: 1
+          persistence:
+            enabled: true
+            storageClass: longhorn
+            size: 50Gi
+            accessModes:
+              - ReadWriteOnce
+
+          resources:
+            limits:
+              memory: 2Gi
+            requests:
+              cpu: 200m
+              memory: 1Gi
+
+          extraEnv:
+            - name: GOMEMLIMIT
+              value: "1800MiB"
+
+        gateway:
+          enabled: true
+          replicas: 1
+          service:
+            type: ClusterIP
+
+          # Enable OTLP receiver routing
+          nginxConfig:
+            customWriteUrl: |
+              location = /otlp/v1/logs {
+                proxy_pass http://{{ include "loki.singleBinaryFullname" . }}:3100$request_uri;
+              }
+
+        backend:
+          replicas: 0
+        read:
+          replicas: 0
+        write:
+          replicas: 0
+
+        monitoring:
+          selfMonitoring:
+            enabled: false
+            grafanaAgent:
+              installOperator: false
+
+        test:
+          enabled: false
+
+  destination:
+    namespace: loki
+    server: https://kubernetes.default.svc
+
+  syncPolicy:
+    automated:
+      enabled: false
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

@@ -98,6 +98,20 @@ spec:
               allow_sign_up: true
               auto_login: true
               role_attribute_path: "[login=='stianfro'][0] && 'GrafanaAdmin' || 'Viewer'"
+
+          additionalDataSources:
+            - name: Loki
+              type: loki
+              access: proxy
+              url: http://loki-gateway.loki.svc.cluster.local
+              isDefault: false
+              jsonData:
+                maxLines: 1000
+                derivedFields:
+                  - datasourceUid: prometheus
+                    matcherRegex: "traceID=(\\w+)"
+                    name: TraceID
+                    url: "$${__value.raw}"
   destination:
     namespace: monitoring
     server: https://kubernetes.default.svc

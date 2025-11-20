@@ -19,7 +19,3 @@ data:
     requestedIDTokenClaims:
       groups:
         essential: true
-    claimMapping:
-      username: preferred_username
-      email: preferred_username
-    overrideClaimMapping: true

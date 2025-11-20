@@ -36,7 +36,7 @@ spec:
             filter/kubevirt:
               logs:
                 log_record:
-                  - 'IsMatch(resource.attributes["k8s.object.kind"], "VirtualMachineInstance.*")'
+                  - 'IsMatch(resource.attributes["k8s.object.kind"], "^VirtualMachineInstance")'
 
             batch:
               timeout: 10s
@@ -62,7 +62,7 @@ spec:
             pipelines:
               logs:
                 receivers: [k8s_events]
-                processors: [resource, batch]  # Filter disabled for debugging
+                processors: [filter/kubevirt, resource, batch]
                 exporters: [debug, otlphttp]
 
         # RBAC for reading events cluster-wide

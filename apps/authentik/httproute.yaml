@@ -11,5 +11,5 @@ spec:
     - "authentik.talos.froystein.jp"
   rules:
     - backendRefs:
-        - name: authentik-server
+        - name: authentik-chart-server
           port: 80

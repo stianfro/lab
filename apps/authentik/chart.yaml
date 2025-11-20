@@ -64,6 +64,9 @@ spec:
             storageClass: longhorn
             accessMode: ReadWriteOnce
             size: 10Gi
+          # Disable ingress as we're using Gateway API
+          ingress:
+            enabled: false
 
         worker:
           persistence:
@@ -71,10 +74,6 @@ spec:
             storageClass: longhorn
             accessMode: ReadWriteOnce
             size: 10Gi
-
-        # Disable ingress as we're using Gateway API
-        ingress:
-          enabled: false
 
   destination:
     namespace: authentik

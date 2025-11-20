@@ -36,7 +36,7 @@ spec:
             filter/kubevirt:
               logs:
                 log_record:
-                  - 'IsMatch(resource.attributes["k8s.object.kind"], "^VirtualMachineInstance")'
+                  - 'IsMatch(attributes["k8s.object.kind"], "^VirtualMachineInstance")'
 
             batch:
               timeout: 10s

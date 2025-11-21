@@ -31,6 +31,13 @@ spec:
               auth_type: serviceAccount
               namespaces: []  # Empty array = watch all namespaces
 
+            otlp:
+              protocols:
+                grpc:
+                  endpoint: 0.0.0.0:4317
+                http:
+                  endpoint: 0.0.0.0:4318
+
           processors:
             # Filter to only VirtualMachineInstance and VirtualMachineInstanceMigration events
             # Note: Filter DROPS events that match the condition, so we use NOT to invert
@@ -59,12 +66,22 @@ spec:
               tls:
                 insecure: true
 
+            otlp:
+              endpoint: tempo.tempo.svc.cluster.local:4317
+              tls:
+                insecure: true
+
           service:
             pipelines:
               logs:
                 receivers: [k8s_events]
                 processors: [filter/kubevirt, resource, batch]
                 exporters: [debug, otlphttp]
+
+              traces:
+                receivers: [otlp]
+                processors: [batch]
+                exporters: [debug, otlp]
 
         # RBAC for reading events cluster-wide
         clusterRole:
@@ -80,6 +97,20 @@ spec:
         service:
           enabled: true
           type: ClusterIP
+
+        ports:
+          otlp:
+            enabled: true
+            containerPort: 4317
+            servicePort: 4317
+            hostPort: 4317
+            protocol: TCP
+          otlp-http:
+            enabled: true
+            containerPort: 4318
+            servicePort: 4318
+            hostPort: 4318
+            protocol: TCP
 
         resources:
           limits:

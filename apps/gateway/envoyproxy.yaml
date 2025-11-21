@@ -1,0 +1,20 @@
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: tracing-config
+  namespace: envoy-gateway-system
+spec:
+  telemetry:
+    tracing:
+      provider:
+        type: OpenTelemetry
+        host: otel-collector.otel-collector.svc.cluster.local
+        port: 4317
+      customTags:
+        "environment":
+          literal:
+            value: "homelab"
+        "cluster":
+          literal:
+            value: "talos"
+      samplingRate: 100

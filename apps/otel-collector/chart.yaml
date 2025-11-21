@@ -67,7 +67,7 @@ spec:
                 insecure: true
 
             otlp:
-              endpoint: tempo.tempo.svc.cluster.local:4317
+              endpoint: tempo-chart.tempo.svc.cluster.local:4317
               tls:
                 insecure: true
 

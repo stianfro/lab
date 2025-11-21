@@ -122,7 +122,7 @@ spec:
               uid: tempo
               type: tempo
               access: proxy
-              url: http://tempo.tempo.svc.cluster.local:3100
+              url: http://tempo-chart.tempo.svc.cluster.local:3200
               isDefault: false
               editable: false
               orgId: 1

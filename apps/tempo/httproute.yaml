@@ -15,5 +15,5 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: tempo
+        - name: tempo-chart
           port: 3100

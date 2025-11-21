@@ -8,7 +8,7 @@ spec:
     tracing:
       provider:
         type: OpenTelemetry
-        host: otel-collector.otel-collector.svc.cluster.local
+        host: otel-collector-opentelemetry-collector.otel-collector.svc.cluster.local
         port: 4317
       customTags:
         "environment":

@@ -14,10 +14,10 @@ spec:
         servingEngineSpec:
           runtimeClassName: ""
           modelSpec:
-          - name: "llama3"
+          - name: "gemma3"
             repository: "public.ecr.aws/q9t5s3a7/vllm-cpu-release-repo"
             tag: "v0.7.2"
-            modelURL: "meta-llama/Llama-3.2-1B-Instruct"
+            modelURL: "google/gemma-3-1b-it"
 
             replicaCount: 1
 
@@ -42,11 +42,11 @@ spec:
               - name: VLLM_CPU_OMP_THREADS_BIND
                 value: "auto"
               - name: OTEL_SERVICE_NAME
-                value: "vllm-llama3"
+                value: "vllm-gemma3"
               - name: OTEL_EXPORTER_OTLP_ENDPOINT
                 value: "http://otel-collector-opentelemetry-collector.otel-collector.svc.cluster.local:4317"
               - name: OTEL_RESOURCE_ATTRIBUTES
-                value: "service.name=vllm-llama3,deployment.environment=homelab"
+                value: "service.name=vllm-gemma3,deployment.environment=homelab"
 
   destination:
     server: https://kubernetes.default.svc

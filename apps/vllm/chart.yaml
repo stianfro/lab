@@ -42,17 +42,15 @@ spec:
 
             vllmConfig:
               dtype: "bfloat16"
-              extraArgs: ["--device", "cpu"]
+              extraArgs:
+                - "--device"
+                - "cpu"
+                - "--otlp-traces-endpoint"
+                - "http://otel-collector-opentelemetry-collector.otel-collector.svc.cluster.local:4318/v1/traces"
 
             env:
               - name: VLLM_CPU_KVCACHE_SPACE
                 value: "8"
-              - name: OTEL_SERVICE_NAME
-                value: "vllm-gemma2"
-              - name: OTEL_EXPORTER_OTLP_ENDPOINT
-                value: "http://otel-collector-opentelemetry-collector.otel-collector.svc.cluster.local:4317"
-              - name: OTEL_RESOURCE_ATTRIBUTES
-                value: "service.name=vllm-gemma2,deployment.environment=homelab"
 
   destination:
     server: https://kubernetes.default.svc

@@ -1,15 +1,15 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
-  name: vllm-engine
+  name: vllm
   namespace: vllm
   labels:
     app.kubernetes.io/name: vllm
 spec:
   selector:
     matchLabels:
-      app: vllm
+      helm-release-name: vllm-chart
   podMetricsEndpoints:
-    - port: http
+    - port: container-port
       interval: 30s
       path: /metrics

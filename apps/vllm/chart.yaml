@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    chart: vllm/vllm-stack
+    chart: vllm-stack
     repoURL: https://vllm-project.github.io/production-stack
     targetRevision: 0.1.8
     helm:

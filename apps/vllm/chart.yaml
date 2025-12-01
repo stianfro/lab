@@ -39,8 +39,6 @@ spec:
             env:
               - name: VLLM_CPU_KVCACHE_SPACE
                 value: "8"
-              - name: VLLM_CPU_OMP_THREADS_BIND
-                value: "auto"
               - name: OTEL_SERVICE_NAME
                 value: "vllm-gemma2"
               - name: OTEL_EXPORTER_OTLP_ENDPOINT

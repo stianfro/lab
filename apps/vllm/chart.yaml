@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    chart: vllm
+    chart: vllm/vllm-stack
     repoURL: https://vllm-project.github.io/production-stack
     targetRevision: 0.1.8
     helm:
@@ -21,7 +21,7 @@ spec:
 
             replicaCount: 1
 
-            requestCPU: 1
+            requestCPU: 6
             requestMemory: "16Gi"
 
             pvcStorage: "50Gi"

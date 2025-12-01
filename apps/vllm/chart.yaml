@@ -2,7 +2,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: vllm-chart
-  namespace: vllm
+  namespace: argocd
 spec:
   project: default
   source:
@@ -21,7 +21,7 @@ spec:
 
             replicaCount: 1
 
-            requestCPU: 6
+            requestCPU: 1
             requestMemory: "16Gi"
 
             pvcStorage: "50Gi"
@@ -31,6 +31,14 @@ spec:
             hf_token:
               secretName: "vllm-hf-token"
               secretKey: "token"
+
+            env:
+              - name: OTEL_SERVICE_NAME
+                value: "vllm-llama3"
+              - name: OTEL_EXPORTER_OTLP_ENDPOINT
+                value: "http://otel-collector-opentelemetry-collector.otel-collector.svc.cluster.local:4317"
+              - name: OTEL_RESOURCE_ATTRIBUTES
+                value: "service.name=vllm-llama3,deployment.environment=homelab"
 
   destination:
     server: https://kubernetes.default.svc

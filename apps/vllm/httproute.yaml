@@ -1,0 +1,15 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: vllm
+  namespace: vllm
+spec:
+  parentRefs:
+    - name: eg
+      namespace: envoy-gateway-system
+  hostnames:
+    - "vllm.talos.froystein.jp"
+  rules:
+    - backendRefs:
+        - name: vllm-chart-router-service
+          port: 80

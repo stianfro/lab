@@ -3,3 +3,4 @@ resources:
   - chart.yaml
   - podmonitor.yaml
   - dashboard.yaml
+  - httproute.yaml

@@ -45,8 +45,6 @@ spec:
               extraArgs:
                 - "--device"
                 - "cpu"
-                - "--otlp-traces-endpoint"
-                - "http://otel-collector-opentelemetry-collector.otel-collector.svc.cluster.local:4318/v1/traces"
 
             env:
               - name: VLLM_CPU_KVCACHE_SPACE

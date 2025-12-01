@@ -15,8 +15,8 @@ spec:
           runtimeClassName: ""
           modelSpec:
           - name: "llama3"
-            repository: "vllm/vllm-openai"
-            tag: "latest"
+            repository: "public.ecr.aws/q9t5s3a7/vllm-cpu-release-repo"
+            tag: "v0.7.2"
             modelURL: "meta-llama/Llama-3.2-1B-Instruct"
 
             replicaCount: 1
@@ -32,7 +32,15 @@ spec:
               secretName: "vllm-hf-token"
               secretKey: "token"
 
+            vllmConfig:
+              dtype: "bfloat16"
+              extraArgs: ["--device", "cpu"]
+
             env:
+              - name: VLLM_CPU_KVCACHE_SPACE
+                value: "8"
+              - name: VLLM_CPU_OMP_THREADS_BIND
+                value: "auto"
               - name: OTEL_SERVICE_NAME
                 value: "vllm-llama3"
               - name: OTEL_EXPORTER_OTLP_ENDPOINT

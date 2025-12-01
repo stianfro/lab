@@ -1,0 +1,40 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: vllm-chart
+  namespace: vllm
+spec:
+  project: default
+  source:
+    chart: vllm
+    repoURL: https://vllm-project.github.io/production-stack
+    targetRevision: 0.1.8
+    helm:
+      values: |
+        servingEngineSpec:
+          runtimeClassName: ""
+          modelSpec:
+          - name: "llama3"
+            repository: "vllm/vllm-openai"
+            tag: "latest"
+            modelURL: "meta-llama/Llama-3.2-1B-Instruct"
+
+            replicaCount: 1
+
+            requestCPU: 6
+            requestMemory: "16Gi"
+
+            pvcStorage: "50Gi"
+            pvcAccessMode:
+              - ReadWriteOnce
+
+            hf_token:
+              secretName: "vllm-hf-token"
+              secretKey: "token"
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: vllm
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true

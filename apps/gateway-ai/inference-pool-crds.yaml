@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: inference-pool-crds
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/kubernetes-sigs/gateway-api-inference-extension.git
+    targetRevision: v1.2.0
+    path: config/crd
+    directory:
+      include: "inference.networking.k8s.io*.yaml"
+  destination:
+    namespace: envoy-ai-gateway-system
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated:
+      enabled: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
+      - CreateNamespace=false

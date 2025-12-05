@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - inference-pool-crds.yaml
+  - inference-experimental-crds.yaml
   - envoy-gateway.yaml
   - ai-gateway-crds.yaml
   - ai-gateway.yaml

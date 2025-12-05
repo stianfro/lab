@@ -1,0 +1,15 @@
+apiVersion: inference.networking.k8s.io/v1
+kind: InferencePool
+metadata:
+  name: gemma2
+  namespace: vllm
+spec:
+  targetPorts:
+    - number: 8000
+  selector:
+    matchLabels:
+      model: gemma2
+  endpointPickerRef:
+    name: gemma2-epp
+    port:
+      number: 9002

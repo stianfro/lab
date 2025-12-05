@@ -1,0 +1,120 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: gemma2-epp
+  namespace: vllm
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gemma2-epp-config
+  namespace: vllm
+data:
+  plugins.yaml: |
+    apiVersion: inference.networking.x-k8s.io/v1alpha1
+    kind: EndpointPickerConfig
+    plugins:
+      - type: queue-scorer
+      - type: kv-cache-utilization-scorer
+      - type: prefix-cache-scorer
+    schedulingProfiles:
+      - name: default
+        plugins:
+          - pluginRef: queue-scorer
+          - pluginRef: kv-cache-utilization-scorer
+          - pluginRef: prefix-cache-scorer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gemma2-epp
+  namespace: vllm
+spec:
+  selector:
+    app: gemma2-epp
+  ports:
+    - name: grpc
+      protocol: TCP
+      port: 9002
+      targetPort: 9002
+      appProtocol: h2c
+    - name: health
+      protocol: TCP
+      port: 9003
+      targetPort: 9003
+    - name: metrics
+      protocol: TCP
+      port: 9090
+      targetPort: 9090
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gemma2-epp
+  namespace: vllm
+  labels:
+    app: gemma2-epp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gemma2-epp
+  template:
+    metadata:
+      labels:
+        app: gemma2-epp
+    spec:
+      serviceAccountName: gemma2-epp
+      terminationGracePeriodSeconds: 130
+      containers:
+        - name: epp
+          image: registry.k8s.io/gateway-api-inference-extension/epp:v1.0.1
+          imagePullPolicy: IfNotPresent
+          args:
+            - --pool-name
+            - gemma2
+            - --pool-namespace
+            - vllm
+            - --v
+            - "4"
+            - --zap-encoder
+            - json
+            - --grpc-port
+            - "9002"
+            - --grpc-health-port
+            - "9003"
+            - --config-file
+            - /config/plugins.yaml
+          ports:
+            - containerPort: 9002
+              name: grpc
+            - containerPort: 9003
+              name: health
+            - containerPort: 9090
+              name: metrics
+          livenessProbe:
+            grpc:
+              port: 9003
+              service: inference-extension
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            grpc:
+              port: 9003
+              service: inference-extension
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              memory: 256Mi
+          volumeMounts:
+            - name: config
+              mountPath: /config
+      volumes:
+        - name: config
+          configMap:
+            name: gemma2-epp-config

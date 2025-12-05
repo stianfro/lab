@@ -1,0 +1,30 @@
+apiVersion: aigateway.envoyproxy.io/v1alpha1
+kind: AIGatewayRoute
+metadata:
+  name: gemma2
+  namespace: vllm
+spec:
+  parentRefs:
+    - name: eg-ai
+      namespace: envoy-ai-gateway-system
+      kind: Gateway
+      group: gateway.networking.k8s.io
+  rules:
+    - matches:
+        - headers:
+            - type: Exact
+              name: x-ai-eg-model
+              value: gemma2
+      backendRefs:
+        - group: inference.networking.k8s.io
+          kind: InferencePool
+          name: gemma2
+    - matches:
+        - headers:
+            - type: Exact
+              name: x-ai-eg-model
+              value: google/gemma-2-2b-it
+      backendRefs:
+        - group: inference.networking.k8s.io
+          kind: InferencePool
+          name: gemma2

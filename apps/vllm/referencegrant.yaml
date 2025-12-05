@@ -1,0 +1,15 @@
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: allow-ai-gateway
+  namespace: vllm
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      namespace: envoy-ai-gateway-system
+  to:
+    - group: inference.networking.k8s.io
+      kind: InferencePool
+    - group: ""
+      kind: Service

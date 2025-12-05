@@ -15,12 +15,24 @@ metadata:
 spec:
   gatewayClassName: eg-ai
   listeners:
-    - name: https
+    - name: https-wildcard
       allowedRoutes:
         namespaces:
           from: All
       protocol: HTTPS
       hostname: "*.ai.froystein.jp"
+      port: 443
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: eg-ai-https
+    - name: https-bare
+      allowedRoutes:
+        namespaces:
+          from: All
+      protocol: HTTPS
+      hostname: "ai.froystein.jp"
       port: 443
       tls:
         mode: Terminate

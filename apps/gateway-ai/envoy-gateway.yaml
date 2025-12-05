@@ -1,0 +1,59 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: envoy-gateway-ai
+  namespace: argocd
+spec:
+  project: default
+  source:
+    chart: gateway-helm
+    repoURL: docker.io/envoyproxy
+    targetRevision: v1.5.4
+    helm:
+      values: |
+        config:
+          envoyGateway:
+            gateway:
+              controllerName: gateway.envoyproxy.io/ai-gatewayclass-controller
+            logging:
+              level:
+                default: info
+            provider:
+              type: Kubernetes
+            extensionApis:
+              enableEnvoyPatchPolicy: true
+              enableBackend: true
+            extensionManager:
+              hooks:
+                xdsTranslator:
+                  translation:
+                    listener:
+                      includeAll: true
+                    route:
+                      includeAll: true
+                    cluster:
+                      includeAll: true
+                    secret:
+                      includeAll: true
+                  post:
+                    - Translation
+                    - Cluster
+                    - Route
+              service:
+                fqdn:
+                  hostname: ai-gateway-controller.envoy-ai-gateway-system.svc.cluster.local
+                  port: 1063
+              backendResources:
+                - group: inference.networking.k8s.io
+                  kind: InferencePool
+                  version: v1
+  destination:
+    namespace: envoy-ai-gateway-system
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated:
+      enabled: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
+      - CreateNamespace=false

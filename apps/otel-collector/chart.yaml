@@ -14,6 +14,18 @@ spec:
       values: |
         mode: deployment
 
+        extraEnvs:
+          - name: LOGFIRE_ENDPOINT
+            valueFrom:
+              secretKeyRef:
+                name: logfire-credentials
+                key: LOGFIRE_ENDPOINT
+          - name: LOGFIRE_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: logfire-credentials
+                key: LOGFIRE_TOKEN
+
         image:
           repository: otel/opentelemetry-collector-contrib
           tag: 0.139.0
@@ -66,10 +78,10 @@ spec:
               tls:
                 insecure: true
 
-            otlp:
-              endpoint: tempo-chart.tempo.svc.cluster.local:4317
-              tls:
-                insecure: true
+            otlphttp/logfire:
+              endpoint: ${env:LOGFIRE_ENDPOINT}
+              headers:
+                Authorization: ${env:LOGFIRE_TOKEN}
 
           service:
             pipelines:
@@ -81,7 +93,7 @@ spec:
               traces:
                 receivers: [otlp]
                 processors: [batch]
-                exporters: [debug, otlp]
+                exporters: [debug, otlphttp/logfire]
 
         # RBAC for reading events cluster-wide
         clusterRole:

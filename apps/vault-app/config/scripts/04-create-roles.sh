@@ -5,9 +5,10 @@ set -e
 echo "Creating Kubernetes auth roles..."
 
 # VSO role - allows Vault Secrets Operator to read secrets
+# Note: bound_service_account_namespaces=* allows syncing secrets to any namespace
 vault write auth/kubernetes/role/vault-secrets-operator \
     bound_service_account_names=vault-secrets-operator-controller-manager \
-    bound_service_account_namespaces=vault \
+    bound_service_account_namespaces="*" \
     policies=vso \
     ttl=1h
 

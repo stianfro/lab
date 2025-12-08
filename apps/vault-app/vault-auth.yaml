@@ -6,8 +6,10 @@ metadata:
 spec:
   method: kubernetes
   mount: kubernetes
+  allowedNamespaces:
+    - "*"
   kubernetes:
     role: vault-secrets-operator
-    serviceAccount: vault-secrets-operator-controller-manager
+    serviceAccount: default
     audiences:
       - vault

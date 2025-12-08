@@ -4,6 +4,7 @@ resources:
   - podmonitor.yaml
   - dashboard.yaml
   - httproute.yaml
+  - httproute-inferencepool.yaml
   - epp-rbac.yaml
   - epp.yaml
   - inferencepool.yaml

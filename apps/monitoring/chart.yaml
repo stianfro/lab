@@ -112,50 +112,6 @@ spec:
               version: 1
               jsonData:
                 maxLines: 1000
-                derivedFields:
-                  - datasourceUid: tempo
-                    matcherRegex: "traceID=(\\w+)"
-                    name: TraceID
-                    url: "$${__value.raw}"
-
-            - name: Tempo
-              uid: tempo
-              type: tempo
-              access: proxy
-              url: http://tempo-chart.tempo.svc.cluster.local:3200
-              isDefault: false
-              editable: false
-              orgId: 1
-              version: 1
-              jsonData:
-                tracesToLogsV2:
-                  datasourceUid: loki
-                  spanStartTimeShift: '-1h'
-                  spanEndTimeShift: '1h'
-                  filterByTraceID: true
-                  filterBySpanID: false
-                  customQuery: false
-                  tags:
-                    - key: 'service.name'
-                      value: 'service_name'
-                tracesToMetrics:
-                  datasourceUid: prometheus
-                  spanStartTimeShift: '-1h'
-                  spanEndTimeShift: '1h'
-                  tags:
-                    - key: 'service.name'
-                      value: 'service'
-                  queries:
-                    - name: 'Request Rate'
-                      query: 'rate(traces_spanmetrics_calls_total{$$__tags}[5m])'
-                serviceMap:
-                  datasourceUid: prometheus
-                nodeGraph:
-                  enabled: true
-                search:
-                  hide: false
-                lokiSearch:
-                  datasourceUid: loki
   destination:
     namespace: monitoring
     server: https://kubernetes.default.svc

@@ -1,0 +1,35 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: vault-secrets-operator
+  namespace: argocd
+spec:
+  project: default
+  source:
+    chart: vault-secrets-operator
+    repoURL: https://helm.releases.hashicorp.com
+    targetRevision: 0.10.0
+    helm:
+      values: |
+        defaultVaultConnection:
+          enabled: true
+          address: http://vault-active.vault.svc:8200
+          skipTLSVerify: false
+
+        controller:
+          manager:
+            resources:
+              requests:
+                cpu: 50m
+                memory: 128Mi
+              limits:
+                cpu: 100m
+                memory: 256Mi
+
+  destination:
+    namespace: vault
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

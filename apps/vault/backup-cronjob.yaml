@@ -1,0 +1,53 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: vault-backup
+  namespace: vault
+spec:
+  schedule: "0 2 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: vault-backup
+          containers:
+            - name: backup
+              image: hashicorp/vault:1.19.0
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+                  export VAULT_ADDR=http://vault-active.vault.svc:8200
+                  export VAULT_TOKEN=$(cat /vault-token/token)
+
+                  TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+                  BACKUP_FILE="/backup/vault-snapshot-${TIMESTAMP}.snap"
+
+                  echo "Starting Vault backup..."
+                  vault operator raft snapshot save "$BACKUP_FILE"
+
+                  # Keep only last 7 daily backups
+                  echo "Cleaning up old backups..."
+                  find /backup -name "vault-snapshot-*.snap" -mtime +7 -delete
+
+                  echo "Backup completed: $BACKUP_FILE"
+                  ls -lah /backup/
+              volumeMounts:
+                - name: backup-volume
+                  mountPath: /backup
+                - name: vault-token
+                  mountPath: /vault-token
+                  readOnly: true
+          restartPolicy: OnFailure
+          volumes:
+            - name: backup-volume
+              nfs:
+                server: 192.168.1.10
+                path: /mnt/user/backup/vault
+            - name: vault-token
+              secret:
+                secretName: vault-backup-token

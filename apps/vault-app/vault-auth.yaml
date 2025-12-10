@@ -4,6 +4,7 @@ metadata:
   name: default
   namespace: vault
 spec:
+  namespace: ""
   method: kubernetes
   mount: kubernetes
   allowedNamespaces:

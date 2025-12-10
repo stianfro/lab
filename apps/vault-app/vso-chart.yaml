@@ -16,17 +16,6 @@ spec:
           address: http://vault-active.vault.svc:8200
           skipTLSVerify: false
 
-        defaultAuthMethod:
-          enabled: true
-          allowedNamespaces:
-            - "*"
-          method: kubernetes
-          mount: kubernetes
-          kubernetes:
-            role: vault-secrets-operator
-            tokenAudiences:
-              - vault
-
         controller:
           manager:
             resources:

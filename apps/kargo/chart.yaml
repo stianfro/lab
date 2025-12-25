@@ -1,0 +1,46 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kargo
+  namespace: argocd
+spec:
+  project: default
+  source:
+    chart: kargo
+    repoURL: oci://ghcr.io/akuity/kargo-charts
+    targetRevision: 1.4.2
+    helm:
+      values: |
+        api:
+          tls:
+            enabled: false
+          argocd:
+            urls:
+              - https://argo.talos.froystein.jp
+          oidc:
+            enabled: true
+            issuerURL: https://authentik.talos.froystein.jp/application/o/kargo/
+            clientID: 1FVXxMNpaJwAmtUvEB1277tJFUp6AsfnBrV0h776
+            cliClientID: 1FVXxMNpaJwAmtUvEB1277tJFUp6AsfnBrV0h776
+            clientSecretFromSecret:
+              name: kargo-oidc
+              key: clientSecret
+            dex:
+              enabled: false
+            admins:
+              claims:
+                email:
+                  - stian@froystein.jp
+          adminAccount:
+            enabled: false
+        controller:
+          argocd:
+            integrationEnabled: true
+            namespace: argocd
+  destination:
+    namespace: kargo
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

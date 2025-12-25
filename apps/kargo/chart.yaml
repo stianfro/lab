@@ -29,8 +29,8 @@ spec:
               enabled: false
             admins:
               claims:
-                email:
-                  - stian@froystein.jp
+                groups:
+                  - argo-admin
           adminAccount:
             enabled: false
         controller:

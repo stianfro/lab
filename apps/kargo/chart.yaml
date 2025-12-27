@@ -22,9 +22,6 @@ spec:
             issuerURL: https://authentik.talos.froystein.jp/application/o/kargo/
             clientID: 1FVXxMNpaJwAmtUvEB1277tJFUp6AsfnBrV0h776
             cliClientID: 1FVXxMNpaJwAmtUvEB1277tJFUp6AsfnBrV0h776
-            clientSecretFromSecret:
-              name: kargo-oidc
-              key: clientSecret
             dex:
               enabled: false
             admins:

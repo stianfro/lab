@@ -2,4 +2,3 @@ resources:
   - namespace.yaml
   - chart.yaml
   - httproute.yaml
-  - static-secret.yaml

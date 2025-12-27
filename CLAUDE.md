@@ -127,3 +127,49 @@ talosctl logs <service> --endpoints $CP_IPS
 - Secrets like Grafana OAuth credentials are stored as Kubernetes Secrets (not in git)
 - Talos machine configs contain certificates/keys (these are committed but should be treated as sensitive)
 - GitHub OAuth is configured for Grafana access control (stianfro user gets GrafanaAdmin role)
+
+## Kargo
+
+Kargo is installed for GitOps promotions at `https://kargo.talos.froystein.jp`.
+
+### OIDC Configuration
+- **Provider**: Authentik (at `https://authentik.talos.froystein.jp`)
+- **Client Type**: Public (NOT Confidential)
+- **Authentication**: PKCE (Proof Key for Code Exchange) - no client secret required
+- **Admin Access**: Controlled via `argo-admin` group claim from Authentik
+- **Issuer URL**: `https://authentik.talos.froystein.jp/application/o/kargo/`
+
+### Important Notes
+- Kargo uses PKCE and does NOT need a client secret - the Authentik OAuth2 provider must be set to "Public" client type
+- Do not use `clientSecretFromSecret` in Helm values - it's unnecessary for PKCE
+- The redirect URI for the web UI is `/login` (not `/auth/callback`)
+- CLI redirect URI is `http://localhost:11111/auth/callback`
+
+## Authentik
+
+Authentik is the identity provider for this cluster.
+
+### API Access
+- API endpoint: `https://authentik.talos.froystein.jp/api/v3/`
+- API tokens can be created in the Authentik admin UI under Directory → Tokens
+- Use Bearer token authentication: `Authorization: Bearer <token>`
+
+### Useful API Operations
+```bash
+# List OAuth2 providers
+curl -s -H "Authorization: Bearer $TOKEN" "https://authentik.talos.froystein.jp/api/v3/providers/oauth2/"
+
+# Update a provider (e.g., change client_type to public)
+curl -X PATCH "https://authentik.talos.froystein.jp/api/v3/providers/oauth2/<pk>/" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"client_type": "public"}'
+
+# Check OIDC discovery endpoint
+curl -s "https://authentik.talos.froystein.jp/application/o/<slug>/.well-known/openid-configuration"
+```
+
+### OAuth2 Provider Configuration
+- For applications using PKCE (like Kargo): Use "Public" client type
+- For applications requiring client secret exchange: Use "Confidential" client type
+- Check `token_endpoint_auth_methods_supported` in the OIDC discovery endpoint to verify supported authentication methods

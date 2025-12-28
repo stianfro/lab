@@ -7,7 +7,6 @@ resources:
   - namespace.yaml
   - https://github.com/argoproj/argo-rollouts/releases/latest/download/install.yaml
   - https://github.com/argoproj/argo-rollouts/releases/latest/download/dashboard-install.yaml
-  - dashboard-clusterrole.yaml
   - httproute.yaml
 
 patches:

@@ -1,0 +1,13 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: argo-rollouts-dashboard
+  namespace: argo-rollouts
+spec:
+  template:
+    spec:
+      containers:
+        - name: argo-rollouts-dashboard
+          args:
+            - dashboard
+            - --namespace=

@@ -1,0 +1,15 @@
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: froystein-jp
+  namespace: froystein-jp
+spec:
+  subscriptions:
+    - image:
+        repoURL: ghcr.io/stianfro/froystein-jp
+        semverConstraint: ">=1.0.0"
+        discoveryLimit: 5
+    - git:
+        repoURL: https://github.com/stianfro/froystein.jp.git
+        branch: main
+        discoveryLimit: 5

@@ -1,0 +1,34 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: froystein-jp
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - environment: prod
+            branch: env/prod
+  template:
+    metadata:
+      name: "froystein-jp-{{environment}}"
+      labels:
+        app.kubernetes.io/name: froystein-jp
+        app.kubernetes.io/instance: "{{environment}}"
+      annotations:
+        kargo.akuity.io/authorized-stage: "froystein-jp:{{environment}}"
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/stianfro/froystein.jp
+        targetRevision: "{{branch}}"
+        path: "."
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: froystein-jp
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

@@ -1,0 +1,6 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: froystein-jp
+  labels:
+    app.kubernetes.io/name: froystein-jp

@@ -1,0 +1,62 @@
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: prod
+  namespace: froystein-jp
+spec:
+  requestedFreight:
+    - origin:
+        kind: Warehouse
+        name: froystein-jp
+      sources:
+        direct: true
+  promotionTemplate:
+    spec:
+      vars:
+        - name: gitRepo
+          value: https://github.com/stianfro/froystein.jp.git
+        - name: imageRepo
+          value: ghcr.io/stianfro/froystein-jp
+        - name: targetBranch
+          value: env/prod
+      steps:
+        - uses: git-clone
+          config:
+            repoURL: ${{ vars.gitRepo }}
+            checkout:
+              - commit: ${{ commitFrom(vars.gitRepo).ID }}
+                path: ./src
+              - branch: ${{ vars.targetBranch }}
+                create: true
+                path: ./out
+        - uses: git-clear
+          config:
+            path: ./out
+        - uses: kustomize-set-image
+          as: update-image
+          config:
+            path: ./src/infra/prod
+            images:
+              - image: ${{ vars.imageRepo }}
+                tag: ${{ imageFrom(vars.imageRepo).Tag }}
+        - uses: kustomize-build
+          config:
+            path: ./src/infra/prod
+            outPath: ./out/manifests.yaml
+        - uses: git-commit
+          as: commit
+          config:
+            path: ./out
+            message: "chore: promote to prod - ${{ imageFrom(vars.imageRepo).Tag }}"
+        - uses: git-push
+          config:
+            path: ./out
+            targetBranch: ${{ vars.targetBranch }}
+        - uses: argocd-update
+          config:
+            apps:
+              - name: froystein-jp-prod
+                namespace: argocd
+                sources:
+                  - repoURL: ${{ vars.gitRepo }}
+                    desiredRevision: ${{ outputs.commit.commit }}

@@ -4,3 +4,6 @@ metadata:
   name: froystein-jp
   labels:
     app.kubernetes.io/name: froystein-jp
+    kargo.akuity.io/project: "true"
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"

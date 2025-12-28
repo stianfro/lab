@@ -60,6 +60,12 @@ spec:
                 sources:
                   - repoURL: ${{ vars.gitRepo }}
                     desiredRevision: ${{ outputs.commit.commit }}
+  verification:
+    analysisTemplates:
+      - name: http-health-check
+    args:
+      - name: url
+        value: "http://froystein-jp.froystein-jp-dev.svc.cluster.local"
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage

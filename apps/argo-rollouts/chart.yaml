@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argo-rollouts-chart
+  namespace: argocd
+spec:
+  project: default
+  source:
+    chart: argo-rollouts
+    repoURL: ghcr.io/argoproj/argo-helm
+    targetRevision: 2.39.1
+    helm:
+      values: |
+        controller:
+          replicas: 1
+        dashboard:
+          enabled: false
+  destination:
+    namespace: argo-rollouts
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

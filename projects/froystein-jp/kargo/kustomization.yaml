@@ -8,3 +8,4 @@ resources:
   - stages.yaml
   - project-config.yaml
   - vault-secret.yaml
+  - analysistemplate.yaml

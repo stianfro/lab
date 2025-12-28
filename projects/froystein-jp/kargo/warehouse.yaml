@@ -6,7 +6,7 @@ metadata:
 spec:
   subscriptions:
     - image:
-        repoURL: ghcr.io/stianfro/froystein-jp
+        repoURL: ghcr.io/stianfro/froystein.jp
         semverConstraint: ">=1.0.0"
         discoveryLimit: 5
         imageSelectionStrategy: SemVer

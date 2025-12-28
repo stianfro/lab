@@ -16,7 +16,7 @@ spec:
         - name: gitRepo
           value: https://github.com/stianfro/froystein.jp.git
         - name: imageRepo
-          value: ghcr.io/stianfro/froystein-jp
+          value: ghcr.io/stianfro/froystein.jp
         - name: targetBranch
           value: env/prod
       steps:

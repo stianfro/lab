@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: projects
+  namespace: argocd
+spec:
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+  generators:
+    - git:
+        repoURL: https://github.com/stianfro/lab.git
+        revision: HEAD
+        directories:
+          - path: projects/*
+  template:
+    metadata:
+      name: "project-{{path.basename}}"
+    spec:
+      project: default
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+      source:
+        repoURL: https://github.com/stianfro/lab.git
+        targetRevision: HEAD
+        path: "{{path}}"
+      destination:
+        server: https://kubernetes.default.svc

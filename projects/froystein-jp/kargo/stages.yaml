@@ -3,6 +3,8 @@ kind: Stage
 metadata:
   name: dev
   namespace: froystein-jp
+  annotations:
+    kargo.akuity.io/color: yellow
 spec:
   requestedFreight:
     - origin:
@@ -72,6 +74,8 @@ kind: Stage
 metadata:
   name: prod
   namespace: froystein-jp
+  annotations:
+    kargo.akuity.io/color: green
 spec:
   requestedFreight:
     - origin:

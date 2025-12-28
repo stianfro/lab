@@ -27,7 +27,9 @@ This is a homelab Kubernetes cluster running Talos Linux on 3x Minisforum UM790 
 - **argocd**: GitOps controller, bootstrapped via kustomize from upstream manifest
 - **cert-manager**: TLS certificate management
 - **cilium**: CNI with Hubble observability
-- **gateway**: Kubernetes Gateway API implementation
+- **gateway**: Internal Kubernetes Gateway API (Envoy Gateway) for `*.talos.froystein.jp`
+- **gateway-public**: Public gateway for Cloudflare tunnel traffic on `*.froystein.jp`
+- **cloudflare-tunnel**: Cloudflared deployment connecting to Cloudflare for public internet access
 - **longhorn**: Distributed block storage (used by monitoring stack)
 - **metallb**: Bare-metal load balancer
 - **monitoring**: kube-prometheus-stack (Prometheus + Grafana)
@@ -173,3 +175,95 @@ curl -s "https://authentik.talos.froystein.jp/application/o/<slug>/.well-known/o
 - For applications using PKCE (like Kargo): Use "Public" client type
 - For applications requiring client secret exchange: Use "Confidential" client type
 - Check `token_endpoint_auth_methods_supported` in the OIDC discovery endpoint to verify supported authentication methods
+
+## Cloudflare Tunnel & Public Gateway
+
+The cluster has two gateway setups for different use cases:
+
+### Gateway Architecture
+
+| Gateway | GatewayClass | Domain | Purpose |
+|---------|--------------|--------|---------|
+| `eg` | `eg` | `*.talos.froystein.jp` | Internal services (LoadBalancer via MetalLB) |
+| `eg-public` | `eg-public` | `*.froystein.jp` | Public internet access via Cloudflare Tunnel |
+
+### Traffic Flow (Public)
+```
+Internet → Cloudflare Edge → cloudflared pods → eg-public Gateway → HTTPRoute → Service
+```
+
+### Key Components
+
+**gateway-public** (`apps/gateway-public/`):
+- GatewayClass `eg-public` with ClusterIP service (no LoadBalancer needed)
+- EnvoyProxy configured for ClusterIP since Cloudflare handles external access
+- HTTP listener on port 80 (Cloudflare terminates TLS)
+
+**cloudflare-tunnel** (`apps/cloudflare-tunnel/`):
+- Tunnel ID: `bbe4d352-a6f1-4cec-9070-1e609897ff0f`
+- Credentials stored in Vault at `secret/cloudflare-tunnel/credentials`
+- VaultStaticSecret syncs credentials to Kubernetes
+- 2 replicas with pod anti-affinity for HA
+
+### Exposing a Service Publicly
+
+1. Create an HTTPRoute targeting `eg-public`:
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: myapp-public
+  namespace: myapp
+spec:
+  parentRefs:
+    - name: eg-public
+      namespace: envoy-gateway-system
+  hostnames:
+    - "myapp.froystein.jp"
+  rules:
+    - backendRefs:
+        - name: myapp-service
+          port: 80
+```
+
+2. Add DNS route (if not using wildcard):
+```bash
+cloudflared tunnel route dns lab-public "myapp.froystein.jp"
+```
+
+### Managing the Tunnel
+
+```bash
+# List tunnel info
+cloudflared tunnel info lab-public
+
+# Add DNS route
+cloudflared tunnel route dns lab-public "newhost.froystein.jp"
+
+# Add DNS route (overwrite existing)
+cloudflared tunnel route dns --overwrite-dns lab-public "host.froystein.jp"
+
+# Check tunnel connections
+kubectl logs -n cloudflare-tunnel -l app.kubernetes.io/name=cloudflare-tunnel
+```
+
+### Troubleshooting
+
+**Error 1016 (Origin DNS error)**: DNS not pointing to tunnel
+```bash
+cloudflared tunnel route dns --overwrite-dns lab-public "hostname.froystein.jp"
+```
+
+**502 Bad Gateway**: Check gateway service connectivity
+```bash
+kubectl get svc -n envoy-gateway-system | grep eg-public
+kubectl logs -n cloudflare-tunnel -l app.kubernetes.io/name=cloudflare-tunnel
+```
+
+**Pods not scheduling**: AI Gateway webhook interference
+```bash
+# Restart AI gateway controller to fix certificate issues
+kubectl rollout restart deployment/ai-gateway-controller -n envoy-ai-gateway-system
+```
+
+See `docs/cloudflare-tunnel.md` for detailed setup documentation.

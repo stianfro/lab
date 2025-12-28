@@ -34,6 +34,8 @@ spec:
           argocd:
             integrationEnabled: true
             namespace: argocd
+          rollouts:
+            integrationEnabled: true
   destination:
     namespace: kargo
     server: https://kubernetes.default.svc

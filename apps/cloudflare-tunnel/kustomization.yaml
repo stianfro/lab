@@ -1,0 +1,5 @@
+resources:
+  - namespace.yaml
+  - vaultstaticsecret.yaml
+  - configmap.yaml
+  - deployment.yaml

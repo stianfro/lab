@@ -6,5 +6,8 @@ metadata:
 spec:
   promotionPolicies:
     - stageSelector:
-        name: prod
+        name: dev
       autoPromotionEnabled: true
+    - stageSelector:
+        name: prod
+      autoPromotionEnabled: false

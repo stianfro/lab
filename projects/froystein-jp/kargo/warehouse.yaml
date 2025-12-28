@@ -9,7 +9,11 @@ spec:
         repoURL: ghcr.io/stianfro/froystein-jp
         semverConstraint: ">=1.0.0"
         discoveryLimit: 5
+        imageSelectionStrategy: SemVer
+        strictSemvers: true
     - git:
         repoURL: https://github.com/stianfro/froystein.jp.git
         branch: main
         discoveryLimit: 5
+        commitSelectionStrategy: NewestFromBranch
+        strictSemvers: true

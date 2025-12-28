@@ -9,8 +9,10 @@ spec:
         elements:
           - environment: dev
             branch: env/dev
+            namespace: froystein-jp-dev
           - environment: prod
             branch: env/prod
+            namespace: froystein-jp
   template:
     metadata:
       name: "froystein-jp-{{environment}}"
@@ -27,7 +29,7 @@ spec:
         path: "."
       destination:
         server: https://kubernetes.default.svc
-        namespace: froystein-jp
+        namespace: "{{namespace}}"
       syncPolicy:
         automated:
           prune: true

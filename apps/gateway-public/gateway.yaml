@@ -1,0 +1,63 @@
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: public-config
+  namespace: envoy-gateway-system
+spec:
+  provider:
+    type: Kubernetes
+    kubernetes:
+      envoyService:
+        type: ClusterIP
+  telemetry:
+    tracing:
+      provider:
+        type: OpenTelemetry
+        host: otel-collector-opentelemetry-collector.otel-collector.svc.cluster.local
+        port: 4317
+      customTags:
+        "environment":
+          literal:
+            value: "homelab"
+        "cluster":
+          literal:
+            value: "talos"
+        "gateway":
+          literal:
+            value: "public"
+      samplingRate: 100
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: eg-public
+spec:
+  controllerName: gateway.envoyproxy.io/gatewayclass-controller
+  parametersRef:
+    group: gateway.envoyproxy.io
+    kind: EnvoyProxy
+    name: public-config
+    namespace: envoy-gateway-system
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: eg-public
+  namespace: envoy-gateway-system
+spec:
+  gatewayClassName: eg-public
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      hostname: "*.froystein.jp"
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: http-bare
+      protocol: HTTP
+      port: 80
+      hostname: "froystein.jp"
+      allowedRoutes:
+        namespaces:
+          from: All

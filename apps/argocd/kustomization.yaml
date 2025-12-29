@@ -2,6 +2,8 @@ resources:
   - https://raw.githubusercontent.com/argoproj/argo-cd/v3.2.0/manifests/install.yaml
   - namespace.yaml
   - github-token.yaml
+  - webhook-httproute.yaml
+  - webhook-secret.yaml
 
 patches:
   - path: argocd-cm-patch.yaml
@@ -16,5 +18,9 @@ patches:
     target:
       kind: ConfigMap
       name: argocd-cmd-params-cm
+  - path: appset-controller-patch.yaml
+    target:
+      kind: Deployment
+      name: argocd-applicationset-controller
 
 namespace: argocd

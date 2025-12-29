@@ -76,7 +76,8 @@ spec:
         kind: Warehouse
         name: blog
       sources:
-        direct: true
+        stages:
+          - dev
   promotionTemplate:
     spec:
       vars:

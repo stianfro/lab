@@ -1,6 +1,71 @@
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
 metadata:
+  name: dev
+  namespace: blog
+  annotations:
+    kargo.akuity.io/color: yellow
+spec:
+  requestedFreight:
+    - origin:
+        kind: Warehouse
+        name: blog
+      sources:
+        direct: true
+  promotionTemplate:
+    spec:
+      vars:
+        - name: gitRepo
+          value: https://github.com/stianfro/blog.git
+        - name: imageRepo
+          value: ghcr.io/stianfro/blog
+        - name: targetBranch
+          value: env/dev
+      steps:
+        - uses: git-clone
+          config:
+            repoURL: ${{ vars.gitRepo }}
+            checkout:
+              - commit: ${{ commitFrom(vars.gitRepo).ID }}
+                path: ./src
+              - branch: ${{ vars.targetBranch }}
+                create: true
+                path: ./out
+        - uses: git-clear
+          config:
+            path: ./out
+        - uses: kustomize-set-image
+          as: update-image
+          config:
+            path: ./src/infra/dev
+            images:
+              - image: ${{ vars.imageRepo }}
+                tag: ${{ imageFrom(vars.imageRepo).Tag }}
+        - uses: kustomize-build
+          config:
+            path: ./src/infra/dev
+            outPath: ./out/manifests.yaml
+        - uses: git-commit
+          as: commit
+          config:
+            path: ./out
+            message: "chore: promote to dev - ${{ imageFrom(vars.imageRepo).Tag }}"
+        - uses: git-push
+          config:
+            path: ./out
+            targetBranch: ${{ vars.targetBranch }}
+        - uses: argocd-update
+          config:
+            apps:
+              - name: blog-dev
+                namespace: argocd
+                sources:
+                  - repoURL: ${{ vars.gitRepo }}
+                    desiredRevision: ${{ outputs.commit.commit }}
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
   name: prod
   namespace: blog
   annotations:

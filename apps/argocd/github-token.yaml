@@ -1,0 +1,13 @@
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultStaticSecret
+metadata:
+  name: github-token
+spec:
+  type: kv-v2
+  mount: secret
+  path: argocd/github-token
+  destination:
+    name: github-token
+    create: true
+  refreshAfter: 60s
+  vaultAuthRef: vault/default

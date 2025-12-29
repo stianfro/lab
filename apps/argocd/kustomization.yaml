@@ -1,6 +1,7 @@
 resources:
   - https://raw.githubusercontent.com/argoproj/argo-cd/v3.2.0/manifests/install.yaml
   - namespace.yaml
+  - github-token.yaml
 
 patches:
   - path: argocd-cm-patch.yaml

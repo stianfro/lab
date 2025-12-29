@@ -10,6 +10,9 @@ spec:
         github:
           owner: stianfro
           repo: blog
+          tokenRef:
+            secretName: github-token
+            key: token
         requeueAfterSeconds: 60
   template:
     metadata:

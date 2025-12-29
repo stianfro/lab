@@ -7,9 +7,6 @@ spec:
   generators:
     - list:
         elements:
-          - environment: dev
-            branch: env/dev
-            namespace: blog-dev
           - environment: prod
             branch: env/prod
             namespace: blog

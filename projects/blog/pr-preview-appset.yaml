@@ -1,0 +1,45 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: blog-pr-previews
+  namespace: argocd
+spec:
+  goTemplate: true
+  generators:
+    - pullRequest:
+        github:
+          owner: stianfro
+          repo: blog
+        requeueAfterSeconds: 60
+  template:
+    metadata:
+      name: "blog-pr-{{.number}}"
+      labels:
+        app.kubernetes.io/name: blog
+        app.kubernetes.io/instance: "pr-{{.number}}"
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/stianfro/blog
+        targetRevision: "{{.head_sha}}"
+        path: infra/pr-preview
+        kustomize:
+          images:
+            - ghcr.io/stianfro/blog:pr-{{.number}}
+          patches:
+            - target:
+                kind: HTTPRoute
+                name: blog
+              patch: |
+                - op: replace
+                  path: /spec/hostnames/0
+                  value: blog-pr-{{.number}}.talos.froystein.jp
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "blog-pr-{{.number}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

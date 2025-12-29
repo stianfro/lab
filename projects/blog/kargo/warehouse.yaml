@@ -1,0 +1,19 @@
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: blog
+  namespace: blog
+spec:
+  subscriptions:
+    - image:
+        repoURL: ghcr.io/stianfro/blog
+        semverConstraint: ">=0.1.0"
+        discoveryLimit: 5
+        imageSelectionStrategy: SemVer
+        strictSemvers: true
+    - git:
+        repoURL: https://github.com/stianfro/blog.git
+        branch: main
+        discoveryLimit: 5
+        commitSelectionStrategy: NewestFromBranch
+        strictSemvers: true

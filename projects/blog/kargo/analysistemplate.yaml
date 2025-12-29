@@ -1,0 +1,19 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: http-health-check
+  namespace: blog
+spec:
+  args:
+    - name: url
+  metrics:
+    - name: http-check
+      interval: 10s
+      count: 3
+      successCondition: result == 200
+      failureLimit: 1
+      provider:
+        web:
+          url: "{{ args.url }}"
+          method: GET
+          timeoutSeconds: 10

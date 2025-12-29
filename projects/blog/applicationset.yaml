@@ -1,0 +1,38 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: blog
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - environment: dev
+            branch: env/dev
+            namespace: blog-dev
+          - environment: prod
+            branch: env/prod
+            namespace: blog
+  template:
+    metadata:
+      name: "blog-{{environment}}"
+      labels:
+        app.kubernetes.io/name: blog
+        app.kubernetes.io/instance: "{{environment}}"
+      annotations:
+        kargo.akuity.io/authorized-stage: "blog:{{environment}}"
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/stianfro/blog
+        targetRevision: "{{branch}}"
+        path: "."
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{namespace}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

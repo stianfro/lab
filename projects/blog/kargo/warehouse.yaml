@@ -1,7 +1,7 @@
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Warehouse
 metadata:
-  name: blog
+  name: blog-prod
   namespace: blog
 spec:
   subscriptions:
@@ -11,6 +11,25 @@ spec:
         discoveryLimit: 5
         imageSelectionStrategy: SemVer
         strictSemvers: true
+    - git:
+        repoURL: https://github.com/stianfro/blog.git
+        branch: main
+        discoveryLimit: 5
+        commitSelectionStrategy: NewestFromBranch
+        strictSemvers: true
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: blog-dev
+  namespace: blog
+spec:
+  subscriptions:
+    - image:
+        repoURL: ghcr.io/stianfro/blog
+        discoveryLimit: 5
+        imageSelectionStrategy: Lexical
+        allowTags: "^.*-dev$"
     - git:
         repoURL: https://github.com/stianfro/blog.git
         branch: main

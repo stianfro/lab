@@ -9,7 +9,7 @@ spec:
   requestedFreight:
     - origin:
         kind: Warehouse
-        name: blog
+        name: blog-dev
       sources:
         direct: true
   promotionTemplate:
@@ -80,10 +80,9 @@ spec:
   requestedFreight:
     - origin:
         kind: Warehouse
-        name: blog
+        name: blog-prod
       sources:
-        stages:
-          - dev
+        direct: true
   promotionTemplate:
     spec:
       vars:

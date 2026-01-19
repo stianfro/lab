@@ -4,3 +4,4 @@ resources:
   - rbac.yaml
   - job.yaml
   - vm.yaml
+  - service.yaml

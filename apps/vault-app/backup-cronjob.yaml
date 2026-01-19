@@ -10,6 +10,8 @@ spec:
   failedJobsHistoryLimit: 3
   jobTemplate:
     spec:
+      activeDeadlineSeconds: 600
+      ttlSecondsAfterFinished: 86400
       template:
         spec:
           serviceAccountName: vault-backup
@@ -22,7 +24,11 @@ spec:
                 - |
                   set -e
                   export VAULT_ADDR=http://vault-active.vault.svc:8200
-                  export VAULT_TOKEN=$(cat /vault-token/token)
+
+                  echo "Authenticating with Vault using Kubernetes auth..."
+                  export VAULT_TOKEN=$(vault write -field=token auth/kubernetes/login \
+                    role=vault-backup \
+                    jwt=@/var/run/secrets/kubernetes.io/serviceaccount/token)
 
                   TIMESTAMP=$(date +%Y%m%d_%H%M%S)
                   BACKUP_FILE="/backup/vault-snapshot-${TIMESTAMP}.snap"
@@ -32,22 +38,16 @@ spec:
 
                   # Keep only last 7 daily backups
                   echo "Cleaning up old backups..."
-                  find /backup -name "vault-snapshot-*.snap" -mtime +7 -delete
+                  find /backup -name "vault-snapshot-*.snap" -mtime +7 -delete || echo "Warning: cleanup failed, continuing..."
 
                   echo "Backup completed: $BACKUP_FILE"
-                  ls -lah /backup/
+                  ls -lah /backup/ || echo "Warning: could not list backup directory"
               volumeMounts:
                 - name: backup-volume
                   mountPath: /backup
-                - name: vault-token
-                  mountPath: /vault-token
-                  readOnly: true
           restartPolicy: OnFailure
           volumes:
             - name: backup-volume
               nfs:
                 server: 192.168.1.10
                 path: /mnt/user/backup/vault
-            - name: vault-token
-              secret:
-                secretName: vault-backup-token

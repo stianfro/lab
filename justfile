@@ -12,3 +12,6 @@ bootstrap:
 bootstrap-apps:
   just env
   kubectl apply -f apps/appset.yaml
+
+vnc-ocp-upgrade-lab:
+  virtctl vnc ocp-upgrade-lab -n ocp-upgrade-lab --viewer-path="/Applications/TigerVNC Viewer 1.15.0.app/Contents/MacOS/TigerVNC Viewer"

@@ -8,7 +8,7 @@ metadata:
 spec:
   type: LoadBalancer
   selector:
-    kubevirt.io/vm: ocp-upgrade-lab
+    vm.kubevirt.io/name: ocp-upgrade-lab
   ports:
     - name: https
       port: 443

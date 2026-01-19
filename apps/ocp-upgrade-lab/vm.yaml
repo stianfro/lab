@@ -19,10 +19,10 @@ spec:
               disk:
                 bus: virtio
               bootOrder: 2
-            # - name: iso
-            #   cdrom:
-            #     bus: sata
-            #   bootOrder: 1
+            - name: iso
+              cdrom:
+                bus: sata
+              bootOrder: 1
           interfaces:
             - name: podnet
               masquerade: {}
@@ -33,9 +33,9 @@ spec:
         - name: rootdisk
           persistentVolumeClaim:
             claimName: ocp-upgrade-lab-root
-        # - name: iso
-        #   persistentVolumeClaim:
-        #     claimName: ocp-upgrade-lab-iso
+        - name: iso
+          persistentVolumeClaim:
+            claimName: ocp-upgrade-lab-iso
   dataVolumeTemplates:
     - metadata:
         name: ocp-upgrade-lab-root

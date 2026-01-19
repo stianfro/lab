@@ -1,0 +1,6 @@
+resources:
+  - namespace.yaml
+  - vaultstaticsecret.yaml
+  - rbac.yaml
+  - job.yaml
+  - vm.yaml

@@ -1,0 +1,46 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: create-iso-datavolume
+  namespace: ocp-upgrade-lab
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      serviceAccountName: datavolume-creator
+      restartPolicy: OnFailure
+      containers:
+        - name: create-dv
+          image: bitnami/kubectl:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              # Read ISO URL from secret
+              ISO_URL=$(kubectl get secret iso-url -n ocp-upgrade-lab -o jsonpath='{.data.discovery_image_ocp-upgrade-lab\.iso}' | base64 -d)
+
+              # Check if DataVolume already exists
+              if kubectl get datavolume ocp-upgrade-lab-iso -n ocp-upgrade-lab >/dev/null 2>&1; then
+                echo "DataVolume already exists, skipping creation"
+                exit 0
+              fi
+
+              # Create DataVolume
+              cat <<EOF | kubectl apply -f -
+              apiVersion: cdi.kubevirt.io/v1beta1
+              kind: DataVolume
+              metadata:
+                name: ocp-upgrade-lab-iso
+                namespace: ocp-upgrade-lab
+              spec:
+                source:
+                  http:
+                    url: "${ISO_URL}"
+                storage:
+                  resources:
+                    requests:
+                      storage: 2Gi
+                  storageClassName: longhorn
+              EOF
+
+              echo "DataVolume created successfully"

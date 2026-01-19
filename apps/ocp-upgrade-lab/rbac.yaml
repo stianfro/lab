@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: datavolume-creator
+  namespace: ocp-upgrade-lab
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: datavolume-creator
+  namespace: ocp-upgrade-lab
+rules:
+  - apiGroups: ["cdi.kubevirt.io"]
+    resources: ["datavolumes"]
+    verbs: ["create", "get", "list"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: datavolume-creator
+  namespace: ocp-upgrade-lab
+subjects:
+  - kind: ServiceAccount
+    name: datavolume-creator
+    namespace: ocp-upgrade-lab
+roleRef:
+  kind: Role
+  name: datavolume-creator
+  apiGroup: rbac.authorization.k8s.io

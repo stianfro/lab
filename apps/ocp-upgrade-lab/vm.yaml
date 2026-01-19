@@ -1,0 +1,49 @@
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: ocp-upgrade-lab
+  namespace: ocp-upgrade-lab
+spec:
+  running: true
+  template:
+    spec:
+      domain:
+        cpu:
+          cores: 8
+        resources:
+          requests:
+            memory: 15Gi
+        devices:
+          disks:
+            - name: rootdisk
+              disk:
+                bus: virtio
+              bootOrder: 2
+            - name: iso
+              cdrom:
+                bus: sata
+              bootOrder: 1
+          interfaces:
+            - name: podnet
+              masquerade: {}
+      networks:
+        - name: podnet
+          pod: {}
+      volumes:
+        - name: rootdisk
+          persistentVolumeClaim:
+            claimName: ocp-upgrade-lab-root
+        - name: iso
+          persistentVolumeClaim:
+            claimName: ocp-upgrade-lab-iso
+  dataVolumeTemplates:
+    - metadata:
+        name: ocp-upgrade-lab-root
+      spec:
+        storage:
+          resources:
+            requests:
+              storage: 100Gi
+          storageClassName: longhorn
+        source:
+          blank: {}

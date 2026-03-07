@@ -17,7 +17,7 @@ machine:
   network: {}
   install:
     disk: /dev/nvme0n1
-    image: ghcr.io/siderolabs/installer:v1.11.3
+    image: factory.talos.dev/installer/65cf8364cd0de4cf7b851dc7067a2db83d0ba04f11d8635c6cd3334be6ffb825:v1.12.4
     wipe: false
   features:
     rbac: true

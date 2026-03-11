@@ -7,5 +7,3 @@ resources:
   - epp-rbac.yaml
   - epp.yaml
   - inferencepool.yaml
-  - referencegrant.yaml
-  - aigatewayroute.yaml

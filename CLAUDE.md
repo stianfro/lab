@@ -260,10 +260,4 @@ kubectl get svc -n envoy-gateway-system | grep eg-public
 kubectl logs -n cloudflare-tunnel -l app.kubernetes.io/name=cloudflare-tunnel
 ```
 
-**Pods not scheduling**: AI Gateway webhook interference
-```bash
-# Restart AI gateway controller to fix certificate issues
-kubectl rollout restart deployment/ai-gateway-controller -n envoy-ai-gateway-system
-```
-
 See `docs/cloudflare-tunnel.md` for detailed setup documentation.

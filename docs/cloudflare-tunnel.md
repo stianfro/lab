@@ -344,19 +344,6 @@ kubectl get httproute -A
 kubectl describe httproute <name> -n <namespace>
 ```
 
-### Gateway Pods Not Scheduling
-
-**Cause**: AI Gateway webhook certificate issues.
-
-**Fix**:
-```bash
-# Restart AI gateway controller
-kubectl rollout restart deployment/ai-gateway-controller -n envoy-ai-gateway-system
-
-# Then restart the gateway deployment
-kubectl rollout restart deployment/envoy-envoy-gateway-system-eg-public-7b646a69 -n envoy-gateway-system
-```
-
 ### VaultStaticSecret Not Syncing
 
 **Debug**:

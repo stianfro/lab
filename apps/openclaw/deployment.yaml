@@ -80,20 +80,17 @@ spec:
               containerPort: 18789
               protocol: TCP
           startupProbe:
-            httpGet:
-              path: /readyz
+            tcpSocket:
               port: http
             periodSeconds: 5
             failureThreshold: 24
           livenessProbe:
-            httpGet:
-              path: /healthz
+            tcpSocket:
               port: http
             periodSeconds: 10
             failureThreshold: 3
           readinessProbe:
-            httpGet:
-              path: /readyz
+            tcpSocket:
               port: http
             periodSeconds: 5
             failureThreshold: 3

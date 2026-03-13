@@ -26,8 +26,10 @@ spec:
           command:
             - sh
             - -c
-            - >
-              mkdir -p /data/.openclaw /data/workspace &&
+            - |
+              mkdir -p /data/.openclaw /data/workspace /data/workspace/memory &&
+              touch /data/workspace/MEMORY.md &&
+              touch "/data/workspace/memory/$(date +%F).md" &&
               if [ ! -f /data/.openclaw/openclaw.json ]; then
                 cp /bootstrap/openclaw.json /data/.openclaw/openclaw.json;
               fi &&

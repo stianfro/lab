@@ -28,6 +28,7 @@ data:
     {
       "agents": {
         "defaults": {
+          "workspace": "/data/workspace",
           "model": {
             "primary": "openai-codex/gpt-5.2-codex"
           }

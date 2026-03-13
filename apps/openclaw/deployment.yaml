@@ -60,6 +60,11 @@ spec:
                 secretKeyRef:
                   name: openclaw-secrets
                   key: OPENCLAW_GATEWAY_TOKEN
+            - name: DISCORD_BOT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: openclaw-secrets
+                  key: DISCORD_BOT_TOKEN
             - name: SETUP_PASSWORD
               valueFrom:
                 secretKeyRef:

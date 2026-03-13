@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: openclaw-env
+  namespace: openclaw
+  labels:
+    app.kubernetes.io/name: openclaw
+data:
+  HOME: /home/node
+  NODE_ENV: production
+  NODE_OPTIONS: --max-old-space-size=1536
+  OPENCLAW_CONFIG_PATH: /data/.openclaw/openclaw.json
+  OPENCLAW_GATEWAY_BIND: lan
+  OPENCLAW_GATEWAY_PORT: "18789"
+  OPENCLAW_STATE_DIR: /data/.openclaw
+  OPENCLAW_WORKSPACE_DIR: /data/workspace
+  XDG_CONFIG_HOME: /data/.openclaw
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: openclaw-bootstrap
+  namespace: openclaw
+  labels:
+    app.kubernetes.io/name: openclaw
+data:
+  openclaw.json: |
+    {
+      "gateway": {
+        "auth": {
+          "mode": "token",
+          "token": "${OPENCLAW_GATEWAY_TOKEN}",
+          "allowTailscale": false
+        },
+        "controlUi": {
+          "enabled": true,
+          "allowedOrigins": ["https://openclaw.talos.froystein.jp"]
+        }
+      }
+    }

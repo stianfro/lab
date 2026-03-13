@@ -1,0 +1,8 @@
+resources:
+  - namespace.yaml
+  - vaultstaticsecret.yaml
+  - configmap.yaml
+  - pvc.yaml
+  - deployment.yaml
+  - service.yaml
+  - httproute.yaml

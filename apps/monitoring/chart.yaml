@@ -16,6 +16,8 @@ spec:
           prometheusSpec:
             serviceMonitorSelectorNilUsesHelmValues: false
             podMonitorSelectorNilUsesHelmValues: false
+            probeSelectorNilUsesHelmValues: false
+            probeNamespaceSelector: {}
             enableFeatures:
               - exemplar-storage
             storageSpec:
@@ -100,6 +102,10 @@ spec:
               allow_sign_up: true
               auto_login: true
               role_attribute_path: "[login=='stianfro'][0] && 'GrafanaAdmin' || 'Viewer'"
+
+          sidecar:
+            dashboards:
+              searchNamespace: ALL
 
           additionalDataSources:
             - name: Loki

@@ -1,0 +1,61 @@
+---
+# Gateway ICMP reachability
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: gateway-icmp
+  namespace: network-monitor
+spec:
+  jobName: gateway-icmp
+  prober:
+    url: blackbox-exporter-prometheus-blackbox-exporter.network-monitor.svc.cluster.local:9115
+    path: /probe
+  module: icmp
+  interval: 15s
+  scrapeTimeout: 10s
+  targets:
+    staticConfig:
+      static:
+        - 192.168.1.1
+      labels:
+        target: gateway
+---
+# Internet ICMP connectivity
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: internet-icmp
+  namespace: network-monitor
+spec:
+  jobName: internet-icmp
+  prober:
+    url: blackbox-exporter-prometheus-blackbox-exporter.network-monitor.svc.cluster.local:9115
+    path: /probe
+  module: icmp
+  interval: 15s
+  scrapeTimeout: 10s
+  targets:
+    staticConfig:
+      static:
+        - 8.8.8.8
+        - 1.1.1.1
+---
+# Internet HTTP connectivity
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: internet-http
+  namespace: network-monitor
+spec:
+  jobName: internet-http
+  prober:
+    url: blackbox-exporter-prometheus-blackbox-exporter.network-monitor.svc.cluster.local:9115
+    path: /probe
+  module: http_2xx
+  interval: 30s
+  scrapeTimeout: 15s
+  targets:
+    staticConfig:
+      static:
+        - https://www.google.com
+        - https://one.one.one.one

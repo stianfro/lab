@@ -1,0 +1,77 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: speedtest-exporter
+  namespace: network-monitor
+  labels:
+    app.kubernetes.io/name: speedtest-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: speedtest-exporter
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: speedtest-exporter
+    spec:
+      containers:
+        - name: speedtest-exporter
+          image: ghcr.io/miguelndecarvalho/speedtest-exporter:v3.5.4@sha256:f1064d49124c7fc45faabb87c6c876a2fd04e92b3dc14d4b871301217ba30fed
+          ports:
+            - name: metrics
+              containerPort: 9798
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /
+              port: metrics
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /
+              port: metrics
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: speedtest-exporter
+  namespace: network-monitor
+  labels:
+    app.kubernetes.io/name: speedtest-exporter
+spec:
+  selector:
+    app.kubernetes.io/name: speedtest-exporter
+  ports:
+    - name: metrics
+      port: 9798
+      targetPort: metrics
+      protocol: TCP
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: speedtest-exporter
+  namespace: network-monitor
+  labels:
+    app.kubernetes.io/name: speedtest-exporter
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: speedtest-exporter
+  endpoints:
+    - port: metrics
+      interval: 30m
+      scrapeTimeout: 2m
+      path: /metrics

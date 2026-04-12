@@ -1,0 +1,54 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: blackbox-exporter-chart
+  namespace: argocd
+spec:
+  project: default
+  source:
+    chart: prometheus-blackbox-exporter
+    repoURL: ghcr.io/prometheus-community/charts
+    targetRevision: 11.9.1
+    helm:
+      releaseName: blackbox-exporter
+      values: |
+        config:
+          modules:
+            icmp:
+              prober: icmp
+              timeout: 5s
+              icmp:
+                preferred_ip_protocol: ip4
+            http_2xx:
+              prober: http
+              timeout: 10s
+              http:
+                preferred_ip_protocol: ip4
+                valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+                valid_status_codes: []
+                follow_redirects: true
+                no_follow_redirects: false
+
+        podSecurityContext:
+          runAsNonRoot: false
+
+        securityContext:
+          runAsUser: 0
+          runAsGroup: 0
+          runAsNonRoot: false
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+            add:
+              - NET_RAW
+
+        serviceMonitor:
+          enabled: false
+  destination:
+    namespace: network-monitor
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true

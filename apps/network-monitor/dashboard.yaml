@@ -1,0 +1,388 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: network-monitor-dashboard
+  namespace: network-monitor
+  labels:
+    grafana_dashboard: "1"
+data:
+  network-monitor.json: |
+    {
+      "annotations": {"list": []},
+      "editable": true,
+      "graphTooltip": 1,
+      "links": [],
+      "panels": [
+        {
+          "id": 1,
+          "type": "stat",
+          "title": "Internet (HTTP)",
+          "gridPos": {"h": 4, "w": 8, "x": 0, "y": 0},
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "justifyMode": "center",
+            "orientation": "auto",
+            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+            "textMode": "auto"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "mappings": [
+                {"type": "value", "options": {"0": {"color": "red", "index": 0, "text": "DOWN"}, "1": {"color": "green", "index": 1, "text": "UP"}}}
+              ],
+              "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]},
+              "color": {"mode": "thresholds"},
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "min(probe_success{job=\"internet-http\"})",
+              "legendFormat": "HTTP",
+              "refId": "A"
+            }
+          ],
+          "datasource": {"type": "prometheus", "uid": "${datasource}"}
+        },
+        {
+          "id": 2,
+          "type": "stat",
+          "title": "Internet (ICMP)",
+          "gridPos": {"h": 4, "w": 8, "x": 8, "y": 0},
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "justifyMode": "center",
+            "orientation": "auto",
+            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+            "textMode": "auto"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "mappings": [
+                {"type": "value", "options": {"0": {"color": "red", "index": 0, "text": "DOWN"}, "1": {"color": "green", "index": 1, "text": "UP"}}}
+              ],
+              "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]},
+              "color": {"mode": "thresholds"},
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "min(probe_success{job=\"internet-icmp\"})",
+              "legendFormat": "ICMP",
+              "refId": "A"
+            }
+          ],
+          "datasource": {"type": "prometheus", "uid": "${datasource}"}
+        },
+        {
+          "id": 3,
+          "type": "stat",
+          "title": "Gateway (192.168.1.1)",
+          "gridPos": {"h": 4, "w": 8, "x": 16, "y": 0},
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "justifyMode": "center",
+            "orientation": "auto",
+            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+            "textMode": "auto"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "mappings": [
+                {"type": "value", "options": {"0": {"color": "red", "index": 0, "text": "DOWN"}, "1": {"color": "green", "index": 1, "text": "UP"}}}
+              ],
+              "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]},
+              "color": {"mode": "thresholds"},
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "probe_success{job=\"gateway-icmp\"}",
+              "legendFormat": "Gateway",
+              "refId": "A"
+            }
+          ],
+          "datasource": {"type": "prometheus", "uid": "${datasource}"}
+        },
+        {
+          "id": 4,
+          "type": "timeseries",
+          "title": "Connectivity (probe success over time)",
+          "description": "Shows internet and gateway connectivity blips. Drop to 0 = unreachable.",
+          "gridPos": {"h": 8, "w": 24, "x": 0, "y": 4},
+          "options": {
+            "tooltip": {"mode": "multi", "sort": "none"},
+            "legend": {"displayMode": "list", "placement": "bottom", "calcs": []},
+            "fillOpacity": 20
+          },
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 20,
+                "spanNulls": false,
+                "drawStyle": "line",
+                "lineInterpolation": "stepAfter"
+              },
+              "min": 0,
+              "max": 1,
+              "mappings": [],
+              "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]},
+              "color": {"mode": "palette-classic"}
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "probe_success{job=\"internet-http\"}",
+              "legendFormat": "HTTP: {{instance}}",
+              "refId": "A"
+            },
+            {
+              "expr": "probe_success{job=\"internet-icmp\"}",
+              "legendFormat": "ICMP: {{instance}}",
+              "refId": "B"
+            },
+            {
+              "expr": "probe_success{job=\"gateway-icmp\"}",
+              "legendFormat": "Gateway: {{instance}}",
+              "refId": "C"
+            }
+          ],
+          "datasource": {"type": "prometheus", "uid": "${datasource}"}
+        },
+        {
+          "id": 5,
+          "type": "timeseries",
+          "title": "ICMP Round-Trip Time",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12},
+          "options": {
+            "tooltip": {"mode": "multi", "sort": "none"},
+            "legend": {"displayMode": "list", "placement": "bottom", "calcs": ["mean", "max"]}
+          },
+          "fieldConfig": {
+            "defaults": {
+              "custom": {"lineWidth": 2, "fillOpacity": 10, "spanNulls": false, "drawStyle": "line"},
+              "unit": "s",
+              "color": {"mode": "palette-classic"}
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "probe_icmp_duration_seconds{phase=\"rtt\", job=\"internet-icmp\"}",
+              "legendFormat": "Internet: {{instance}}",
+              "refId": "A"
+            },
+            {
+              "expr": "probe_icmp_duration_seconds{phase=\"rtt\", job=\"gateway-icmp\"}",
+              "legendFormat": "Gateway: {{instance}}",
+              "refId": "B"
+            }
+          ],
+          "datasource": {"type": "prometheus", "uid": "${datasource}"}
+        },
+        {
+          "id": 6,
+          "type": "timeseries",
+          "title": "HTTP Probe Duration",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
+          "options": {
+            "tooltip": {"mode": "multi", "sort": "none"},
+            "legend": {"displayMode": "list", "placement": "bottom", "calcs": ["mean", "max"]}
+          },
+          "fieldConfig": {
+            "defaults": {
+              "custom": {"lineWidth": 2, "fillOpacity": 10, "spanNulls": false, "drawStyle": "line"},
+              "unit": "s",
+              "color": {"mode": "palette-classic"}
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "probe_duration_seconds{job=\"internet-http\"}",
+              "legendFormat": "{{instance}}",
+              "refId": "A"
+            }
+          ],
+          "datasource": {"type": "prometheus", "uid": "${datasource}"}
+        },
+        {
+          "id": 7,
+          "type": "timeseries",
+          "title": "Packet Loss (1h rolling window)",
+          "description": "Percentage of ICMP probes that failed over a 1-hour sliding window. Approximate packet loss.",
+          "gridPos": {"h": 8, "w": 24, "x": 0, "y": 20},
+          "options": {
+            "tooltip": {"mode": "multi", "sort": "none"},
+            "legend": {"displayMode": "list", "placement": "bottom", "calcs": ["mean", "max"]}
+          },
+          "fieldConfig": {
+            "defaults": {
+              "custom": {"lineWidth": 2, "fillOpacity": 10, "spanNulls": false, "drawStyle": "line"},
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "color": {"mode": "palette-classic"},
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 1}, {"color": "red", "value": 5}]
+              }
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "(1 - avg_over_time(probe_success{job=\"internet-icmp\", instance=\"8.8.8.8\"}[1h])) * 100",
+              "legendFormat": "8.8.8.8",
+              "refId": "A"
+            },
+            {
+              "expr": "(1 - avg_over_time(probe_success{job=\"internet-icmp\", instance=\"1.1.1.1\"}[1h])) * 100",
+              "legendFormat": "1.1.1.1",
+              "refId": "B"
+            },
+            {
+              "expr": "(1 - avg_over_time(probe_success{job=\"gateway-icmp\"}[1h])) * 100",
+              "legendFormat": "Gateway",
+              "refId": "C"
+            }
+          ],
+          "datasource": {"type": "prometheus", "uid": "${datasource}"}
+        },
+        {
+          "id": 8,
+          "type": "timeseries",
+          "title": "Speedtest Download",
+          "gridPos": {"h": 8, "w": 8, "x": 0, "y": 28},
+          "options": {
+            "tooltip": {"mode": "single", "sort": "none"},
+            "legend": {"displayMode": "list", "placement": "bottom", "calcs": ["last"]}
+          },
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 20,
+                "spanNulls": true,
+                "drawStyle": "line",
+                "lineInterpolation": "smooth"
+              },
+              "unit": "bps",
+              "color": {"mode": "fixed", "fixedColor": "blue"}
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "speedtest_download_bits_per_second",
+              "legendFormat": "Download",
+              "refId": "A"
+            }
+          ],
+          "datasource": {"type": "prometheus", "uid": "${datasource}"}
+        },
+        {
+          "id": 9,
+          "type": "timeseries",
+          "title": "Speedtest Upload",
+          "gridPos": {"h": 8, "w": 8, "x": 8, "y": 28},
+          "options": {
+            "tooltip": {"mode": "single", "sort": "none"},
+            "legend": {"displayMode": "list", "placement": "bottom", "calcs": ["last"]}
+          },
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 20,
+                "spanNulls": true,
+                "drawStyle": "line",
+                "lineInterpolation": "smooth"
+              },
+              "unit": "bps",
+              "color": {"mode": "fixed", "fixedColor": "orange"}
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "speedtest_upload_bits_per_second",
+              "legendFormat": "Upload",
+              "refId": "A"
+            }
+          ],
+          "datasource": {"type": "prometheus", "uid": "${datasource}"}
+        },
+        {
+          "id": 10,
+          "type": "timeseries",
+          "title": "Speedtest Ping",
+          "gridPos": {"h": 8, "w": 8, "x": 16, "y": 28},
+          "options": {
+            "tooltip": {"mode": "single", "sort": "none"},
+            "legend": {"displayMode": "list", "placement": "bottom", "calcs": ["last", "mean"]}
+          },
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 10,
+                "spanNulls": true,
+                "drawStyle": "line",
+                "lineInterpolation": "smooth"
+              },
+              "unit": "ms",
+              "color": {"mode": "fixed", "fixedColor": "purple"}
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "speedtest_ping_latency_milliseconds",
+              "legendFormat": "Ping",
+              "refId": "A"
+            },
+            {
+              "expr": "speedtest_ping_jitter_milliseconds",
+              "legendFormat": "Jitter",
+              "refId": "B"
+            }
+          ],
+          "datasource": {"type": "prometheus", "uid": "${datasource}"}
+        }
+      ],
+      "refresh": "1m",
+      "schemaVersion": 38,
+      "tags": ["network", "monitoring", "internet"],
+      "templating": {
+        "list": [
+          {
+            "current": {},
+            "hide": 0,
+            "includeAll": false,
+            "label": "Datasource",
+            "name": "datasource",
+            "options": [],
+            "query": "prometheus",
+            "refresh": 1,
+            "type": "datasource"
+          }
+        ]
+      },
+      "time": {"from": "now-24h", "to": "now"},
+      "timepicker": {},
+      "timezone": "browser",
+      "title": "Network Monitoring",
+      "uid": "network-monitor-home",
+      "version": 1
+    }

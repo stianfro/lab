@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: speedtest-exporter
-          image: ghcr.io/miguelndecarvalho/speedtest-exporter:v3.5.4
+          image: ghcr.io/miguelndecarvalho/speedtest-exporter:v3.5.4@sha256:f1064d49124c7fc45faabb87c6c876a2fd04e92b3dc14d4b871301217ba30fed
           ports:
             - name: metrics
               containerPort: 9798
@@ -32,13 +32,13 @@ spec:
               memory: 128Mi
           livenessProbe:
             httpGet:
-              path: /healthz
+              path: /
               port: metrics
             initialDelaySeconds: 10
             periodSeconds: 30
           readinessProbe:
             httpGet:
-              path: /healthz
+              path: /
               port: metrics
             initialDelaySeconds: 5
             periodSeconds: 10

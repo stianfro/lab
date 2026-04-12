@@ -7,8 +7,8 @@ spec:
   project: default
   source:
     chart: prometheus-blackbox-exporter
-    repoURL: https://prometheus-community.github.io/helm-charts
-    targetRevision: 9.1.0
+    repoURL: ghcr.io/prometheus-community/charts
+    targetRevision: 11.9.1
     helm:
       releaseName: blackbox-exporter
       values: |
@@ -34,7 +34,13 @@ spec:
 
         securityContext:
           runAsUser: 0
+          runAsGroup: 0
+          runAsNonRoot: false
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
           capabilities:
+            drop:
+              - ALL
             add:
               - NET_RAW
 

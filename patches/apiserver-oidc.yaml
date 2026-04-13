@@ -1,0 +1,7 @@
+- op: add
+  path: /cluster/apiServer/extraArgs
+  value:
+    oidc-issuer-url: https://dex.talos.froystein.jp
+    oidc-client-id: headlamp
+    oidc-username-claim: email
+    oidc-groups-claim: groups

@@ -35,6 +35,11 @@ spec:
               secretKeyRef:
                 name: dex-secrets
                 key: kargo-client-secret
+          - name: VAULT_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: dex-secrets
+                key: vault-client-secret
 
         config:
           issuer: https://dex.talos.froystein.jp
@@ -70,6 +75,13 @@ spec:
               redirectURIs:
                 - https://kargo.talos.froystein.jp/login
                 - http://localhost:11111/auth/callback
+
+            - id: vault
+              name: Vault
+              secret: "${VAULT_CLIENT_SECRET}"
+              redirectURIs:
+                - https://vault.talos.froystein.jp/ui/vault/auth/oidc/oidc/callback
+                - http://localhost:8250/oidc/callback
 
           oauth2:
             skipApprovalScreen: true

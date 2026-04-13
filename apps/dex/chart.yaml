@@ -45,9 +45,7 @@ spec:
           issuer: https://dex.talos.froystein.jp
 
           storage:
-            type: sqlite3
-            config:
-              file: /data/dex.db
+            type: memory
 
           web:
             http: 0.0.0.0:5556
@@ -90,13 +88,6 @@ spec:
             deviceRequests: 5m
             signingKeys: 6h
             idTokens: 24h
-
-        persistence:
-          enabled: true
-          storageClass: longhorn
-          size: 1Gi
-          accessModes:
-            - ReadWriteOnce
 
         service:
           type: ClusterIP

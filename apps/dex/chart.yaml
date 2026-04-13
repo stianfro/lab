@@ -14,80 +14,11 @@ spec:
       values: |
         replicaCount: 1
 
-        envVars:
-          - name: GITHUB_CLIENT_ID
-            valueFrom:
-              secretKeyRef:
-                name: dex-secrets
-                key: github-client-id
-          - name: GITHUB_CLIENT_SECRET
-            valueFrom:
-              secretKeyRef:
-                name: dex-secrets
-                key: github-client-secret
-          - name: HEADLAMP_CLIENT_SECRET
-            valueFrom:
-              secretKeyRef:
-                name: dex-secrets
-                key: headlamp-client-secret
-          - name: KARGO_CLIENT_SECRET
-            valueFrom:
-              secretKeyRef:
-                name: dex-secrets
-                key: kargo-client-secret
-          - name: VAULT_CLIENT_SECRET
-            valueFrom:
-              secretKeyRef:
-                name: dex-secrets
-                key: vault-client-secret
-
-        config:
-          issuer: https://dex.talos.froystein.jp
-
-          storage:
-            type: memory
-
-          web:
-            http: 0.0.0.0:5556
-
-          connectors:
-            - type: github
-              id: github
-              name: GitHub
-              config:
-                clientID: "${GITHUB_CLIENT_ID}"
-                clientSecret: "${GITHUB_CLIENT_SECRET}"
-                redirectURI: https://dex.talos.froystein.jp/callback
-                loadAllGroups: true
-
-          staticClients:
-            - id: headlamp
-              name: Headlamp
-              secret: "${HEADLAMP_CLIENT_SECRET}"
-              redirectURIs:
-                - https://headlamp.talos.froystein.jp/oidc-callback
-
-            - id: kargo
-              name: Kargo
-              public: true
-              redirectURIs:
-                - https://kargo.talos.froystein.jp/login
-                - http://localhost:11111/auth/callback
-
-            - id: vault
-              name: Vault
-              secret: "${VAULT_CLIENT_SECRET}"
-              redirectURIs:
-                - https://vault.talos.froystein.jp/ui/vault/auth/oidc/oidc/callback
-                - http://localhost:8250/oidc/callback
-
-          oauth2:
-            skipApprovalScreen: true
-
-          expiry:
-            deviceRequests: 5m
-            signingKeys: 6h
-            idTokens: 24h
+        # Config is managed via VaultStaticSecret (dex-config secret)
+        # to avoid env-var substitution issues in Dex v2.44+
+        configSecret:
+          create: false
+          name: dex-config
 
         service:
           type: ClusterIP

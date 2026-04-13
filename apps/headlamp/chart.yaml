@@ -26,17 +26,9 @@ spec:
 
         config:
           oidc:
-            clientID: headlamp
-            issuerURL: "https://dex.talos.froystein.jp"
-            scopes: "openid profile email groups"
-            callbackURL: "https://headlamp.talos.froystein.jp/oidc-callback"
-
-        env:
-          - name: HEADLAMP_CONFIG_OIDC_CLIENT_SECRET
-            valueFrom:
-              secretKeyRef:
-                name: headlamp-oidc
-                key: client-secret
+            externalSecret:
+              enabled: true
+              name: headlamp-oidc
 
         resources:
           requests:

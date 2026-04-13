@@ -1,0 +1,115 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: dex-chart
+  namespace: argocd
+spec:
+  project: default
+  source:
+    chart: dex
+    repoURL: https://charts.dexidp.io
+    targetRevision: 0.24.0
+    helm:
+      releaseName: dex
+      values: |
+        replicaCount: 1
+
+        env:
+          - name: GITHUB_CLIENT_ID
+            valueFrom:
+              secretKeyRef:
+                name: dex-secrets
+                key: github-client-id
+          - name: GITHUB_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: dex-secrets
+                key: github-client-secret
+          - name: HEADLAMP_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: dex-secrets
+                key: headlamp-client-secret
+          - name: KARGO_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: dex-secrets
+                key: kargo-client-secret
+
+        config:
+          issuer: https://dex.talos.froystein.jp
+
+          storage:
+            type: sqlite3
+            config:
+              file: /data/dex.db
+
+          web:
+            http: 0.0.0.0:5556
+
+          connectors:
+            - type: github
+              id: github
+              name: GitHub
+              config:
+                clientID: "${GITHUB_CLIENT_ID}"
+                clientSecret: "${GITHUB_CLIENT_SECRET}"
+                redirectURI: https://dex.talos.froystein.jp/callback
+                loadAllGroups: true
+
+          staticClients:
+            - id: headlamp
+              name: Headlamp
+              secret: "${HEADLAMP_CLIENT_SECRET}"
+              redirectURIs:
+                - https://headlamp.talos.froystein.jp/oidc-callback
+
+            - id: kargo
+              name: Kargo
+              public: true
+              redirectURIs:
+                - https://kargo.talos.froystein.jp/login
+                - http://localhost:11111/auth/callback
+
+          oauth2:
+            skipApprovalScreen: true
+
+          expiry:
+            deviceRequests: 5m
+            signingKeys: 6h
+            idTokens: 24h
+
+        persistence:
+          enabled: true
+          storageClass: longhorn
+          size: 1Gi
+          accessModes:
+            - ReadWriteOnce
+
+        service:
+          type: ClusterIP
+          ports:
+            http:
+              port: 5556
+              targetPort: 5556
+              nodePort: null
+
+        ingress:
+          enabled: false
+
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
+
+  destination:
+    namespace: dex
+    server: https://kubernetes.default.svc
+
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

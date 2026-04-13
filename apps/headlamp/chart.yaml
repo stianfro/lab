@@ -1,0 +1,56 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: headlamp-chart
+  namespace: argocd
+spec:
+  project: default
+  source:
+    chart: headlamp
+    repoURL: https://kubernetes-sigs.github.io/headlamp/
+    targetRevision: 0.41.0
+    helm:
+      releaseName: headlamp
+      values: |
+        replicaCount: 1
+
+        clusterRoleBinding:
+          create: true
+
+        service:
+          type: ClusterIP
+          port: 80
+
+        ingress:
+          enabled: false
+
+        config:
+          oidc:
+            clientID: headlamp
+            issuerURL: "https://dex.talos.froystein.jp"
+            scopes: "openid profile email groups"
+            callbackURL: "https://headlamp.talos.froystein.jp/oidc-callback"
+
+        env:
+          - name: HEADLAMP_CONFIG_OIDC_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: headlamp-oidc
+                key: client-secret
+
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+
+  destination:
+    namespace: headlamp
+    server: https://kubernetes.default.svc
+
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

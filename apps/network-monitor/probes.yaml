@@ -5,6 +5,8 @@ kind: Probe
 metadata:
   name: gateway-icmp
   namespace: network-monitor
+  labels:
+    release: kube-prom-stack
 spec:
   jobName: gateway-icmp
   prober:
@@ -26,6 +28,8 @@ kind: Probe
 metadata:
   name: internet-icmp
   namespace: network-monitor
+  labels:
+    release: kube-prom-stack
 spec:
   jobName: internet-icmp
   prober:
@@ -46,6 +50,8 @@ kind: Probe
 metadata:
   name: internet-http
   namespace: network-monitor
+  labels:
+    release: kube-prom-stack
 spec:
   jobName: internet-http
   prober:

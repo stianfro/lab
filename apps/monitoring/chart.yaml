@@ -16,8 +16,6 @@ spec:
           prometheusSpec:
             serviceMonitorSelectorNilUsesHelmValues: false
             podMonitorSelectorNilUsesHelmValues: false
-            probeSelectorNilUsesHelmValues: false
-            probeNamespaceSelector: {}
             enableFeatures:
               - exemplar-storage
             storageSpec:

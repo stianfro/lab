@@ -14,7 +14,7 @@ spec:
       values: |
         replicaCount: 1
 
-        env:
+        envVars:
           - name: GITHUB_CLIENT_ID
             valueFrom:
               secretKeyRef:

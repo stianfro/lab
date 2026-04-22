@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tcp-echo
+  namespace: tcp-echo
+  labels:
+    app.kubernetes.io/name: tcp-echo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: tcp-echo
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: tcp-echo
+    spec:
+      containers:
+        - name: tcp-echo
+          image: istio/tcp-echo-server:1.3@sha256:782259608d5ce934e1a07ce4a3f2664934b6806d50430fd20b7bf429ea500272
+          imagePullPolicy: IfNotPresent
+          args:
+            - "9000"
+            - "hello"
+          ports:
+            - name: tcp
+              containerPort: 9000
+              protocol: TCP
+          readinessProbe:
+            tcpSocket:
+              port: tcp
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: tcp
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            capabilities:
+              drop:
+                - ALL

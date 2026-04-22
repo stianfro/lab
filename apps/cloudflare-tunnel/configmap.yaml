@@ -20,6 +20,8 @@ data:
       http2Origin: true
 
     ingress:
+      - hostname: "tcpecho.froystein.jp"
+        service: tcp://envoy-envoy-gateway-system-eg-public-7b646a69.envoy-gateway-system.svc.cluster.local:9000
       - hostname: "*.froystein.jp"
         service: http://envoy-envoy-gateway-system-eg-public-7b646a69.envoy-gateway-system.svc.cluster.local:80
       - hostname: "froystein.jp"

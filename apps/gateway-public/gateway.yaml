@@ -54,8 +54,6 @@ spec:
       allowedRoutes:
         namespaces:
           from: All
-        kinds:
-          - kind: HTTPRoute
     - name: http-bare
       protocol: HTTP
       port: 80
@@ -63,13 +61,3 @@ spec:
       allowedRoutes:
         namespaces:
           from: All
-        kinds:
-          - kind: HTTPRoute
-    - name: tcp-echo
-      protocol: TCP
-      port: 9000
-      allowedRoutes:
-        namespaces:
-          from: All
-        kinds:
-          - kind: TCPRoute

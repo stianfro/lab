@@ -23,6 +23,9 @@ spec:
             - name: metrics
               containerPort: 9798
               protocol: TCP
+          env:
+            - name: SPEEDTEST_CACHE_FOR
+              value: "1800"
           resources:
             requests:
               cpu: 100m
@@ -72,6 +75,6 @@ spec:
       app.kubernetes.io/name: speedtest-exporter
   endpoints:
     - port: metrics
-      interval: 30m
-      scrapeTimeout: 2m
+      interval: 2m
+      scrapeTimeout: 110s
       path: /metrics

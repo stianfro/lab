@@ -23,6 +23,7 @@ spec:
   values:
     prometheus:
       prometheusSpec:
+        retention: 30d
         serviceMonitorSelectorNilUsesHelmValues: false
         podMonitorSelectorNilUsesHelmValues: false
         enableFeatures:

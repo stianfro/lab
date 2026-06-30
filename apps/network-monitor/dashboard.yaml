@@ -353,7 +353,7 @@ data:
               "refId": "A"
             },
             {
-              "expr": "speedtest_ping_jitter_milliseconds",
+              "expr": "speedtest_jitter_latency_milliseconds",
               "legendFormat": "Jitter",
               "refId": "B"
             }

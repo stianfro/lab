@@ -18,5 +18,11 @@ reconcile:
   just env
   flux reconcile kustomization cluster -n flux-system --with-source
 
+controller-decommission-preflight pattern:
+  scripts/controller-decommission-preflight.sh "{{pattern}}"
+
+smoke-public-sites:
+  scripts/smoke-public-sites.sh
+
 vnc-ocp-upgrade-lab:
   virtctl vnc ocp-upgrade-lab -n ocp-upgrade-lab --vnc-type=tiger --vnc-path="/Applications/TigerVNC Viewer 1.15.0.app/Contents/MacOS/TigerVNC Viewer"

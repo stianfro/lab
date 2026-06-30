@@ -175,9 +175,15 @@ kubectl get validatingwebhookconfiguration,mutatingwebhookconfiguration | egrep 
 
 ## Action Items
 
-- [ ] Add a controller decommission checklist to `docs/lab-operations.md`.
-- [ ] Add a preflight command set for finding namespace finalizers before deleting CRDs.
-- [ ] Add a production smoke test command for `froystein.jp` and `blog.froystein.jp`.
-- [ ] Review whether any stale `kargo.akuity.io/finalizer` remains anywhere in the cluster.
-- [ ] Keep the Flux migration follow-up list updated with this incident.
-- [ ] Avoid deleting CRDs for a removed controller until all related custom resources and finalizers are accounted for.
+- [x] Add a controller decommission checklist to `docs/lab-operations.md`.
+- [x] Add a preflight command set for finding namespace finalizers before deleting CRDs.
+  This is available as `just controller-decommission-preflight <pattern>`.
+- [x] Add a production smoke test command for `froystein.jp` and `blog.froystein.jp`.
+  This is available as `just smoke-public-sites`.
+- [x] Review whether any stale `kargo.akuity.io/finalizer` remains anywhere in the cluster.
+  On 2026-06-30, `just controller-decommission-preflight kargo` found no Kargo
+  finalizers or owner references. It did find the `kargo-cluster-secrets`
+  namespace by name, which needs a separate keep-or-delete decision.
+- [x] Keep the Flux migration follow-up list updated with this incident.
+- [x] Avoid deleting CRDs for a removed controller until all related custom resources and finalizers are accounted for.
+  The controller decommission checklist now states that CRDs are deleted last.

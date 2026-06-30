@@ -143,6 +143,14 @@ Fresh bootstrap expectation:
 - Decide whether to move `authentik-secrets` and `grafana-github-oauth` into
   VaultStaticSecret resources.
 - Add `kustomization.yaml` to external `blog` and `froystein.jp` env branches.
+- The Kargo finalizer incident is documented in
+  `docs/postmortems/2026-06-30-kargo-finalizer-outage.md`. Before any further
+  controller or CRD cleanup, run `just controller-decommission-preflight
+  <pattern>` and run targeted smoke tests, for example `just
+  smoke-public-sites`.
+- Decide whether to remove the leftover `kargo-cluster-secrets` namespace. It
+  matched the Kargo preflight by name on 2026-06-30, but no Kargo finalizers or
+  owner references remained.
 - Create a reusable "how to use lab" guide for coding agents in other projects,
   so an agent can deploy a dev environment to this cluster from another repo.
 - Perform Talos version updates as a separate task.

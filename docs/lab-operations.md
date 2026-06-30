@@ -57,6 +57,28 @@ kubectl get gateways,httproutes -A
 kubectl get svc -n envoy-gateway-system
 ```
 
+## Production Smoke Test
+
+Use this after Gateway, Cloudflare Tunnel, or production app changes:
+
+```bash
+just smoke-public-sites
+```
+
+The recipe creates a short-lived curl pod and sends requests through the same
+`eg-public` Envoy service that Cloudflare Tunnel uses. It checks:
+
+- `froystein.jp`
+- `www.froystein.jp`
+- `blog.froystein.jp`
+
+If local DNS for the kubeconfig server name is broken, point kubectl directly at
+a control-plane IP:
+
+```bash
+KUBECTL='kubectl --server https://192.168.1.100:6443 --kubeconfig ./kubeconfig' just smoke-public-sites
+```
+
 ## Secrets
 
 Most synced secrets use Vault Secrets Operator:
@@ -78,3 +100,51 @@ manually when needed, for example:
 ```bash
 kubectl apply -f tasks/ocp-upgrade-lab/import-iso-job.yaml
 ```
+
+## Controller Decommissioning
+
+Use this checklist before removing any controller that owns CRDs, webhooks, or
+finalizers. Examples: Argo CD, Argo Rollouts, Kargo, cert-manager, Longhorn,
+Vault Secrets Operator, CloudNativePG.
+
+Never delete CRDs first. CRDs are last.
+
+1. Run the preflight recipe:
+
+   ```bash
+   just controller-decommission-preflight kargo
+   ```
+
+   If local DNS for the kubeconfig server name is broken:
+
+   ```bash
+   KUBECTL='kubectl --server https://192.168.1.100:6443 --kubeconfig ./kubeconfig' just controller-decommission-preflight kargo
+   ```
+
+2. Read every section of the output:
+
+   - matching CRDs
+   - matching API resources
+   - matching webhooks
+   - namespaces with matching names
+   - finalizers on namespaces and other resources
+   - owner references on cluster-scoped and namespaced resources
+
+3. While the controller is still running, delete or migrate its custom
+   resources.
+4. Confirm the finalizer and owner reference sections are empty, or document why
+   each remaining item is safe.
+5. Remove admission webhooks only after custom resources and finalizers are
+   handled.
+6. Delete the controller namespace only after webhook and finalizer risk is
+   understood.
+7. Delete CRDs last.
+8. Re-run the preflight recipe and confirm no unexpected matches remain.
+9. Run affected app checks. For public sites, run:
+
+   ```bash
+   just smoke-public-sites
+   ```
+
+Do not continue if the preflight output shows finalizers or owner references
+that you cannot explain.

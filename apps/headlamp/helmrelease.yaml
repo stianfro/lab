@@ -27,10 +27,36 @@ spec:
     ingress:
       enabled: false
     config:
+      pluginsDir: /headlamp/plugins
       oidc:
         externalSecret:
           enabled: true
           name: headlamp-oidc
+    initContainers:
+      - name: headlamp-plugins
+        image: ghcr.io/headlamp-k8s/headlamp-plugin-flux:v0.6.0@sha256:055377b9011dcc73235e8969c488ecd92af5cb70aa5d5df0f66c1cea667fdccb
+        imagePullPolicy: IfNotPresent
+        command:
+          - /bin/sh
+          - -c
+          - |
+            mkdir -p /headlamp/plugins
+            cp -r /plugins/* /headlamp/plugins/
+            chown -R 100:101 /headlamp/plugins
+        securityContext:
+          runAsNonRoot: false
+          privileged: false
+          runAsUser: 0
+          runAsGroup: 0
+        volumeMounts:
+          - name: headlamp-plugins
+            mountPath: /headlamp/plugins
+    volumeMounts:
+      - name: headlamp-plugins
+        mountPath: /headlamp/plugins
+    volumes:
+      - name: headlamp-plugins
+        emptyDir: {}
     resources:
       requests:
         cpu: 50m

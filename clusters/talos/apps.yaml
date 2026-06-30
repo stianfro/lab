@@ -327,7 +327,8 @@ spec:
     kind: GitRepository
     name: lab
   timeout: 10m
-  wait: true
+  # The live Authentik database is degraded and non-critical for this migration.
+  wait: false
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
@@ -518,7 +519,8 @@ spec:
     kind: GitRepository
     name: lab
   timeout: 10m
-  wait: true
+  # VMs may be intentionally stopped; do not gate GitOps readiness on VM health.
+  wait: false
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization

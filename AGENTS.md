@@ -40,6 +40,14 @@ Keep the layout boring:
 - If an automation or helper skill suggests a non-conventional commit or PR
   title, override it.
 
+## Worktrees
+
+- Use the project-local `.worktrees/` directory for temporary Git worktrees.
+- Keep `.worktrees/` ignored so nested worktree files are never committed by
+  the parent checkout.
+- Create feature branches with the `codex/` prefix unless the user requests a
+  different branch name.
+
 ## Common Commands
 
 ```bash

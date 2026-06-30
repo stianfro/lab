@@ -132,12 +132,18 @@ kubectl exec -it vault-0 -n vault -- vault kv put secret/cloudflare-tunnel/crede
 
 ### Step 4: Deploy the Apps
 
-The apps are deployed via Argo CD ApplicationSet:
+The apps are deployed by Flux Kustomizations in `clusters/talos/apps.yaml`:
 
 1. `apps/gateway-public/` - Creates the public gateway
 2. `apps/cloudflare-tunnel/` - Deploys cloudflared
 
-After pushing to git, Argo CD will sync automatically.
+After pushing to git, reconcile Flux if you do not want to wait for the normal interval:
+
+```bash
+flux reconcile source git lab -n flux-system
+flux reconcile kustomization gateway-public -n flux-system --with-source
+flux reconcile kustomization cloudflare-tunnel -n flux-system --with-source
+```
 
 ### Step 5: Update ConfigMap with Gateway Service
 
@@ -208,7 +214,7 @@ rules:
           value: /
     backendRefs:
       - name: frontend-service
-          port: 80
+        port: 80
 ```
 
 ## Configuration Reference

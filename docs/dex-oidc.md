@@ -1,6 +1,6 @@
 # Dex OIDC Provider
 
-Dex is the OIDC provider for this cluster. It runs at `https://dex.talos.froystein.jp` and handles authentication for Headlamp, Vault, and Kargo by delegating to GitHub OAuth2.
+Dex is the OIDC provider for this cluster. It runs at `https://dex.talos.froystein.jp` and handles authentication for Headlamp and Vault by delegating to GitHub OAuth2.
 
 ## Architecture
 
@@ -21,7 +21,7 @@ Dex
   |
   | issues id_token (JWT) with email + groups claims
   v
-Application (Headlamp / Vault / Kargo)
+Application (Headlamp / Vault)
 ```
 
 ## Deployment
@@ -32,7 +32,7 @@ Application (Headlamp / Vault / Kargo)
 
 | File | Purpose |
 |------|---------|
-| `chart.yaml` | Argo CD Application (Helm chart) |
+| `helmrelease.yaml` | Flux HelmRelease for the Dex chart |
 | `vaultstaticsecret.yaml` | Syncs `secret/dex/secrets` from Vault to k8s Secret `dex-secrets` |
 | `vaultstaticsecret-config.yaml` | Syncs `secret/dex/config` from Vault to k8s Secret `dex-config` |
 | `httproute.yaml` | Envoy Gateway route at `dex.talos.froystein.jp` |
@@ -65,7 +65,7 @@ The Dex config in Vault defines static clients. All client secrets are also stor
 |-----------|-------------|---------|
 | `headlamp` | `https://headlamp.talos.froystein.jp/oidc-callback` | Headlamp dashboard |
 | `vault` | `https://vault.talos.froystein.jp/ui/vault/auth/oidc/oidc/callback`, `http://localhost:8250/oidc/callback` | Vault UI + CLI |
-| `kargo` | `https://kargo.talos.froystein.jp/login` | Kargo GitOps promotions |
+If a `kargo` client is still present in the Vault-backed Dex config, it is stale and should be removed when the Vault secret is next edited.
 
 ## GitHub Connector
 
@@ -80,7 +80,7 @@ Headlamp uses the OIDC id_token issued by Dex as a Bearer token for all Kubernet
 
 ### 1. kube-apiserver OIDC flags
 
-Applied via `patches/apiserver-oidc.yaml` (see the [Talos patch note](#applying-config-to-talos) below):
+Applied via `talos/patches/apiserver-oidc.yaml` (see the [Talos patch note](#applying-config-to-talos) below):
 
 ```yaml
 cluster:
@@ -135,7 +135,7 @@ vault read auth/oidc/role/admin
 
 ## Applying Config to Talos
 
-The `patches/apiserver-oidc.yaml` file documents the intended patch in RFC 6902 format, but `talosctl patch machineconfig` is broken in Talos v1.11.3 (see `docs/lessons-learned.md`). The config was applied using:
+The `talos/patches/apiserver-oidc.yaml` file documents the intended patch in RFC 6902 format, but `talosctl patch machineconfig` is broken in Talos v1.11.3 (see `docs/lessons-learned.md`). The config was applied using:
 
 ```bash
 for node in 192.168.1.100 192.168.1.101 192.168.1.102; do

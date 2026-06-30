@@ -67,7 +67,7 @@ exporters:
 
 **Files**:
 - `namespace.yaml`: Creates `otel-collector` namespace
-- `chart.yaml`: Argo CD Application using OpenTelemetry Helm chart
+- `helmrelease.yaml`: Flux HelmRelease using the OpenTelemetry Helm chart
 - `kustomization.yaml`: Resource list
 
 ### 2. Loki (`apps/loki/`)
@@ -97,7 +97,7 @@ singleBinary:
 
 **Files**:
 - `namespace.yaml`: Creates `loki` namespace
-- `chart.yaml`: Argo CD Application using Grafana Loki Helm chart
+- `helmrelease.yaml`: Flux HelmRelease using the Grafana Loki Helm chart
 - `httproute.yaml`: Gateway API route for web UI access
 - `kustomization.yaml`: Resource list
 
@@ -105,7 +105,7 @@ singleBinary:
 
 **Purpose**: Connect Grafana to Loki for log visualization.
 
-**Changes**: Updated `apps/monitoring/chart.yaml` to add Loki as an additional datasource:
+**Changes**: Updated `apps/monitoring/helmrelease.yaml` to add Loki as an additional datasource:
 
 ```yaml
 grafana:
@@ -130,27 +130,23 @@ grafana:
 
 ## Deployment
 
-### Deploy Applications via Argo CD
+### Deploy Applications via Flux
 
-The applications will be automatically detected by the existing ApplicationSet. To deploy:
+Flux reconciles these applications from the Kustomizations in `clusters/talos/apps.yaml`. To deploy:
 
 1. **Commit and push the changes**:
    ```bash
-   git add apps/otel-collector apps/loki apps/monitoring/chart.yaml
+   git add apps/otel-collector apps/loki apps/monitoring/helmrelease.yaml
    git commit -m "feat: add OpenTelemetry collector and Loki for VM migration logging"
    git push
    ```
 
-2. **Sync applications in Argo CD**:
+2. **Reconcile Flux**:
    ```bash
-   # Sync OpenTelemetry Collector
-   kubectl -n argocd patch application otel-collector --type merge -p '{"operation":{"sync":{}}}'
-
-   # Sync Loki
-   kubectl -n argocd patch application loki --type merge -p '{"operation":{"sync":{}}}'
-
-   # Sync monitoring (to update Grafana datasource)
-   kubectl -n argocd patch application kube-prometheus-stack --type merge -p '{"operation":{"sync":{}}}'
+   flux reconcile source git lab -n flux-system
+   flux reconcile kustomization otel-collector -n flux-system --with-source
+   flux reconcile kustomization loki -n flux-system --with-source
+   flux reconcile kustomization monitoring -n flux-system --with-source
    ```
 
 3. **Verify deployments**:

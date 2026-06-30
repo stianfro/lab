@@ -1,0 +1,92 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: cilium
+  namespace: flux-system
+spec:
+  interval: 10m
+  releaseName: cilium
+  targetNamespace: kube-system
+  install:
+    crds: CreateReplace
+  upgrade:
+    crds: CreateReplace
+  chart:
+    spec:
+      chart: cilium
+      version: 1.18.3
+      sourceRef:
+        kind: HelmRepository
+        name: cilium
+        namespace: flux-system
+  values:
+    ipam:
+      mode: kubernetes
+    kubeProxyReplacement: true
+    securityContext:
+      privileged: true
+      capabilities:
+        cilumAgent:
+          - CHOWN
+          - KILL
+          - NET_ADMIN
+          - NET_RAW
+          - IPC_LOCK
+          - SYS_ADMIN
+          - SYS_RESOURCE
+          - DAC_OVERRIDE
+          - FOWNER
+          - SETGID
+          - SETUID
+        cleanCiliumState:
+          - NET_ADMIN
+          - SYS_ADMIN
+          - SYS_RESOURCE
+    cgroup:
+      autoMount:
+        enabled: false
+      hostRoot: /sys/fs/cgroup
+    k8sServiceHost: localhost
+    k8sServicePort: 7445
+    hubble:
+      enabled: true
+      ui:
+        enabled: true
+      relay:
+        enabled: true
+      enableOpenMetrics: true
+      metrics:
+        enabled:
+          - dns
+          - drop
+          - tcp
+          - flow
+          - port-distribution
+          - icmp
+          - httpV2:exemplars=true;labelsContext=source_ip,source_namespace,source_workload,destination_ip,destination_namespace,destination_workload,traffic_direction
+    prometheus:
+      enabled: true
+    operator:
+      prometheus:
+        enabled: true
+  driftDetection:
+    mode: enabled
+    ignore:
+      - target:
+          kind: Secret
+          name: cilium-ca
+          namespace: kube-system
+        paths:
+          - /data
+      - target:
+          kind: Secret
+          name: hubble-server-certs
+          namespace: kube-system
+        paths:
+          - /data
+      - target:
+          kind: Secret
+          name: hubble-relay-client-certs
+          namespace: kube-system
+        paths:
+          - /data

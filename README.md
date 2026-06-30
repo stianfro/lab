@@ -1,8 +1,7 @@
 # Lab
 
-My new homelab running Talos Linux.
-
-![lab](https://github.com/user-attachments/assets/7610c388-37d5-419e-9917-5a834fe79f1c)
+Homelab Kubernetes cluster running Talos Linux on three Minisforum UM790 Pro
+mini PCs. The cluster is managed with Flux GitOps.
 
 ## Hardware
 
@@ -17,36 +16,43 @@ My new homelab running Talos Linux.
 | talos-1  | 192.168.1.101 | 58-47-CA-7F-C2-9C |
 | talos-2  | 192.168.1.102 | 58-47-CA-7F-C3-46 |
 
-## DNS
+## GitOps
 
-```
-talos.froystein.jp  IN  A  192.168.1.100
-talos.froystein.jp  IN  A  192.168.1.101
-talos.froystein.jp  IN  A  192.168.1.102
-```
-
-## Installation
-
-Image used: [link](https://factory.talos.dev/?arch=amd64&cmdline-set=true&extensions=-&extensions=siderolabs%2Famdgpu&extensions=siderolabs%2Famd-ucode&extensions=siderolabs%2Fiscsi-tools&extensions=siderolabs%2Futil-linux-tools&platform=metal&target=metal&version=1.11.5)
-
-```yaml
-customization:
-  systemExtensions:
-    officialExtensions:
-      - siderolabs/amd-ucode
-      - siderolabs/amdgpu
-      - siderolabs/iscsi-tools
-      - siderolabs/util-linux-tools
-```
+- Flux is bootstrapped from `clusters/talos/flux-system`.
+- The root Flux `Kustomization` reconciles `clusters/talos`.
+- Each app or infrastructure concern has an explicit Flux `Kustomization` in
+  `clusters/talos/apps.yaml`.
+- Helm charts are represented as Flux `HelmRelease` objects in the app
+  directories.
+- Argo CD, Kargo, and Argo Rollouts are intentionally not part of this setup.
 
 ## Bootstrap
 
-After cluster installation, bootstrap Argo CD:
+```bash
+just bootstrap
+just reconcile
+```
+
+## Common Checks
 
 ```bash
-# install argo
-just bootstrap
-
-# create applicationset
-just bootstrap-app
+flux check
+flux get sources git -A
+flux get sources helm -A
+flux get kustomizations -A
+flux get helmreleases -A
+kubectl get pods -A
 ```
+
+## Talos
+
+Talos machine configuration lives under `talos/`.
+
+- `talos/controlplane.yaml`
+- `talos/worker.yaml`
+- `talos/patches/`
+- `talos/manifests/cilium.yaml`
+
+Cilium remains a Talos bootstrap manifest so a fresh cluster has CNI before
+Flux starts. Metrics Server and kubelet serving certificate approver are
+Flux-managed apps.

@@ -2,5 +2,5 @@ resources:
   - namespace.yaml
   - vaultstaticsecret.yaml
   - vaultstaticsecret-config.yaml
-  - chart.yaml
+  - helmrelease.yaml
   - httproute.yaml

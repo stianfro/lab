@@ -1,0 +1,49 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: dex
+  namespace: flux-system
+spec:
+  interval: 10m
+  releaseName: dex
+  targetNamespace: dex
+  install:
+    createNamespace: true
+  chart:
+    spec:
+      chart: dex
+      version: 0.24.0
+      sourceRef:
+        kind: HelmRepository
+        name: dex
+        namespace: flux-system
+  values:
+    replicaCount: 1
+    configSecret:
+      create: false
+      name: dex-config
+    service:
+      type: ClusterIP
+      ports:
+        http:
+          port: 5556
+          targetPort: 5556
+          nodePort: null
+    ingress:
+      enabled: false
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+  driftDetection:
+    mode: enabled
+    ignore:
+      - target:
+          kind: Secret
+          name: dex
+          namespace: dex
+        paths:
+          - /data

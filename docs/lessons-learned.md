@@ -38,7 +38,7 @@ Verify with `vault read auth/oidc/role/admin` and confirm `groups_claim = n/a`.
 
 The plan stated "no API server changes required" because Headlamp uses an in-cluster service account. This is wrong for OIDC mode. Headlamp v0.41.0 uses the OIDC id_token from the browser cookie as the `Authorization: Bearer` token for ALL Kubernetes API proxy calls. Without `--oidc-issuer-url` and related flags on kube-apiserver, every API call returns 401, and the user is bounced back to the sign-in page immediately after the OIDC popup closes.
 
-**Fix:** Configure kube-apiserver with OIDC flags pointing at the Dex issuer (see `patches/apiserver-oidc.yaml`). The `ClusterRoleBinding` for the authenticated user email must also exist so the API calls are authorized.
+**Fix:** Configure kube-apiserver with OIDC flags pointing at the Dex issuer (see `talos/patches/apiserver-oidc.yaml`). The `ClusterRoleBinding` for the authenticated user email must also exist so the API calls are authorized.
 
 ---
 

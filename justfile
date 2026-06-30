@@ -18,6 +18,9 @@ reconcile:
   just env
   flux reconcile kustomization cluster -n flux-system --with-source
 
+validate:
+  kustomize build clusters/talos | yq e 'true' -
+
 controller-decommission-preflight pattern:
   scripts/controller-decommission-preflight.sh "{{pattern}}"
 

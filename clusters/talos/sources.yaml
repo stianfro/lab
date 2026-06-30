@@ -109,3 +109,12 @@ spec:
   interval: 1h
   type: oci
   url: oci://ghcr.io/prometheus-community/charts
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: zot
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: https://zotregistry.dev/helm-charts

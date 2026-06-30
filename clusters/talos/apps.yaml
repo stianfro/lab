@@ -1,0 +1,628 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: metrics-server
+  namespace: flux-system
+spec:
+  interval: 10m
+  path: ./apps/metrics-server
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 5m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: kubelet-serving-cert-approver
+  namespace: flux-system
+spec:
+  interval: 10m
+  path: ./apps/kubelet-serving-cert-approver
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 5m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cert-manager
+  namespace: flux-system
+spec:
+  interval: 10m
+  path: ./apps/cert-manager
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 10m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cert-manager-config
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: cert-manager
+  interval: 10m
+  path: ./apps/cert-manager-config
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 5m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cilium
+  namespace: flux-system
+spec:
+  interval: 10m
+  path: ./apps/cilium
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 10m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cnpg
+  namespace: flux-system
+spec:
+  interval: 10m
+  path: ./apps/cnpg
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 10m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: longhorn
+  namespace: flux-system
+spec:
+  interval: 10m
+  path: ./apps/longhorn
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 15m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: metallb
+  namespace: flux-system
+spec:
+  interval: 10m
+  path: ./apps/metallb
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 10m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: metallb-config
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: metallb
+  interval: 10m
+  path: ./apps/metallb-config
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 5m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: vault
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: longhorn
+  interval: 10m
+  path: ./apps/vault
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 15m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: vault-secrets-operator
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: vault
+  interval: 10m
+  path: ./apps/vault-secrets-operator
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 10m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: vault-config
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: vault-secrets-operator
+  interval: 10m
+  path: ./apps/vault-config
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 5m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: gateway
+  namespace: flux-system
+spec:
+  interval: 10m
+  path: ./apps/gateway
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 10m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: gateway-config
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: cert-manager-config
+    - name: gateway
+    - name: metallb-config
+  interval: 10m
+  path: ./apps/gateway-config
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 5m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: gateway-public
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: gateway-config
+  interval: 10m
+  path: ./apps/gateway-public
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 5m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: monitoring
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: longhorn
+  interval: 10m
+  path: ./apps/monitoring
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 15m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cilium-extras
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: cilium
+    - name: gateway-config
+    - name: monitoring
+  interval: 10m
+  path: ./apps/cilium-extras
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 5m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: loki
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: longhorn
+    - name: gateway-config
+  interval: 10m
+  path: ./apps/loki
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 15m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: otel-collector
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: vault-config
+    - name: loki
+  interval: 10m
+  path: ./apps/otel-collector
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 10m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: authentik-db
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: cnpg
+    - name: longhorn
+  interval: 10m
+  path: ./apps/authentik-db
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 10m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: authentik
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: authentik-db
+    - name: gateway-config
+  interval: 10m
+  path: ./apps/authentik
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 15m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: dex
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: vault-config
+    - name: gateway-config
+  interval: 10m
+  path: ./apps/dex
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 10m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cloudflare-tunnel
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: vault-config
+    - name: gateway-public
+  interval: 10m
+  path: ./apps/cloudflare-tunnel
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 10m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: headlamp
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: vault-config
+    - name: gateway-config
+  interval: 10m
+  path: ./apps/headlamp
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 10m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: network-monitor
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: monitoring
+  interval: 10m
+  path: ./apps/network-monitor
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 10m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: multus
+  namespace: flux-system
+spec:
+  interval: 10m
+  path: ./apps/multus
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 10m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: kubevirt
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: multus
+  interval: 10m
+  path: ./apps/kubevirt
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 10m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: kubevirt-config
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: kubevirt
+  interval: 10m
+  path: ./apps/kubevirt-config
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 5m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cdi
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: longhorn
+  interval: 10m
+  path: ./apps/cdi
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 10m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cdi-config
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: cdi
+    - name: longhorn
+  interval: 10m
+  path: ./apps/cdi-config
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 5m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: vm
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: kubevirt-config
+    - name: cdi-config
+  interval: 10m
+  path: ./apps/vm
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 10m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: ocp-upgrade-lab
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: kubevirt-config
+    - name: cdi-config
+    - name: metallb-config
+    - name: vault-config
+  interval: 10m
+  path: ./apps/ocp-upgrade-lab
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 10m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: openclaw
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: vault-config
+    - name: gateway-config
+    - name: longhorn
+  interval: 10m
+  path: ./apps/openclaw
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 10m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: froystein-jp-dev
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: gateway-config
+  interval: 5m
+  path: ./apps/froystein-jp-dev
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 5m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: froystein-jp
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: gateway-public
+  interval: 5m
+  path: ./apps/froystein-jp
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 5m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: blog-dev
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: gateway-config
+  interval: 5m
+  path: ./apps/blog-dev
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 5m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: blog
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: gateway-public
+  interval: 5m
+  path: ./apps/blog
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 5m
+  wait: true

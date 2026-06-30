@@ -1,6 +1,6 @@
 resources:
   - namespace.yaml
-  - blackbox-exporter.yaml
+  - blackbox-exporter-helmrelease.yaml
   - speedtest.yaml
   - probes.yaml
   - dashboard.yaml

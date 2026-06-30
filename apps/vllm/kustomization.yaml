@@ -1,9 +1,0 @@
-resources:
-  - namespace.yaml
-  - chart.yaml
-  - podmonitor.yaml
-  - dashboard.yaml
-  - httproute.yaml
-  - epp-rbac.yaml
-  - epp.yaml
-  - inferencepool.yaml

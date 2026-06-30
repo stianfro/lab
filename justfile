@@ -3,15 +3,20 @@ env:
 
 patch:
   just env
-  for i in $(ls patches/); do printf '%s\n' "$i" ; talosctl patch machineconfig --patch @patches/$i --endpoints $CP_IPS --nodes $CP_IPS ; done
+  for i in $(ls talos/patches/); do printf '%s\n' "$i" ; talosctl patch machineconfig --patch @talos/patches/$i --endpoints $CP_IPS --nodes $CP_IPS ; done
 
 bootstrap:
   just env
-  kubectl apply -k apps/argocd
+  kubectl apply -f clusters/talos/flux-system/gotk-components.yaml
+  kubectl wait --for=condition=Established crd/gitrepositories.source.toolkit.fluxcd.io crd/kustomizations.kustomize.toolkit.fluxcd.io --timeout=60s
+  kubectl -n flux-system rollout status deployment/source-controller
+  kubectl -n flux-system rollout status deployment/kustomize-controller
+  kubectl -n flux-system rollout status deployment/helm-controller
+  kubectl apply -f clusters/talos/flux-system/gotk-sync.yaml
 
-bootstrap-apps:
+reconcile:
   just env
-  kubectl apply -f apps/appset.yaml
+  flux reconcile kustomization cluster -n flux-system --with-source
 
 vnc-ocp-upgrade-lab:
   virtctl vnc ocp-upgrade-lab -n ocp-upgrade-lab --vnc-type=tiger --vnc-path="/Applications/TigerVNC Viewer 1.15.0.app/Contents/MacOS/TigerVNC Viewer"

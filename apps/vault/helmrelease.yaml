@@ -1,0 +1,124 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: vault
+  namespace: flux-system
+spec:
+  interval: 10m
+  releaseName: vault
+  targetNamespace: vault
+  install:
+    createNamespace: true
+  chart:
+    spec:
+      chart: vault
+      version: 0.31.0
+      sourceRef:
+        kind: HelmRepository
+        name: hashicorp
+        namespace: flux-system
+  values:
+    global:
+      enabled: true
+      tlsDisable: true
+    server:
+      enabled: true
+      image:
+        repository: hashicorp/vault
+        tag: "1.20.4"
+      resources:
+        requests:
+          memory: 256Mi
+          cpu: 250m
+        limits:
+          memory: 512Mi
+          cpu: 500m
+      ha:
+        enabled: true
+        replicas: 3
+        raft:
+          enabled: true
+          setNodeId: true
+          config: |
+            ui = true
+            disable_mlock = true
+
+            listener "tcp" {
+              tls_disable = 1
+              address = "[::]:8200"
+              cluster_address = "[::]:8201"
+            }
+
+            storage "raft" {
+              path = "/vault/data"
+              retry_join {
+                leader_api_addr = "http://vault-0.vault-internal:8200"
+              }
+              retry_join {
+                leader_api_addr = "http://vault-1.vault-internal:8200"
+              }
+              retry_join {
+                leader_api_addr = "http://vault-2.vault-internal:8200"
+              }
+            }
+
+            service_registration "kubernetes" {}
+      auditStorage:
+        enabled: true
+        size: 10Gi
+        storageClass: longhorn
+        accessMode: ReadWriteOnce
+      dataStorage:
+        enabled: true
+        size: 10Gi
+        storageClass: longhorn
+        accessMode: ReadWriteOnce
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: vault
+                  component: server
+              topologyKey: kubernetes.io/hostname
+      extraSecretEnvironmentVars:
+        - envName: VAULT_UNSEAL_KEY_1
+          secretName: vault-unseal-keys
+          secretKey: VAULT_UNSEAL_KEY_1
+        - envName: VAULT_UNSEAL_KEY_2
+          secretName: vault-unseal-keys
+          secretKey: VAULT_UNSEAL_KEY_2
+        - envName: VAULT_UNSEAL_KEY_3
+          secretName: vault-unseal-keys
+          secretKey: VAULT_UNSEAL_KEY_3
+      postStart:
+        - /bin/sh
+        - -c
+        - |
+          sleep 15
+          if [ -n "$VAULT_UNSEAL_KEY_1" ]; then
+            if vault status 2>&1 | grep -q "Sealed.*true"; then
+              echo "Vault is sealed, attempting unseal..."
+              vault operator unseal "$VAULT_UNSEAL_KEY_1" || true
+              vault operator unseal "$VAULT_UNSEAL_KEY_2" || true
+              vault operator unseal "$VAULT_UNSEAL_KEY_3" || true
+            fi
+          fi
+    ui:
+      enabled: true
+      serviceType: ClusterIP
+    injector:
+      enabled: false
+  driftDetection:
+    mode: enabled
+    ignore:
+      - target:
+          group: apps
+          kind: StatefulSet
+          name: vault
+          namespace: vault
+        paths:
+          - /spec/volumeClaimTemplates/0/apiVersion
+          - /spec/volumeClaimTemplates/0/kind
+          - /spec/volumeClaimTemplates/1/apiVersion
+          - /spec/volumeClaimTemplates/1/kind

@@ -1,4 +1,4 @@
 resources:
   - namespace.yaml
-  - chart.yaml
+  - helmrelease.yaml
   - vaultstaticsecret.yaml

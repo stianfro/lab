@@ -1,0 +1,118 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: otel-collector
+  namespace: flux-system
+spec:
+  interval: 10m
+  releaseName: otel-collector
+  targetNamespace: otel-collector
+  install:
+    createNamespace: true
+  chart:
+    spec:
+      chart: opentelemetry-collector
+      version: 0.139.1
+      sourceRef:
+        kind: HelmRepository
+        name: opentelemetry
+        namespace: flux-system
+  values:
+    mode: deployment
+    extraEnvs:
+      - name: LOGFIRE_ENDPOINT
+        valueFrom:
+          secretKeyRef:
+            name: logfire-credentials
+            key: LOGFIRE_ENDPOINT
+      - name: LOGFIRE_TOKEN
+        valueFrom:
+          secretKeyRef:
+            name: logfire-credentials
+            key: LOGFIRE_TOKEN
+    image:
+      repository: otel/opentelemetry-collector-contrib
+      tag: 0.139.0
+    presets:
+      kubernetesAttributes:
+        enabled: false
+      kubeletMetrics:
+        enabled: false
+    config:
+      receivers:
+        k8s_events:
+          auth_type: serviceAccount
+          namespaces: []
+        otlp:
+          protocols:
+            grpc:
+              endpoint: 0.0.0.0:4317
+            http:
+              endpoint: 0.0.0.0:4318
+      processors:
+        filter/kubevirt:
+          logs:
+            log_record:
+              - 'not IsMatch(resource.attributes["k8s.object.kind"], "^VirtualMachineInstance")'
+        batch:
+          timeout: 10s
+          send_batch_size: 1024
+        resource:
+          attributes:
+            - key: service.name
+              value: kubevirt-events
+              action: insert
+      exporters:
+        debug:
+          verbosity: detailed
+        otlphttp:
+          endpoint: http://loki-gateway.loki.svc.cluster.local/otlp
+          tls:
+            insecure: true
+        otlphttp/logfire:
+          endpoint: ${env:LOGFIRE_ENDPOINT}
+          headers:
+            Authorization: ${env:LOGFIRE_TOKEN}
+      service:
+        pipelines:
+          logs:
+            receivers: [k8s_events]
+            processors: [filter/kubevirt, resource, batch]
+            exporters: [debug, otlphttp]
+          traces:
+            receivers: [otlp]
+            processors: [batch]
+            exporters: [debug, otlphttp/logfire]
+    clusterRole:
+      create: true
+      rules:
+        - apiGroups: [""]
+          resources: ["events"]
+          verbs: ["get", "list", "watch"]
+        - apiGroups: [""]
+          resources: ["namespaces", "pods"]
+          verbs: ["get", "list", "watch"]
+    service:
+      enabled: true
+      type: ClusterIP
+    ports:
+      otlp:
+        enabled: true
+        containerPort: 4317
+        servicePort: 4317
+        hostPort: 4317
+        protocol: TCP
+      otlp-http:
+        enabled: true
+        containerPort: 4318
+        servicePort: 4318
+        hostPort: 4318
+        protocol: TCP
+    resources:
+      limits:
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+  driftDetection:
+    mode: enabled

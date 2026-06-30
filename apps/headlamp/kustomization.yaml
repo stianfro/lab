@@ -2,5 +2,5 @@ resources:
   - namespace.yaml
   - vaultstaticsecret.yaml
   - clusterrolebinding.yaml
-  - chart.yaml
+  - helmrelease.yaml
   - httproute.yaml

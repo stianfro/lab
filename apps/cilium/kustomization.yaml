@@ -1,4 +1,2 @@
 resources:
-  - chart.yaml
-  - httproute.yaml
-  - servicemonitors.yaml
+  - helmrelease.yaml

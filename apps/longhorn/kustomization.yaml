@@ -1,4 +1,4 @@
 resources:
-  - chart.yaml
+  - helmrelease.yaml
   - namespace.yaml
   - httproute.yaml

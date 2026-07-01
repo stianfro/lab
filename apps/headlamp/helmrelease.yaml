@@ -51,6 +51,24 @@ spec:
         volumeMounts:
           - name: headlamp-plugins
             mountPath: /headlamp/plugins
+      - name: headlamp-plugin-kubevirt
+        image: registry.talos.froystein.jp/headlamp-plugin-kubevirt:4e917cc2ff62@sha256:28485f29d298c4e697cd6977a9cc712ad489c750793839e68dcf9af146195161
+        imagePullPolicy: IfNotPresent
+        command:
+          - /bin/sh
+          - -c
+          - |
+            mkdir -p /headlamp/plugins
+            cp -r /plugins/* /headlamp/plugins/
+            chown -R 100:101 /headlamp/plugins
+        securityContext:
+          runAsNonRoot: false
+          privileged: false
+          runAsUser: 0
+          runAsGroup: 0
+        volumeMounts:
+          - name: headlamp-plugins
+            mountPath: /headlamp/plugins
     volumeMounts:
       - name: headlamp-plugins
         mountPath: /headlamp/plugins

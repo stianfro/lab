@@ -3,6 +3,8 @@
 Homelab Kubernetes cluster running Talos Linux on three Minisforum UM790 Pro
 mini PCs. The cluster is managed with Flux GitOps.
 
+![lab](https://github.com/user-attachments/assets/7610c388-37d5-419e-9917-5a834fe79f1c)
+
 ## Hardware
 
 - 3x Minisforum UM790 Pro Mini-PC

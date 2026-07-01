@@ -79,6 +79,40 @@
   environment:
     HOME: "{{ devbox_home }}"
 
+- name: Install home AGENTS.md pointer for Codex
+  ansible.builtin.copy:
+    dest: "{{ devbox_home }}/AGENTS.md"
+    owner: "{{ devbox_user }}"
+    group: "{{ devbox_user }}"
+    mode: "0644"
+    content: |
+      @CLAUDE.md
+
+- name: Install home CLAUDE.md server context
+  ansible.builtin.copy:
+    dest: "{{ devbox_home }}/CLAUDE.md"
+    owner: "{{ devbox_user }}"
+    group: "{{ devbox_user }}"
+    mode: "0644"
+    content: |
+      # Devbox Agent Context
+
+      This is a personal persistent Ubuntu LTS devbox running as a headless
+      server in the homelab. It is reached over SSH and is not a Mac workstation
+      or desktop environment.
+
+      Use terminal-first workflows. Prefer tmux for long-running work. The home
+      directory is `/home/stian`, and repositories usually live under
+      `/home/stian/src`.
+
+      The devbox runs in KubeVirt on the lab Kubernetes cluster with persistent
+      Longhorn storage and local-network SSH access. Server operations from this
+      home directory can include shell, systemd, Docker, kubectl, Flux, Talos,
+      and GitHub CLI work when requested.
+
+      Do not assume a GUI, clipboard, browser, or macOS tools are available. Do
+      not store secrets in Git.
+
 - name: Link Codex CLI into system path
   ansible.builtin.file:
     src: "{{ devbox_home }}/.local/bin/codex"

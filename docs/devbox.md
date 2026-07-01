@@ -70,6 +70,10 @@ The sync recipe copies allowlisted files over SSH. It does not store personal
 agent config, cloud config, auth state, SSH files, kubeconfigs, sessions, or
 generated memories in Git.
 
+Ansible also manages home-level agent context files. `/home/stian/AGENTS.md`
+points Codex to `/home/stian/CLAUDE.md`, which tells both agents that the
+devbox is a headless Ubuntu server for terminal-first server operations.
+
 ## Manual authentication
 
 Do not commit agent tokens or SSH private keys to Git. Authenticate inside the devbox when needed:

@@ -40,6 +40,9 @@ devbox-ssh:
 devbox-tmux:
   ssh {{devbox_ssh_target}} 'tmux new-session -A -s main'
 
+devbox-sync-personal-config:
+  DEVBOX_SSH_TARGET={{devbox_ssh_target}} scripts/devbox-sync-personal-config.sh
+
 devbox-converge:
   mkdir -p .cache/ansible/tmp
   ANSIBLE_LOCAL_TEMP=.cache/ansible/tmp ANSIBLE_HOME=.cache/ansible ansible-playbook -i ansible/devbox/inventory.ini ansible/devbox/playbook.yaml

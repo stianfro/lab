@@ -5,3 +5,5 @@ resources:
   - namespace.yaml
   - vm.yaml
   - service.yaml
+  - node-exporter-service.yaml
+  - servicemonitor.yaml

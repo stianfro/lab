@@ -33,6 +33,7 @@
     owner: "{{ devbox_user }}"
     group: "{{ devbox_user }}"
     mode: "0644"
+    force: false
     content: |
       fish_add_path --move --path $HOME/.local/bin
       fish_add_path --move --path $HOME/.cargo/bin

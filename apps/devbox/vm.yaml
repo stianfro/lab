@@ -32,6 +32,9 @@ spec:
                 - name: ssh
                   port: 22
                   protocol: TCP
+                - name: node-exporter
+                  port: 9100
+                  protocol: TCP
       networks:
         - name: podnet
           pod: {}
@@ -41,10 +44,33 @@ spec:
             claimName: devbox-root
         - name: cloudinitdisk
           cloudInitNoCloud:
+            networkData: |-
+              version: 2
+              ethernets:
+                podnet:
+                  match:
+                    name: en*
+                  dhcp4: true
+                  dhcp6: false
             userData: |-
               #cloud-config
               package_update: true
               package_upgrade: false
+              bootcmd:
+                - |
+                  printf '%s\n' \
+                    'network:' \
+                    '  version: 2' \
+                    '  ethernets:' \
+                    '    podnet:' \
+                    '      match:' \
+                    '        name: "en*"' \
+                    '      dhcp4: true' \
+                    '      dhcp6: false' \
+                    >/etc/netplan/50-devbox-podnet.yaml
+                  chmod 600 /etc/netplan/50-devbox-podnet.yaml
+                  netplan generate
+                  netplan apply
               users:
                 - default
                 - name: stian

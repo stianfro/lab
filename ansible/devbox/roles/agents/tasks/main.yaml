@@ -39,6 +39,30 @@
   environment:
     HOME: "{{ devbox_home }}"
 
+- name: Install uv for devbox user
+  ansible.builtin.shell: "curl -LsSf {{ uv_install_url }} | sh"
+  args:
+    creates: "{{ devbox_home }}/.local/bin/uv"
+  become_user: "{{ devbox_user }}"
+  environment:
+    HOME: "{{ devbox_home }}"
+
+- name: Install commitizen with pipx
+  ansible.builtin.command:
+    cmd: pipx install commitizen
+    creates: "{{ devbox_home }}/.local/bin/cz"
+  become_user: "{{ devbox_user }}"
+  environment:
+    HOME: "{{ devbox_home }}"
+
+- name: Install mitmproxy with pipx
+  ansible.builtin.command:
+    cmd: pipx install mitmproxy
+    creates: "{{ devbox_home }}/.local/bin/mitmdump"
+  become_user: "{{ devbox_user }}"
+  environment:
+    HOME: "{{ devbox_home }}"
+
 - name: Install Codex CLI
   ansible.builtin.shell: "curl -fsSL {{ codex_install_url }} | CODEX_NON_INTERACTIVE=1 sh"
   args:
@@ -66,6 +90,34 @@
   ansible.builtin.file:
     src: "{{ devbox_home }}/.local/bin/claude"
     dest: /usr/local/bin/claude
+    state: link
+    force: true
+
+- name: Link uv into system path
+  ansible.builtin.file:
+    src: "{{ devbox_home }}/.local/bin/uv"
+    dest: /usr/local/bin/uv
+    state: link
+    force: true
+
+- name: Link uvx into system path
+  ansible.builtin.file:
+    src: "{{ devbox_home }}/.local/bin/uvx"
+    dest: /usr/local/bin/uvx
+    state: link
+    force: true
+
+- name: Link commitizen into system path
+  ansible.builtin.file:
+    src: "{{ devbox_home }}/.local/bin/cz"
+    dest: /usr/local/bin/cz
+    state: link
+    force: true
+
+- name: Link mitmdump into system path
+  ansible.builtin.file:
+    src: "{{ devbox_home }}/.local/bin/mitmdump"
+    dest: /usr/local/bin/mitmdump
     state: link
     force: true
 

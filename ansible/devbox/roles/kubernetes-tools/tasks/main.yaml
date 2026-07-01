@@ -40,3 +40,66 @@
     url: "https://github.com/siderolabs/talos/releases/download/{{ talosctl_version }}/talosctl-linux-amd64"
     dest: /usr/local/bin/talosctl
     mode: "0755"
+
+- name: Install virtctl
+  ansible.builtin.get_url:
+    url: "https://github.com/kubevirt/kubevirt/releases/download/{{ kubevirt_version }}/virtctl-{{ kubevirt_version }}-linux-amd64"
+    dest: /usr/local/bin/virtctl
+    mode: "0755"
+
+- name: Install Argo CD CLI
+  ansible.builtin.get_url:
+    url: "https://github.com/argoproj/argo-cd/releases/download/{{ argocd_version }}/argocd-linux-amd64"
+    dest: /usr/local/bin/argocd
+    mode: "0755"
+
+- name: Install Cilium CLI archive
+  ansible.builtin.unarchive:
+    src: "https://github.com/cilium/cilium-cli/releases/download/{{ cilium_cli_version }}/cilium-linux-amd64.tar.gz"
+    dest: /usr/local/bin
+    remote_src: true
+    creates: /usr/local/bin/cilium
+    mode: "0755"
+
+- name: Install k3d
+  ansible.builtin.get_url:
+    url: "https://github.com/k3d-io/k3d/releases/download/{{ k3d_version }}/k3d-linux-amd64"
+    dest: /usr/local/bin/k3d
+    mode: "0755"
+
+- name: Install kind
+  ansible.builtin.get_url:
+    url: "https://kind.sigs.k8s.io/dl/{{ kind_version }}/kind-linux-amd64"
+    dest: /usr/local/bin/kind
+    mode: "0755"
+
+- name: Install lazygit archive
+  ansible.builtin.unarchive:
+    src: "https://github.com/jesseduffield/lazygit/releases/download/v{{ lazygit_version }}/lazygit_{{ lazygit_version }}_Linux_x86_64.tar.gz"
+    dest: /usr/local/bin
+    remote_src: true
+    creates: /usr/local/bin/lazygit
+    mode: "0755"
+
+- name: Install krew for devbox user
+  ansible.builtin.shell: "tmpdir=$(mktemp -d) && cd \"$tmpdir\" && curl -fsSLO https://github.com/kubernetes-sigs/krew/releases/latest/download/krew-linux_amd64.tar.gz && tar zxvf krew-linux_amd64.tar.gz >/dev/null && ./krew-linux_amd64 install krew"
+  args:
+    creates: "{{ devbox_home }}/.krew/bin/kubectl-krew"
+  become_user: "{{ devbox_user }}"
+  environment:
+    HOME: "{{ devbox_home }}"
+
+- name: Install kubectl neat plugin
+  ansible.builtin.command:
+    cmd: "{{ devbox_home }}/.krew/bin/kubectl-krew install neat"
+    creates: "{{ devbox_home }}/.krew/bin/kubectl-neat"
+  become_user: "{{ devbox_user }}"
+  environment:
+    HOME: "{{ devbox_home }}"
+
+- name: Link kubectl neat plugin into system path
+  ansible.builtin.file:
+    src: "{{ devbox_home }}/.krew/bin/kubectl-neat"
+    dest: /usr/local/bin/kubectl-neat
+    state: link
+    force: true

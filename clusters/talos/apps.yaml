@@ -570,6 +570,7 @@ spec:
     - name: kubevirt-config
     - name: cdi-config
     - name: metallb-config
+    - name: monitoring
   interval: 10m
   path: ./apps/devbox
   prune: true

@@ -34,6 +34,12 @@ Then converge the tool setup from the workstation:
 just devbox-converge
 ```
 
+Copy personal shell and agent prompt files from the workstation:
+
+```bash
+just devbox-sync-personal-config
+```
+
 ## Daily use
 
 Attach to the persistent tmux session:
@@ -54,6 +60,16 @@ Check that the repo tmux config still matches the current workstation config:
 just devbox-check-tmux-config
 ```
 
+Sync workstation fish, Codex, and Claude prompt files after local changes:
+
+```bash
+just devbox-sync-personal-config
+```
+
+The sync recipe copies allowlisted files over SSH. It does not store personal
+agent config, cloud config, auth state, SSH files, kubeconfigs, sessions, or
+generated memories in Git.
+
 ## Manual authentication
 
 Do not commit agent tokens or SSH private keys to Git. Authenticate inside the devbox when needed:
@@ -63,6 +79,13 @@ gh auth login
 codex login
 claude
 ```
+
+## Monitoring
+
+The devbox runs `prometheus-node-exporter` on port 9100. Kubernetes exposes it
+through the cluster-internal `devbox-node-exporter` Service and Prometheus
+scrapes it through a `ServiceMonitor`. Port 9100 is not exposed through
+MetalLB.
 
 ## Updates
 

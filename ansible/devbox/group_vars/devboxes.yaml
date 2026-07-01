@@ -1,0 +1,15 @@
+---
+devbox_user: stian
+devbox_home: /home/stian
+codex_install_url: https://chatgpt.com/codex/install.sh
+claude_install_url: https://claude.ai/install.sh
+kubectl_version: v1.34.1
+flux_version: 2.7.0
+helm_version: v3.19.0
+kustomize_version: v5.7.1
+talosctl_version: v1.12.4
+go_version: "1.25.4"
+node_major: 24
+yq_version: v4.47.2
+rustup_init_url: https://sh.rustup.rs
+unattended_upgrades_reboot_time: "04:00"

@@ -1,0 +1,39 @@
+---
+- name: Ensure compatibility directory for workstation tmux shell path exists
+  ansible.builtin.file:
+    path: /opt/homebrew/bin
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Link workstation fish path to Linux fish
+  ansible.builtin.file:
+    src: /usr/bin/fish
+    dest: /opt/homebrew/bin/fish
+    state: link
+    force: true
+
+- name: Set login shell to fish
+  ansible.builtin.user:
+    name: "{{ devbox_user }}"
+    shell: /usr/bin/fish
+
+- name: Create fish config directory
+  ansible.builtin.file:
+    path: "{{ devbox_home }}/.config/fish"
+    state: directory
+    owner: "{{ devbox_user }}"
+    group: "{{ devbox_user }}"
+    mode: "0755"
+
+- name: Configure fish path
+  ansible.builtin.copy:
+    dest: "{{ devbox_home }}/.config/fish/config.fish"
+    owner: "{{ devbox_user }}"
+    group: "{{ devbox_user }}"
+    mode: "0644"
+    content: |
+      fish_add_path --move --path $HOME/.local/bin
+      fish_add_path --move --path $HOME/.cargo/bin
+      fish_add_path --move --path /usr/local/go/bin

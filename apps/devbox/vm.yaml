@@ -1,0 +1,89 @@
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: devbox
+  namespace: devbox
+spec:
+  runStrategy: Always
+  template:
+    metadata:
+      labels:
+        kubevirt.io/vm: devbox
+    spec:
+      domain:
+        cpu:
+          cores: 4
+        resources:
+          requests:
+            memory: 16Gi
+        devices:
+          disks:
+            - name: rootdisk
+              disk:
+                bus: virtio
+              bootOrder: 1
+            - name: cloudinitdisk
+              disk:
+                bus: virtio
+          interfaces:
+            - name: podnet
+              masquerade: {}
+              ports:
+                - name: ssh
+                  port: 22
+                  protocol: TCP
+      networks:
+        - name: podnet
+          pod: {}
+      volumes:
+        - name: rootdisk
+          persistentVolumeClaim:
+            claimName: devbox-root
+        - name: cloudinitdisk
+          cloudInitNoCloud:
+            userData: |-
+              #cloud-config
+              package_update: true
+              package_upgrade: false
+              users:
+                - default
+                - name: stian
+                  gecos: Stian Froystein
+                  groups: sudo
+                  sudo: ['ALL=(ALL) NOPASSWD:ALL']
+                  shell: /bin/bash
+                  lock_passwd: true
+                  ssh_authorized_keys:
+                    - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCjlNh4UPrDac9Yb8R5FOoyB3qo0UNYLS4oGYRY5Cg0gwth0tA0nxvOrirAMj0+RhJ0/O6rg+quh24PYt/Pes6gGUopOyYLvA+i4bHNOAgt91kkqBIjtNFESugcBqVSE565NvKDE+cD8+PLkf4bUMXaMceb1PnGtBwz+URvo9bDVAj/pokkMg11fskIaSikc9nFqYcCs4fXnF3+kOlNL2hdlXKCcD3H5osxgaXoN/O98lsGZZ2BeMcisGwYeGDIxgEFHSUgWrke5JuOod8WkKHF4j67FS6gbiwF7KVAGT2NtVlNbiJ1wu0E4cX05j4j9xo6Uu4HY5roJr+4B7x6f217Je+KwY0EULHCwtKlseNfyQwoDciOC+sDVYXbGsUq4Iya9awpReboeq9Sw6XRu6bq8I9pNBd5kmfezMLRjKCur1B92I92M7MQ0JwX196SKj0HpTa6drXQoln/z0dJatdOZ/WP2Wr7iYWDrjSYHRtgBlQC3kE8Q4lFag5V352fl0U=
+              packages:
+                - ca-certificates
+                - curl
+                - gnupg
+                - openssh-server
+                - python3
+                - sudo
+              ssh_pwauth: false
+              disable_root: true
+              write_files:
+                - path: /etc/ssh/sshd_config.d/99-devbox-hardening.conf
+                  permissions: '0644'
+                  owner: root:root
+                  content: |
+                    PasswordAuthentication no
+                    PermitRootLogin no
+                    PubkeyAuthentication yes
+              runcmd:
+                - systemctl enable --now ssh
+                - systemctl restart ssh
+  dataVolumeTemplates:
+    - metadata:
+        name: devbox-root
+      spec:
+        storage:
+          resources:
+            requests:
+              storage: 140Gi
+          storageClassName: longhorn-devbox
+        source:
+          http:
+            url: https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img

@@ -59,6 +59,7 @@ Resources:
 - `VirtualMachine`: `devbox`
 - Root disk from an Ubuntu LTS cloud image through CDI
 - Longhorn-backed persistent root disk
+- Devbox-specific Longhorn storage class with one replica, sized to current lab capacity
 - `Service`: `LoadBalancer`, port 22 only
 - MetalLB fixed LAN IP, default proposal `192.168.1.51`
 
@@ -223,10 +224,10 @@ Initial proposal:
 
 - CPU: 4 cores
 - Memory: 12 GiB or 16 GiB
-- Disk: 200 GiB Longhorn root disk
+- Disk: 140 GiB Longhorn root disk using `longhorn-devbox` with one replica
 - Network: fixed MetalLB LAN IP, default proposal `192.168.1.51`
 
-These values can be adjusted after first use.
+The disk uses one replica because current Longhorn scheduled capacity cannot fit a larger three-replica devbox disk. Increase the size or replica count later after freeing capacity or adding storage.
 
 ## Operations and recovery
 
@@ -254,10 +255,6 @@ Before calling the implementation complete, run:
 - Kubernetes dry-run checks where practical
 - SSH smoke test after deployment, if the VM is running
 
-## Open questions for implementation
+## Follow-up choices
 
-- Pick the exact MetalLB IP, defaulting to `192.168.1.51` unless reserved elsewhere.
-- Pick 12 GiB or 16 GiB memory.
-- Verify and pin the Ubuntu LTS cloud image URL.
-- Decide whether to install Node.js through Ubuntu packages, NodeSource, or another pinned method.
-- Decide exact installation method for Codex CLI and Claude Code based on current official instructions at implementation time.
+- Replace the floating Ubuntu LTS cloud image URL with a release-pinned URL if exact rebuild reproducibility is needed.

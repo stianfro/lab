@@ -27,5 +27,26 @@ controller-decommission-preflight pattern:
 smoke-public-sites:
   scripts/smoke-public-sites.sh
 
+devbox_host := "192.168.1.51"
+devbox_user := "stian"
+devbox_ssh_target := devbox_user + "@" + devbox_host
+
 vnc-ocp-upgrade-lab:
   virtctl vnc ocp-upgrade-lab -n ocp-upgrade-lab --vnc-type=tiger --vnc-path="/Applications/TigerVNC Viewer 1.15.0.app/Contents/MacOS/TigerVNC Viewer"
+
+devbox-ssh:
+  ssh {{devbox_ssh_target}}
+
+devbox-tmux:
+  ssh {{devbox_ssh_target}} 'tmux new-session -A -s main'
+
+devbox-converge:
+  mkdir -p .cache/ansible/tmp
+  ANSIBLE_LOCAL_TEMP=.cache/ansible/tmp ANSIBLE_HOME=.cache/ansible ansible-playbook -i ansible/devbox/inventory.ini ansible/devbox/playbook.yaml
+
+devbox-check-tmux-config:
+  diff -u /Users/stianfroystein/.config/tmux/tmux.conf ansible/devbox/files/tmux.conf
+
+devbox-ansible-ping:
+  mkdir -p .cache/ansible/tmp
+  ANSIBLE_LOCAL_TEMP=.cache/ansible/tmp ANSIBLE_HOME=.cache/ansible ansible -i ansible/devbox/inventory.ini devboxes -m ping

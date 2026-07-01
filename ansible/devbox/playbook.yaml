@@ -1,0 +1,12 @@
+---
+- name: Configure personal devbox
+  hosts: devboxes
+  become: true
+  gather_facts: true
+  roles:
+    - base
+    - shell
+    - tmux
+    - containers
+    - kubernetes-tools
+    - agents

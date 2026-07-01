@@ -1,0 +1,84 @@
+---
+- name: Add NodeSource Node.js LTS repository
+  ansible.builtin.shell: "curl -fsSL https://deb.nodesource.com/setup_{{ node_major }}.x | bash -"
+  args:
+    creates: /etc/apt/sources.list.d/nodesource.list
+
+- name: Install Node.js LTS
+  ansible.builtin.apt:
+    name: nodejs
+    state: present
+    update_cache: true
+
+- name: Install Go archive
+  ansible.builtin.unarchive:
+    src: "https://go.dev/dl/go{{ go_version }}.linux-amd64.tar.gz"
+    dest: /usr/local
+    remote_src: true
+    creates: /usr/local/go/bin/go
+
+- name: Link go binary
+  ansible.builtin.file:
+    src: /usr/local/go/bin/go
+    dest: /usr/local/bin/go
+    state: link
+    force: true
+
+- name: Link gofmt binary
+  ansible.builtin.file:
+    src: /usr/local/go/bin/gofmt
+    dest: /usr/local/bin/gofmt
+    state: link
+    force: true
+
+- name: Install rustup for devbox user
+  ansible.builtin.shell: "curl --proto '=https' --tlsv1.2 -sSf {{ rustup_init_url }} | sh -s -- -y"
+  args:
+    creates: "{{ devbox_home }}/.cargo/bin/rustc"
+  become_user: "{{ devbox_user }}"
+  environment:
+    HOME: "{{ devbox_home }}"
+
+- name: Install Codex CLI
+  ansible.builtin.shell: "curl -fsSL {{ codex_install_url }} | CODEX_NON_INTERACTIVE=1 sh"
+  args:
+    creates: "{{ devbox_home }}/.local/bin/codex"
+  become_user: "{{ devbox_user }}"
+  environment:
+    HOME: "{{ devbox_home }}"
+
+- name: Install Claude Code
+  ansible.builtin.shell: "curl -fsSL {{ claude_install_url }} | bash"
+  args:
+    creates: "{{ devbox_home }}/.local/bin/claude"
+  become_user: "{{ devbox_user }}"
+  environment:
+    HOME: "{{ devbox_home }}"
+
+- name: Link Codex CLI into system path
+  ansible.builtin.file:
+    src: "{{ devbox_home }}/.local/bin/codex"
+    dest: /usr/local/bin/codex
+    state: link
+    force: true
+
+- name: Link Claude Code into system path
+  ansible.builtin.file:
+    src: "{{ devbox_home }}/.local/bin/claude"
+    dest: /usr/local/bin/claude
+    state: link
+    force: true
+
+- name: Link rustc into system path
+  ansible.builtin.file:
+    src: "{{ devbox_home }}/.cargo/bin/rustc"
+    dest: /usr/local/bin/rustc
+    state: link
+    force: true
+
+- name: Link cargo into system path
+  ansible.builtin.file:
+    src: "{{ devbox_home }}/.cargo/bin/cargo"
+    dest: /usr/local/bin/cargo
+    state: link
+    force: true

@@ -2,3 +2,5 @@
 secrets.yaml
 talosconfig
 kubeconfig
+
+.cache/

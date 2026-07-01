@@ -93,10 +93,11 @@ MetalLB.
 
 ## Updates
 
-Ubuntu package updates are managed by unattended-upgrades. The devbox installs
-security and standard Ubuntu updates automatically, removes unused packages, and
-allows automatic reboots at 04:00 when a reboot is required. This can interrupt
-long-running processes, so keep important work in Git or another durable store.
+Ubuntu package updates are managed by unattended-upgrades. The devbox checks for
+packages from 02:00 Japan time, installs security and standard Ubuntu updates
+from 03:00 Japan time, and removes unused packages. Both timers have up to 30
+minutes of random delay. Automatic reboots are disabled. Reboot manually after
+kernel or system library updates when convenient.
 
 ## Recovery
 

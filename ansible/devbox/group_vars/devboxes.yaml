@@ -19,4 +19,6 @@ node_major: 24
 yq_version: v4.47.2
 rustup_init_url: https://sh.rustup.rs
 uv_install_url: https://astral.sh/uv/install.sh
-unattended_upgrades_reboot_time: "04:00"
+apt_daily_on_calendar: "*-*-* 02:00 Asia/Tokyo"
+apt_daily_upgrade_on_calendar: "*-*-* 03:00 Asia/Tokyo"
+apt_daily_randomized_delay_sec: 30m

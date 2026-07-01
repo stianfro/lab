@@ -78,9 +78,41 @@
       Unattended-Upgrade::Remove-Unused-Kernel-Packages "true";
       Unattended-Upgrade::Remove-New-Unused-Dependencies "true";
       Unattended-Upgrade::Remove-Unused-Dependencies "true";
-      Unattended-Upgrade::Automatic-Reboot "true";
-      Unattended-Upgrade::Automatic-Reboot-WithUsers "true";
-      Unattended-Upgrade::Automatic-Reboot-Time "{{ unattended_upgrades_reboot_time }}";
+      Unattended-Upgrade::Automatic-Reboot "false";
+      Unattended-Upgrade::Automatic-Reboot-WithUsers "false";
+
+- name: Create apt timer override directories
+  ansible.builtin.file:
+    path: "/etc/systemd/system/{{ item.name }}.d"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop:
+    - name: apt-daily.timer
+    - name: apt-daily-upgrade.timer
+
+- name: Configure apt timer schedules
+  ansible.builtin.copy:
+    dest: "/etc/systemd/system/{{ item.name }}.d/override.conf"
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [Timer]
+      OnCalendar=
+      OnCalendar={{ item.on_calendar }}
+      RandomizedDelaySec={{ apt_daily_randomized_delay_sec }}
+      Persistent=true
+  loop:
+    - name: apt-daily.timer
+      on_calendar: "{{ apt_daily_on_calendar }}"
+    - name: apt-daily-upgrade.timer
+      on_calendar: "{{ apt_daily_upgrade_on_calendar }}"
+
+- name: Reload systemd units
+  ansible.builtin.systemd:
+    daemon_reload: true
 
 - name: Enable apt update timers
   ansible.builtin.systemd:

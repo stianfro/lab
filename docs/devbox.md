@@ -28,10 +28,21 @@ kubectl -n devbox wait --for=condition=Ready vmi/devbox --timeout=20m
 ssh stian@192.168.1.51 'cloud-init status --wait && echo ssh-ready'
 ```
 
-Then converge the tool setup from the workstation:
+Then converge the tool setup:
 
 ```bash
 just devbox-converge
+```
+
+This recipe detects whether it is running on the devbox. On host `devbox`, it
+uses a local Ansible connection. From another machine, it uses the SSH inventory
+for `192.168.1.51`.
+
+For base OS settings only, such as package update policy, run this from the
+devbox:
+
+```bash
+just devbox-converge-local-base
 ```
 
 Copy personal shell and agent prompt files from the workstation:

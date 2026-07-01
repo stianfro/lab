@@ -4,9 +4,15 @@
   become: true
   gather_facts: true
   roles:
-    - base
-    - shell
-    - tmux
-    - containers
-    - kubernetes-tools
-    - agents
+    - role: base
+      tags: base
+    - role: shell
+      tags: shell
+    - role: tmux
+      tags: tmux
+    - role: containers
+      tags: containers
+    - role: kubernetes-tools
+      tags: kubernetes-tools
+    - role: agents
+      tags: agents

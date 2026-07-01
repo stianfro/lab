@@ -28,6 +28,7 @@ smoke-public-sites:
   scripts/smoke-public-sites.sh
 
 devbox_host := "192.168.1.51"
+devbox_hostname := "devbox"
 devbox_user := "stian"
 devbox_ssh_target := devbox_user + "@" + devbox_host
 
@@ -44,8 +45,24 @@ devbox-sync-personal-config:
   DEVBOX_SSH_TARGET={{devbox_ssh_target}} scripts/devbox-sync-personal-config.sh
 
 devbox-converge:
-  mkdir -p .cache/ansible/tmp
-  ANSIBLE_LOCAL_TEMP=.cache/ansible/tmp ANSIBLE_HOME=.cache/ansible ansible-playbook -i ansible/devbox/inventory.ini ansible/devbox/playbook.yaml
+  #!/usr/bin/env bash
+  set -euo pipefail
+  if [[ "$(hostname -s)" == "{{devbox_hostname}}" ]]; then
+    just devbox-converge-local
+  else
+    mkdir -p .cache/ansible/tmp
+    ANSIBLE_LOCAL_TEMP=.cache/ansible/tmp ANSIBLE_HOME=.cache/ansible ansible-playbook -i ansible/devbox/inventory.ini ansible/devbox/playbook.yaml
+  fi
+
+_devbox-local-inventory:
+  mkdir -p .cache/ansible/tmp .cache/uv
+  printf '%s\n' '[devboxes]' 'devbox ansible_connection=local ansible_python_interpreter=/usr/bin/python3' > .cache/ansible/local-inventory.ini
+
+devbox-converge-local: _devbox-local-inventory
+  ANSIBLE_LOCAL_TEMP=.cache/ansible/tmp ANSIBLE_HOME=.cache/ansible UV_CACHE_DIR=.cache/uv uvx --from ansible-core ansible-playbook -i .cache/ansible/local-inventory.ini ansible/devbox/playbook.yaml
+
+devbox-converge-local-base: _devbox-local-inventory
+  ANSIBLE_LOCAL_TEMP=.cache/ansible/tmp ANSIBLE_HOME=.cache/ansible UV_CACHE_DIR=.cache/uv uvx --from ansible-core ansible-playbook -i .cache/ansible/local-inventory.ini ansible/devbox/playbook.yaml --tags base
 
 devbox-check-tmux-config:
   diff -u /Users/stianfroystein/.config/tmux/tmux.conf ansible/devbox/files/tmux.conf

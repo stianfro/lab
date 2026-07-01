@@ -48,6 +48,14 @@ Keep the layout boring:
 - Create feature branches with the `codex/` prefix unless the user requests a
   different branch name.
 
+## Devbox Convergence
+
+- The devbox host short name is `devbox`. When running on that host, use
+  `just devbox-converge`; it detects the local host and uses a local Ansible
+  connection instead of SSH.
+- When running from another machine, use the same `just devbox-converge` command;
+  it uses the SSH inventory for `192.168.1.51`.
+
 ## Common Commands
 
 ```bash

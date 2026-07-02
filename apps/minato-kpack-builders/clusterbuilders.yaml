@@ -1,0 +1,192 @@
+# Platform-approved ClusterBuilders. The metadata.name of each is the friendly
+# alias the Minato API references when it creates a tenant Build/Image; do not
+# rename without updating the API's allow-list.
+#
+# Each builder assembles from the shared `base` ClusterStack and the `default`
+# ClusterStore, and is published (the `tag`) to the internal zot registry by the
+# kpack-builder ServiceAccount. The `order` is the CNB detection order: a single
+# language buildpack for the per-language aliases, and every language as its own
+# optional group for `auto` (CNB picks the first group whose detect passes).
+#
+# Aliases -> buildpack:
+#   auto    -> detect across node, python, java, go, dotnet, static (in order)
+#   node    -> paketo-buildpacks/nodejs
+#   python  -> paketo-buildpacks/python
+#   java    -> paketo-buildpacks/java
+#   go      -> paketo-buildpacks/go
+#   dotnet  -> paketo-buildpacks/dotnet-core
+#   static  -> paketo-buildpacks/web-servers
+#
+# Tags pinned by name only here; kpack resolves and records the built builder
+# digest on the resource status. A follow-up digest-pins the store/stack inputs.
+#
+# The `tag` below publishes to zot.zot.svc.cluster.local:5000, which serves real
+# TLS signed by the internal CA (issue #84). kpack (via go-containerregistry)
+# defaults to HTTPS and trusts that CA via the cluster-wide trust bundle, so the
+# builders reach Ready without any insecure-registry flag. Bring-up still owes
+# the zot `kpack/**` push accessControl policy and a robot push credential on the
+# kpack-builder SA (see serviceaccount.yaml). None of this affects offline
+# `kustomize build`.
+apiVersion: kpack.io/v1alpha2
+kind: ClusterBuilder
+metadata:
+  name: auto
+  labels:
+    app.kubernetes.io/part-of: minato
+    minato.intility.com/component: build
+spec:
+  tag: registry.talos.froystein.jp/kpack/builder-auto
+  serviceAccountRef:
+    name: kpack-builder
+    namespace: kpack
+  stack:
+    name: base
+    kind: ClusterStack
+  store:
+    name: default
+    kind: ClusterStore
+  order:
+    - group:
+        - id: paketo-buildpacks/nodejs
+    - group:
+        - id: paketo-buildpacks/python
+    - group:
+        - id: paketo-buildpacks/java
+    - group:
+        - id: paketo-buildpacks/go
+    - group:
+        - id: paketo-buildpacks/dotnet-core
+    - group:
+        - id: paketo-buildpacks/web-servers
+---
+apiVersion: kpack.io/v1alpha2
+kind: ClusterBuilder
+metadata:
+  name: node
+  labels:
+    app.kubernetes.io/part-of: minato
+    minato.intility.com/component: build
+spec:
+  tag: registry.talos.froystein.jp/kpack/builder-node
+  serviceAccountRef:
+    name: kpack-builder
+    namespace: kpack
+  stack:
+    name: base
+    kind: ClusterStack
+  store:
+    name: default
+    kind: ClusterStore
+  order:
+    - group:
+        - id: paketo-buildpacks/nodejs
+---
+apiVersion: kpack.io/v1alpha2
+kind: ClusterBuilder
+metadata:
+  name: python
+  labels:
+    app.kubernetes.io/part-of: minato
+    minato.intility.com/component: build
+spec:
+  tag: registry.talos.froystein.jp/kpack/builder-python
+  serviceAccountRef:
+    name: kpack-builder
+    namespace: kpack
+  stack:
+    name: base
+    kind: ClusterStack
+  store:
+    name: default
+    kind: ClusterStore
+  order:
+    - group:
+        - id: paketo-buildpacks/python
+---
+apiVersion: kpack.io/v1alpha2
+kind: ClusterBuilder
+metadata:
+  name: java
+  labels:
+    app.kubernetes.io/part-of: minato
+    minato.intility.com/component: build
+spec:
+  tag: registry.talos.froystein.jp/kpack/builder-java
+  serviceAccountRef:
+    name: kpack-builder
+    namespace: kpack
+  stack:
+    name: base
+    kind: ClusterStack
+  store:
+    name: default
+    kind: ClusterStore
+  order:
+    - group:
+        - id: paketo-buildpacks/java
+---
+apiVersion: kpack.io/v1alpha2
+kind: ClusterBuilder
+metadata:
+  name: go
+  labels:
+    app.kubernetes.io/part-of: minato
+    minato.intility.com/component: build
+spec:
+  tag: registry.talos.froystein.jp/kpack/builder-go
+  serviceAccountRef:
+    name: kpack-builder
+    namespace: kpack
+  stack:
+    name: base
+    kind: ClusterStack
+  store:
+    name: default
+    kind: ClusterStore
+  order:
+    - group:
+        - id: paketo-buildpacks/go
+---
+apiVersion: kpack.io/v1alpha2
+kind: ClusterBuilder
+metadata:
+  name: dotnet
+  labels:
+    app.kubernetes.io/part-of: minato
+    minato.intility.com/component: build
+spec:
+  tag: registry.talos.froystein.jp/kpack/builder-dotnet
+  serviceAccountRef:
+    name: kpack-builder
+    namespace: kpack
+  stack:
+    name: base
+    kind: ClusterStack
+  store:
+    name: default
+    kind: ClusterStore
+  order:
+    - group:
+        - id: paketo-buildpacks/dotnet-core
+---
+apiVersion: kpack.io/v1alpha2
+kind: ClusterBuilder
+metadata:
+  name: static
+  labels:
+    app.kubernetes.io/part-of: minato
+    minato.intility.com/component: build
+spec:
+  tag: registry.talos.froystein.jp/kpack/builder-static
+  serviceAccountRef:
+    name: kpack-builder
+    namespace: kpack
+  stack:
+    name: base
+    kind: ClusterStack
+  store:
+    name: default
+    kind: ClusterStore
+  order:
+    - group:
+        - id: paketo-buildpacks/web-servers

@@ -1,0 +1,23 @@
+apiVersion: operator.knative.dev/v1beta1
+kind: KnativeServing
+metadata:
+  name: knative-serving
+  namespace: knative-serving
+spec:
+  ingress:
+    gateway-api:
+      enabled: true
+  config:
+    network:
+      ingress-class: gateway-api.ingress.networking.knative.dev
+    domain:
+      talos.froystein.jp: ""
+    gateway:
+      external-gateways: |
+        - class: eg
+          gateway: envoy-gateway-system/eg
+          service: envoy-gateway-system/envoy-envoy-gateway-system-eg-5391c79d
+      local-gateways: |
+        - class: eg
+          gateway: minato-system/knative-local
+          service: envoy-gateway-system/envoy-minato-system-knative-local-e9623b53

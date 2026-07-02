@@ -1,0 +1,20 @@
+# Platform CNB store: the set of Paketo language buildpackages the ClusterBuilders
+# draw from. Each source is a buildpackage OCI image; the ClusterBuilder order
+# selects buildpack ids out of this store. Covers the supported stacks: Node,
+# Python, Java, Go, .NET, and static (web-servers: nginx/httpd serving built
+# assets). Pinned by major-version tag; a follow-up digest-pins.
+apiVersion: kpack.io/v1alpha2
+kind: ClusterStore
+metadata:
+  name: default
+  labels:
+    app.kubernetes.io/part-of: minato
+    minato.intility.com/component: build
+spec:
+  sources:
+    - image: paketobuildpacks/nodejs:10
+    - image: paketobuildpacks/python:2
+    - image: paketobuildpacks/java:22
+    - image: paketobuildpacks/go:4
+    - image: paketobuildpacks/dotnet-core:4
+    - image: paketobuildpacks/web-servers:4

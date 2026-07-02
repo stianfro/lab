@@ -1,0 +1,17 @@
+# Platform CNB stack: the Ubuntu Jammy build + run image pair every builder
+# shares. Paketo's "base" stack carries the common OS packages most language
+# buildpacks need without the full toolchain bloat. Pinned by tag; a follow-up
+# digest-pins (the Minato signing/provenance gate wants digests).
+apiVersion: kpack.io/v1alpha2
+kind: ClusterStack
+metadata:
+  name: base
+  labels:
+    app.kubernetes.io/part-of: minato
+    minato.intility.com/component: build
+spec:
+  id: io.buildpacks.stacks.jammy
+  buildImage:
+    image: paketobuildpacks/build-jammy-base:0.1.238
+  runImage:
+    image: paketobuildpacks/run-jammy-base:0.1.238

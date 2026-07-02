@@ -6,6 +6,7 @@ metadata:
 spec:
   ipAddressPools:
     - default
+    - minato-tenant-gateways
   interfaces:
     - enp1s0
 ---
@@ -17,3 +18,13 @@ metadata:
 spec:
   addresses:
     - 192.168.1.20-192.168.1.99
+---
+kind: IPAddressPool
+apiVersion: metallb.io/v1beta1
+metadata:
+  name: minato-tenant-gateways
+  namespace: metallb-system
+spec:
+  autoAssign: false
+  addresses:
+    - 192.168.1.200-192.168.1.250

@@ -69,6 +69,24 @@ spec:
         volumeMounts:
           - name: headlamp-plugins
             mountPath: /headlamp/plugins
+      - name: headlamp-plugin-knative
+        image: ghcr.io/headlamp-k8s/headlamp-plugin-knative:v0.3.0-beta@sha256:b8573cfe69723ed010ed055dc8cfbe1c3643c8f91dac0136264e841c4387c64e
+        imagePullPolicy: IfNotPresent
+        command:
+          - /bin/sh
+          - -c
+          - |
+            mkdir -p /headlamp/plugins
+            cp -r /plugins/* /headlamp/plugins/
+            chown -R 100:101 /headlamp/plugins
+        securityContext:
+          runAsNonRoot: false
+          privileged: false
+          runAsUser: 0
+          runAsGroup: 0
+        volumeMounts:
+          - name: headlamp-plugins
+            mountPath: /headlamp/plugins
     volumeMounts:
       - name: headlamp-plugins
         mountPath: /headlamp/plugins

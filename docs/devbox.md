@@ -85,6 +85,20 @@ Ansible also manages home-level agent context files. `/home/stian/AGENTS.md`
 points Codex to `/home/stian/CLAUDE.md`, which tells both agents that the
 devbox is a headless Ubuntu server for terminal-first server operations.
 
+## Homebrew packages
+
+Some devbox packages are installed with Homebrew for Linux when the Ubuntu
+package is missing or too old. The package list is in
+`ansible/devbox/group_vars/devboxes.yaml` under `homebrew_packages`. The first
+managed formula is `derailed/k9s/k9s`, and Ansible links `k9s` into
+`/usr/local/bin`.
+
+Converge the devbox after changing the list:
+
+```bash
+just devbox-converge
+```
+
 ## Manual authentication
 
 Do not commit agent tokens or SSH private keys to Git. Authenticate inside the devbox when needed:

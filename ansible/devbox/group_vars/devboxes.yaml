@@ -17,6 +17,21 @@ lazygit_version: 0.62.2
 go_version: "1.25.4"
 node_major: 24
 yq_version: v4.47.2
+homebrew_prefix: /home/linuxbrew/.linuxbrew
+homebrew_path_entries:
+  - "{{ homebrew_prefix }}/bin"
+  - "{{ homebrew_prefix }}/sbin"
+  - /usr/local/sbin
+  - /usr/local/bin
+  - /usr/sbin
+  - /usr/bin
+  - /sbin
+  - /bin
+homebrew_install_url: https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh
+homebrew_packages:
+  - derailed/k9s/k9s
+homebrew_binary_links:
+  - k9s
 rustup_init_url: https://sh.rustup.rs
 uv_install_url: https://astral.sh/uv/install.sh
 apt_daily_on_calendar: "*-*-* 02:00 Asia/Tokyo"

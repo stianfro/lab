@@ -1,0 +1,127 @@
+---
+- name: Install Homebrew apt dependencies
+  ansible.builtin.apt:
+    name:
+      - build-essential
+      - curl
+      - file
+      - git
+      - procps
+    state: present
+    update_cache: true
+
+- name: Create Homebrew prefix
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ devbox_user }}"
+    group: "{{ devbox_user }}"
+    mode: "0755"
+  loop:
+    - /home/linuxbrew
+    - "{{ homebrew_prefix }}"
+
+- name: Install Homebrew
+  ansible.builtin.shell: |
+    set -o pipefail
+    curl -fsSL {{ homebrew_install_url }} | NONINTERACTIVE=1 bash
+  args:
+    executable: /bin/bash
+    creates: "{{ homebrew_prefix }}/bin/brew"
+  become_user: "{{ devbox_user }}"
+  environment:
+    HOME: "{{ devbox_home }}"
+    PATH: "{{ homebrew_path_entries | join(':') }}"
+
+- name: Inspect brew in system path
+  ansible.builtin.stat:
+    path: /usr/local/bin/brew
+    follow: false
+  register: homebrew_system_brew
+
+- name: Remove brew symlink from system path
+  ansible.builtin.file:
+    path: /usr/local/bin/brew
+    state: absent
+  when: homebrew_system_brew.stat.islnk | default(false)
+
+- name: Install brew wrapper into system path
+  ansible.builtin.copy:
+    dest: /usr/local/bin/brew
+    owner: root
+    group: root
+    mode: "0755"
+    content: |
+      #!/bin/sh
+      exec {{ homebrew_prefix }}/bin/brew "$@"
+
+- name: Configure Homebrew for POSIX shells
+  ansible.builtin.copy:
+    dest: /etc/profile.d/homebrew.sh
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      if [ -x {{ homebrew_prefix }}/bin/brew ]; then
+        eval "$({{ homebrew_prefix }}/bin/brew shellenv)"
+      fi
+
+- name: Create fish system config directory
+  ansible.builtin.file:
+    path: /etc/fish/conf.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Configure Homebrew for fish
+  ansible.builtin.copy:
+    dest: /etc/fish/conf.d/homebrew.fish
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      if test -x {{ homebrew_prefix }}/bin/brew
+          eval ({{ homebrew_prefix }}/bin/brew shellenv)
+      end
+
+- name: Check Homebrew package state
+  ansible.builtin.command:
+    argv:
+      - "{{ homebrew_prefix }}/bin/brew"
+      - list
+      - --formula
+      - --versions
+      - "{{ item | basename }}"
+  register: homebrew_package_checks
+  changed_when: false
+  failed_when: false
+  loop: "{{ homebrew_packages }}"
+  become_user: "{{ devbox_user }}"
+  environment:
+    HOME: "{{ devbox_home }}"
+    PATH: "{{ homebrew_path_entries | join(':') }}"
+
+- name: Install missing Homebrew packages
+  ansible.builtin.command:
+    argv:
+      - "{{ homebrew_prefix }}/bin/brew"
+      - install
+      - "{{ item.item }}"
+  changed_when: true
+  loop: "{{ homebrew_package_checks.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  when: item.rc != 0
+  become_user: "{{ devbox_user }}"
+  environment:
+    HOME: "{{ devbox_home }}"
+    PATH: "{{ homebrew_path_entries | join(':') }}"
+
+- name: Link Homebrew binaries into system path
+  ansible.builtin.file:
+    src: "{{ homebrew_prefix }}/bin/{{ item }}"
+    dest: "/usr/local/bin/{{ item }}"
+    state: link
+    force: true
+  loop: "{{ homebrew_binary_links }}"

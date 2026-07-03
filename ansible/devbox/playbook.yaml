@@ -8,6 +8,8 @@
       tags: base
     - role: shell
       tags: shell
+    - role: homebrew
+      tags: homebrew
     - role: tmux
       tags: tmux
     - role: containers

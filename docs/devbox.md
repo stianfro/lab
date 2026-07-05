@@ -16,7 +16,7 @@ Host devbox
   IdentityFile ~/.ssh/id_rsa
 ```
 
-SSH password login is disabled. Use SSH public key authentication. The root disk uses the `longhorn-devbox` storage class with one replica because current lab storage capacity does not fit a larger three-replica devbox volume.
+SSH password login is disabled. Use SSH public key authentication. New root disks use the `longhorn-devbox-local` storage class with one replica because current lab storage capacity does not fit a larger three-replica devbox volume. Existing root disks created before that class may still report `longhorn-devbox`.
 
 ## First boot
 
@@ -142,3 +142,23 @@ just bench
 ```
 
 See `docs/agentic-coding-benchmarks.md` for macOS setup, profiles, result files, and comparison commands.
+
+## Storage performance
+
+The current devbox root disk is a one-replica Longhorn volume. It was originally created with disabled data locality, which allowed the VM to run on one node while the Longhorn replica lived on another node. That path adds network IO to every disk operation.
+
+For the existing root volume, Longhorn rejected switching directly to `strict-local` while the volume was attached. The live volume was temporarily switched to `best-effort`, which created a local replica on the VM node without stopping the VM. After switching the volume back to `disabled`, Longhorn kept the single replica local to `talos-p13-7d3`.
+
+The local-replica benchmark result is `.cache/bench/results/20260705T105410Z-devbox-balanced`. Compared with the earlier 8 vCPU / 32 GiB result, sequential read improved from 259 MiB/s to 626 MiB/s, sequential write from 145 MiB/s to 262 MiB/s, random mixed read from 6.7 MiB/s to 10.0 MiB/s, random mixed write from 2.9 MiB/s to 4.3 MiB/s, and fsync-heavy small writes from 1.4 MiB/s to 2.0 MiB/s.
+
+For future rebuilds, the VM template uses the `longhorn-devbox-local` storage class. It keeps one strict-local replica on the same node as the VM for lower latency. This trades away cross-node failover for better devbox IO, which is acceptable for this personal, reproducible VM because code should be pushed to Git and the machine can be rebuilt with Ansible.
+
+If the devbox is rebuilt from scratch for IO testing:
+
+1. Confirm no uncommitted or unpushed work exists inside the devbox.
+2. Stop or delete the old VM and root PVC from outside the devbox.
+3. Confirm `apps/devbox/vm.yaml` uses `storageClassName: longhorn-devbox-local` for the root disk.
+4. Reconcile Flux, wait for the VM, run `just devbox-converge`, then re-authenticate manual tools.
+5. Run `just bench` and compare with the saved benchmark results.
+
+NVMe PCI passthrough was investigated but is not suitable with the current hardware layout. Each node has one 1 TB NVMe device, and that device is the Talos install disk and Longhorn backing disk. Passing it through to the VM would break the host. NVMe passthrough would require a second dedicated NVMe device or a dedicated bare-metal devbox.

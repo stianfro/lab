@@ -87,9 +87,11 @@ The resize is useful for comfort and concurrency, especially multiple agents, la
 
 ## Storage locality note
 
-After the resize, the VM was running on `talos-p13-7d3`, while the single Longhorn replica for the root disk was running on `talos-g6p-fik`. That means the VM disk path was still crossing the network.
+After the resize, the VM was running on `talos-p13-7d3`, while the original single Longhorn replica for the root disk was running on `talos-g6p-fik`. That means the VM disk path was crossing the network during this benchmark run.
 
-This likely explains why raw IO barely changed after increasing CPU and memory. If the next goal is higher raw disk performance, storage placement or a different storage path is more likely to help than adding more vCPU.
+Longhorn rejected a direct switch to `strict-local` while the volume was attached. Switching temporarily to `best-effort` created a local replica on `talos-p13-7d3`; switching back to `disabled` left the single replica local to the VM node. A follow-up benchmark at `.cache/bench/results/20260705T105410Z-devbox-balanced` showed raw IO improvements: sequential read 259 MiB/s to 626 MiB/s, sequential write 145 MiB/s to 262 MiB/s, random mixed read 6.7 MiB/s to 10.0 MiB/s, random mixed write 2.9 MiB/s to 4.3 MiB/s, and fsync-heavy small writes 1.4 MiB/s to 2.0 MiB/s.
+
+Future rebuilds should use the repo-managed `longhorn-devbox-local` storage class, which creates one strict-local replica on the same node as the VM. Storage placement improved raw IO materially; making the VM bigger did not.
 
 ## Reading the result
 

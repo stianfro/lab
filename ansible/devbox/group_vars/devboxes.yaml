@@ -32,8 +32,10 @@ homebrew_path_entries:
 homebrew_install_url: https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh
 homebrew_packages:
   - derailed/k9s/k9s
+  - neovim
 homebrew_binary_links:
   - k9s
+  - nvim
 rustup_init_url: https://sh.rustup.rs
 uv_install_url: https://astral.sh/uv/install.sh
 apt_daily_on_calendar: "*-*-* 02:00 Asia/Tokyo"

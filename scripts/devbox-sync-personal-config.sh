@@ -177,7 +177,7 @@ UNIT
 }
 
 log "syncing to $target"
-remote_mkdir "~/.config/fish ~/.codex ~/.codex/prompts ~/.claude ~/.claude/commands ~/.claude/skills ~/.claude/hooks ~/.claude/engines ~/.claude/scripts ~/code/claude-auto ~/.config/systemd/user"
+remote_mkdir "~/.config/fish ~/.config/nvim ~/.codex ~/.codex/prompts ~/.claude ~/.claude/commands ~/.claude/skills ~/.claude/hooks ~/.claude/engines ~/.claude/scripts ~/code/claude-auto ~/.config/systemd/user"
 
 if [[ -d "$HOME/.config/fish" ]]; then
   log "copying fish config"
@@ -192,6 +192,14 @@ if [[ -d "$HOME/.config/fish" ]]; then
     --exclude 'functions/brew86.fish' \
     --exclude 'functions/fzf_key_bindings.fish' \
     "$HOME/.config/fish/" "$target:~/.config/fish/"
+fi
+
+if [[ -d "$HOME/.config/nvim" ]]; then
+  log "copying Neovim config"
+  rsync "${rsync_flags[@]}" --delete \
+    --exclude '.git/' \
+    --exclude '.nvimlog' \
+    "$HOME/.config/nvim/" "$target:~/.config/nvim/"
 fi
 
 log "copying Codex prompt files"

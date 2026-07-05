@@ -133,6 +133,24 @@
     group: "{{ devbox_user }}"
     mode: "0755"
 
+- name: Create SSH directory for devbox user
+  ansible.builtin.file:
+    path: "{{ devbox_home }}/.ssh"
+    state: directory
+    owner: "{{ devbox_user }}"
+    group: "{{ devbox_user }}"
+    mode: "0700"
+
+- name: Install extra SSH authorized keys
+  ansible.builtin.lineinfile:
+    path: "{{ devbox_home }}/.ssh/authorized_keys"
+    line: "{{ item }}"
+    create: true
+    owner: "{{ devbox_user }}"
+    group: "{{ devbox_user }}"
+    mode: "0600"
+  loop: "{{ devbox_extra_authorized_keys | default([]) }}"
+
 - name: Create local bin directory
   ansible.builtin.file:
     path: "{{ devbox_home }}/.local/bin"

@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Devbox vs M3 Pro Mac benchmark visual summary</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #0f172a;
+      --panel: #111827;
+      --panel-2: #1f2937;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --grid: #334155;
+      --devbox: #22c55e;
+      --devbox-soft: rgba(34, 197, 94, 0.20);
+      --mac: #60a5fa;
+      --mac-soft: rgba(96, 165, 250, 0.20);
+      --warn: #f59e0b;
+      --warn-soft: rgba(245, 158, 11, 0.18);
+      --border: rgba(148, 163, 184, 0.25);
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at top left, rgba(34, 197, 94, 0.20), transparent 34rem),
+        radial-gradient(circle at top right, rgba(96, 165, 250, 0.20), transparent 34rem),
+        var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    a {
+      color: #93c5fd;
+    }
+
+    .page {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 40px 0 64px;
+    }
+
+    header {
+      padding: 34px;
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      background: rgba(15, 23, 42, 0.74);
+      box-shadow: var(--shadow);
+    }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    h1, h2, h3, p {
+      margin-top: 0;
+    }
+
+    h1 {
+      max-width: 850px;
+      margin-bottom: 14px;
+      font-size: clamp(2.1rem, 4vw, 4.4rem);
+      line-height: 1.02;
+      letter-spacing: -0.04em;
+    }
+
+    .lede {
+      max-width: 850px;
+      margin-bottom: 0;
+      color: #cbd5e1;
+      font-size: 1.12rem;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .card, section {
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      background: rgba(17, 24, 39, 0.86);
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.18);
+    }
+
+    .card {
+      padding: 20px;
+    }
+
+    .card strong {
+      display: block;
+      margin-bottom: 6px;
+      color: #f8fafc;
+      font-size: clamp(1.8rem, 3vw, 3rem);
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .card span {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    section {
+      margin-top: 24px;
+      padding: 26px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 20px;
+    }
+
+    .section-head p {
+      max-width: 620px;
+      margin: 0;
+      color: var(--muted);
+    }
+
+    h2 {
+      margin-bottom: 6px;
+      font-size: clamp(1.5rem, 2vw, 2.2rem);
+      letter-spacing: -0.03em;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--devbox);
+    }
+
+    .dot.mac {
+      background: var(--mac);
+    }
+
+    .dot.warn {
+      background: var(--warn);
+    }
+
+    .ratio-list, .io-list, .storage-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .ratio-row, .io-row, .storage-row {
+      display: grid;
+      gap: 10px;
+      padding: 14px;
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      border-radius: 16px;
+      background: rgba(15, 23, 42, 0.56);
+    }
+
+    .ratio-row {
+      grid-template-columns: minmax(210px, 1.1fr) minmax(230px, 2fr) 110px;
+      align-items: center;
+    }
+
+    .name {
+      font-weight: 650;
+    }
+
+    .values {
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .bar-track {
+      min-height: 22px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.16);
+    }
+
+    .bar {
+      width: var(--pct);
+      min-width: 4px;
+      height: 22px;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--devbox-soft), var(--devbox));
+    }
+
+    .bar.mac {
+      background: linear-gradient(90deg, var(--mac-soft), var(--mac));
+    }
+
+    .bar.warn {
+      background: linear-gradient(90deg, var(--warn-soft), var(--warn));
+    }
+
+    .winner {
+      justify-self: end;
+      color: #bbf7d0;
+      font-weight: 750;
+    }
+
+    .winner.mac {
+      color: #bfdbfe;
+    }
+
+    .io-row {
+      grid-template-columns: minmax(180px, 0.8fr) minmax(280px, 2fr) minmax(280px, 2fr) 120px;
+      align-items: center;
+    }
+
+    .mini-label {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 5px;
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+
+    .storage-row {
+      grid-template-columns: minmax(180px, 0.8fr) repeat(3, minmax(150px, 1fr));
+      align-items: center;
+    }
+
+    .storage-cell .bar-track {
+      margin-top: 5px;
+    }
+
+    .note-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .note {
+      padding: 18px;
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      border-radius: 16px;
+      background: rgba(15, 23, 42, 0.56);
+    }
+
+    .note b {
+      display: block;
+      margin-bottom: 4px;
+      color: #f8fafc;
+      font-size: 1.5rem;
+      letter-spacing: -0.03em;
+    }
+
+    .note span {
+      color: var(--muted);
+    }
+
+    footer {
+      margin-top: 28px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    @media (max-width: 980px) {
+      .cards, .note-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .ratio-row, .io-row, .storage-row {
+        grid-template-columns: 1fr;
+      }
+
+      .winner {
+        justify-self: start;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .page {
+        width: min(100% - 20px, 1180px);
+        padding-top: 20px;
+      }
+
+      header, section {
+        padding: 20px;
+        border-radius: 20px;
+      }
+
+      .cards, .note-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .section-head {
+        display: block;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <p class="eyebrow">July 5, 2026 benchmark summary</p>
+      <h1>Devbox wins command loops. Strict-local storage cuts the IO gap.</h1>
+      <p class="lede">This visual summary accompanies the Markdown result doc. It compares the KubeVirt devbox to the M3 Pro Mac and shows what changed after recreating the devbox VM with the `longhorn-devbox-local` storage class.</p>
+    </header>
+
+    <div class="cards" aria-label="Main result cards">
+      <div class="card"><strong>17 of 20</strong><span>shared command benchmarks are faster on the devbox</span></div>
+      <div class="card"><strong>2.8x</strong><span>Mac command timings are slower by geometric mean</span></div>
+      <div class="card"><strong>1.6x to 2.3x</strong><span>strict-local IO gain over the cross-node Longhorn run</span></div>
+      <div class="card"><strong>2.3x</strong><span>devbox lead on fsync-heavy small writes</span></div>
+    </div>
+
+    <section aria-labelledby="command-ratios">
+      <div class="section-head">
+        <div>
+          <h2 id="command-ratios">Command-loop winners</h2>
+          <p>Lower command time is better. Bars show the winner ratio, capped against the largest devbox win in this table.</p>
+        </div>
+        <div class="legend"><span><i class="dot"></i>Devbox win</span><span><i class="dot mac"></i>Mac win</span></div>
+      </div>
+
+      <div class="ratio-list">
+        <div class="ratio-row"><div><div class="name">Fixture Git init, add, commit</div><div class="values">516 ms vs 13.2 s</div></div><div class="bar-track"><div class="bar" style="--pct: 100%"></div></div><div class="winner">25.6x</div></div>
+        <div class="ratio-row"><div><div class="name">Repo local clone and status</div><div class="values">48.2 ms vs 762 ms</div></div><div class="bar-track"><div class="bar" style="--pct: 61.7%"></div></div><div class="winner">15.8x</div></div>
+        <div class="ratio-row"><div><div class="name">Small-file create, stat, read, delete</div><div class="values">191 ms vs 1.76 s</div></div><div class="bar-track"><div class="bar" style="--pct: 35.9%"></div></div><div class="winner">9.2x</div></div>
+        <div class="ratio-row"><div><div class="name">Fixture search</div><div class="values">16.6 ms vs 138 ms</div></div><div class="bar-track"><div class="bar" style="--pct: 32.4%"></div></div><div class="winner">8.3x</div></div>
+        <div class="ratio-row"><div><div class="name">Fixture copy and edit</div><div class="values">401 ms vs 2.39 s</div></div><div class="bar-track"><div class="bar" style="--pct: 23.4%"></div></div><div class="winner">6.0x</div></div>
+        <div class="ratio-row"><div><div class="name">Repo Git status</div><div class="values">2.8 ms vs 13.7 ms</div></div><div class="bar-track"><div class="bar" style="--pct: 18.8%"></div></div><div class="winner">4.8x</div></div>
+        <div class="ratio-row"><div><div class="name">Go test probe</div><div class="values">47.2 ms vs 148 ms</div></div><div class="bar-track"><div class="bar" style="--pct: 12.1%"></div></div><div class="winner">3.1x</div></div>
+        <div class="ratio-row"><div><div class="name">Concurrent agentic mix</div><div class="values">70.6 ms vs 211 ms</div></div><div class="bar-track"><div class="bar" style="--pct: 11.7%"></div></div><div class="winner">3.0x</div></div>
+        <div class="ratio-row"><div><div class="name">Fixture scan and hash</div><div class="values">189 ms vs 494 ms</div></div><div class="bar-track"><div class="bar" style="--pct: 10.2%"></div></div><div class="winner">2.6x</div></div>
+        <div class="ratio-row"><div><div class="name">Repo manifest search</div><div class="values">4.8 ms vs 9.8 ms</div></div><div class="bar-track"><div class="bar" style="--pct: 7.8%"></div></div><div class="winner">2.0x</div></div>
+        <div class="ratio-row"><div><div class="name">just validate</div><div class="values">72.9 ms vs 65.9 ms</div></div><div class="bar-track"><div class="bar mac" style="--pct: 4.3%"></div></div><div class="winner mac">Mac 1.1x</div></div>
+        <div class="ratio-row"><div><div class="name">Repo yq all tracked YAML</div><div class="values">45.5 ms vs 37.7 ms</div></div><div class="bar-track"><div class="bar mac" style="--pct: 4.7%"></div></div><div class="winner mac">Mac 1.2x</div></div>
+        <div class="ratio-row"><div><div class="name">Repo Kustomize plus yq validate</div><div class="values">72.4 ms vs 56.5 ms</div></div><div class="bar-track"><div class="bar mac" style="--pct: 5.1%"></div></div><div class="winner mac">Mac 1.3x</div></div>
+      </div>
+    </section>
+
+    <section aria-labelledby="current-io">
+      <div class="section-head">
+        <div>
+          <h2 id="current-io">Current raw IO comparison</h2>
+          <p>Higher throughput is better. Each pair is scaled to the faster value for that benchmark.</p>
+        </div>
+        <div class="legend"><span><i class="dot"></i>Devbox strict-local</span><span><i class="dot mac"></i>M3 Pro Mac</span></div>
+      </div>
+
+      <div class="io-list">
+        <div class="io-row"><div class="name">Sequential write</div><div><div class="mini-label"><span>Devbox</span><span>262.6 MiB/s</span></div><div class="bar-track"><div class="bar" style="--pct: 7.8%"></div></div></div><div><div class="mini-label"><span>Mac</span><span>3.3 GiB/s</span></div><div class="bar-track"><div class="bar mac" style="--pct: 100%"></div></div></div><div class="winner mac">Mac 13x</div></div>
+        <div class="io-row"><div class="name">Sequential read</div><div><div class="mini-label"><span>Devbox</span><span>594.0 MiB/s</span></div><div class="bar-track"><div class="bar" style="--pct: 10.7%"></div></div></div><div><div class="mini-label"><span>Mac</span><span>5.4 GiB/s</span></div><div class="bar-track"><div class="bar mac" style="--pct: 100%"></div></div></div><div class="winner mac">Mac 9x</div></div>
+        <div class="io-row"><div class="name">Random mixed read</div><div><div class="mini-label"><span>Devbox</span><span>10.8 MiB/s</span></div><div class="bar-track"><div class="bar" style="--pct: 9.8%"></div></div></div><div><div class="mini-label"><span>Mac</span><span>110 MiB/s</span></div><div class="bar-track"><div class="bar mac" style="--pct: 100%"></div></div></div><div class="winner mac">Mac 10x</div></div>
+        <div class="io-row"><div class="name">Random mixed write</div><div><div class="mini-label"><span>Devbox</span><span>4.6 MiB/s</span></div><div class="bar-track"><div class="bar" style="--pct: 9.7%"></div></div></div><div><div class="mini-label"><span>Mac</span><span>47.5 MiB/s</span></div><div class="bar-track"><div class="bar mac" style="--pct: 100%"></div></div></div><div class="winner mac">Mac 10x</div></div>
+        <div class="io-row"><div class="name">fsync-heavy small writes</div><div><div class="mini-label"><span>Devbox</span><span>2.5 MiB/s</span></div><div class="bar-track"><div class="bar" style="--pct: 100%"></div></div></div><div><div class="mini-label"><span>Mac</span><span>1.1 MiB/s</span></div><div class="bar-track"><div class="bar mac" style="--pct: 44.0%"></div></div></div><div class="winner">Devbox 2.3x</div></div>
+      </div>
+    </section>
+
+    <section aria-labelledby="storage-locality">
+      <div class="section-head">
+        <div>
+          <h2 id="storage-locality">What strict-local storage changed</h2>
+          <p>Higher throughput is better. Bars are scaled inside each benchmark row.</p>
+        </div>
+        <div class="legend"><span><i class="dot warn"></i>Cross-node</span><span><i class="dot mac"></i>Manual local replica</span><span><i class="dot"></i>Strict-local rebuild</span></div>
+      </div>
+
+      <div class="storage-list">
+        <div class="storage-row"><div class="name">Sequential write</div><div class="storage-cell"><div class="mini-label"><span>Cross-node</span><span>145 MiB/s</span></div><div class="bar-track"><div class="bar warn" style="--pct: 55.2%"></div></div></div><div class="storage-cell"><div class="mini-label"><span>Manual local</span><span>262 MiB/s</span></div><div class="bar-track"><div class="bar mac" style="--pct: 99.8%"></div></div></div><div class="storage-cell"><div class="mini-label"><span>Strict-local</span><span>262.6 MiB/s</span></div><div class="bar-track"><div class="bar" style="--pct: 100%"></div></div></div></div>
+        <div class="storage-row"><div class="name">Sequential read</div><div class="storage-cell"><div class="mini-label"><span>Cross-node</span><span>259 MiB/s</span></div><div class="bar-track"><div class="bar warn" style="--pct: 41.4%"></div></div></div><div class="storage-cell"><div class="mini-label"><span>Manual local</span><span>626 MiB/s</span></div><div class="bar-track"><div class="bar mac" style="--pct: 100%"></div></div></div><div class="storage-cell"><div class="mini-label"><span>Strict-local</span><span>594.0 MiB/s</span></div><div class="bar-track"><div class="bar" style="--pct: 94.9%"></div></div></div></div>
+        <div class="storage-row"><div class="name">Random mixed read</div><div class="storage-cell"><div class="mini-label"><span>Cross-node</span><span>6.7 MiB/s</span></div><div class="bar-track"><div class="bar warn" style="--pct: 62.0%"></div></div></div><div class="storage-cell"><div class="mini-label"><span>Manual local</span><span>10.0 MiB/s</span></div><div class="bar-track"><div class="bar mac" style="--pct: 92.6%"></div></div></div><div class="storage-cell"><div class="mini-label"><span>Strict-local</span><span>10.8 MiB/s</span></div><div class="bar-track"><div class="bar" style="--pct: 100%"></div></div></div></div>
+        <div class="storage-row"><div class="name">Random mixed write</div><div class="storage-cell"><div class="mini-label"><span>Cross-node</span><span>2.9 MiB/s</span></div><div class="bar-track"><div class="bar warn" style="--pct: 63.0%"></div></div></div><div class="storage-cell"><div class="mini-label"><span>Manual local</span><span>4.3 MiB/s</span></div><div class="bar-track"><div class="bar mac" style="--pct: 93.5%"></div></div></div><div class="storage-cell"><div class="mini-label"><span>Strict-local</span><span>4.6 MiB/s</span></div><div class="bar-track"><div class="bar" style="--pct: 100%"></div></div></div></div>
+        <div class="storage-row"><div class="name">fsync-heavy small writes</div><div class="storage-cell"><div class="mini-label"><span>Cross-node</span><span>1.4 MiB/s</span></div><div class="bar-track"><div class="bar warn" style="--pct: 56.0%"></div></div></div><div class="storage-cell"><div class="mini-label"><span>Manual local</span><span>2.0 MiB/s</span></div><div class="bar-track"><div class="bar mac" style="--pct: 80.0%"></div></div></div><div class="storage-cell"><div class="mini-label"><span>Strict-local</span><span>2.5 MiB/s</span></div><div class="bar-track"><div class="bar" style="--pct: 100%"></div></div></div></div>
+      </div>
+    </section>
+
+    <section aria-labelledby="stability">
+      <div class="section-head">
+        <div>
+          <h2 id="stability">Strict-local rerun stability</h2>
+          <p>The latest run is close to the earlier strict-local data point at `.cache/bench/results/20260705T114216Z-devbox-balanced`.</p>
+        </div>
+      </div>
+      <div class="note-grid">
+        <div class="note"><b>1.1%</b><span>faster by timed-command geometric mean</span></div>
+        <div class="note"><b>16%</b><span>higher sequential write throughput</span></div>
+        <div class="note"><b>12%</b><span>higher fsync-heavy small-write throughput</span></div>
+        <div class="note"><b>within 3%</b><span>for sequential read and random mixed IO</span></div>
+      </div>
+    </section>
+
+    <footer>
+      <p>Full details and notes are in <a href="2026-07-05-devbox-vs-m3-pro.md">the Markdown benchmark writeup</a>. Result directory for the current devbox run: <code>.cache/bench/results/20260705T125145Z-devbox-balanced</code>.</p>
+    </footer>
+  </main>
+</body>
+</html>

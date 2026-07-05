@@ -85,6 +85,32 @@
           eval ({{ homebrew_prefix }}/bin/brew shellenv)
       end
 
+- name: List Homebrew taps
+  ansible.builtin.command:
+    argv:
+      - "{{ homebrew_prefix }}/bin/brew"
+      - tap
+  register: homebrew_tap_list
+  changed_when: false
+  become_user: "{{ devbox_user }}"
+  environment:
+    HOME: "{{ devbox_home }}"
+    PATH: "{{ homebrew_path_entries | join(':') }}"
+
+- name: Add Homebrew taps
+  ansible.builtin.command:
+    argv:
+      - "{{ homebrew_prefix }}/bin/brew"
+      - tap
+      - "{{ item }}"
+  changed_when: true
+  loop: "{{ homebrew_taps | default([]) }}"
+  when: item not in homebrew_tap_list.stdout_lines
+  become_user: "{{ devbox_user }}"
+  environment:
+    HOME: "{{ devbox_home }}"
+    PATH: "{{ homebrew_path_entries | join(':') }}"
+
 - name: Check Homebrew package state
   ansible.builtin.command:
     argv:
@@ -110,6 +136,40 @@
       - "{{ item.item }}"
   changed_when: true
   loop: "{{ homebrew_package_checks.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  when: item.rc != 0
+  become_user: "{{ devbox_user }}"
+  environment:
+    HOME: "{{ devbox_home }}"
+    PATH: "{{ homebrew_path_entries | join(':') }}"
+
+- name: Check Homebrew cask state
+  ansible.builtin.command:
+    argv:
+      - "{{ homebrew_prefix }}/bin/brew"
+      - list
+      - --cask
+      - --versions
+      - "{{ item | basename }}"
+  register: homebrew_cask_checks
+  changed_when: false
+  failed_when: false
+  loop: "{{ homebrew_casks | default([]) }}"
+  become_user: "{{ devbox_user }}"
+  environment:
+    HOME: "{{ devbox_home }}"
+    PATH: "{{ homebrew_path_entries | join(':') }}"
+
+- name: Install missing Homebrew casks
+  ansible.builtin.command:
+    argv:
+      - "{{ homebrew_prefix }}/bin/brew"
+      - install
+      - --cask
+      - "{{ item.item }}"
+  changed_when: true
+  loop: "{{ homebrew_cask_checks.results }}"
   loop_control:
     label: "{{ item.item }}"
   when: item.rc != 0

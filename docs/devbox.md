@@ -89,11 +89,12 @@ devbox is a headless Ubuntu server for terminal-first server operations.
 ## Homebrew packages
 
 Some devbox packages are installed with Homebrew for Linux when the Ubuntu
-package is missing or too old. The package list is in
-`ansible/devbox/group_vars/devboxes.yaml` under `homebrew_packages`. Ansible
-links selected binaries, including `k9s` and Homebrew's `nvim`, into
-`/usr/local/bin`. Homebrew's Neovim is used because the workstation AstroNvim
-config requires Neovim 0.10 or newer.
+package is missing or too old. The package lists are in
+`ansible/devbox/group_vars/devboxes.yaml` under `homebrew_packages` and
+`homebrew_casks`. Taps such as `intility/tap` are listed under
+`homebrew_taps`. Ansible links selected binaries, including `az`, `indev`,
+`k9s`, and Homebrew's `nvim`, into `/usr/local/bin`. Homebrew's Neovim is used
+because the workstation AstroNvim config requires Neovim 0.10 or newer.
 
 Converge the devbox after changing the list:
 

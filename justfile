@@ -44,6 +44,9 @@ devbox-tmux:
 devbox-sync-personal-config:
   DEVBOX_SSH_TARGET={{devbox_ssh_target}} scripts/devbox-sync-personal-config.sh
 
+backup-personal-config:
+  scripts/personal-config-backup.sh
+
 devbox-converge:
   #!/usr/bin/env bash
   set -euo pipefail

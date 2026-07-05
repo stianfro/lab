@@ -5,3 +5,4 @@ kubeconfig
 
 .cache/
 __pycache__/
+.backups/

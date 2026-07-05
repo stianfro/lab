@@ -9,11 +9,13 @@
       - curl
       - direnv
       - fd-find
+      - fio
       - fish
       - fzf
       - git
       - gh
       - gnupg
+      - hyperfine
       - jq
       - just
       - kubectx

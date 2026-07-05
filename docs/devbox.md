@@ -131,3 +131,14 @@ If SSH disconnects, reconnect with `just devbox-tmux`. The tmux session keeps ru
 If the VM reboots, running processes stop, but repositories, auth files, agent transcripts, and tool state remain on the Longhorn root disk.
 
 If the root disk is lost, recreate the VM through Flux, rerun `just devbox-converge`, and restore work from Git. Longhorn backup coverage can be added later.
+
+## Agentic coding benchmarks
+
+Use the repo benchmark suite to compare this devbox with the Mac for local coding loops, disk behavior, Git, search, YAML validation, and concurrent command work:
+
+```bash
+just bench-doctor
+just bench
+```
+
+See `docs/agentic-coding-benchmarks.md` for macOS setup, profiles, result files, and comparison commands.

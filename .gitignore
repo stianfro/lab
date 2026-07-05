@@ -4,3 +4,4 @@ talosconfig
 kubeconfig
 
 .cache/
+__pycache__/

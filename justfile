@@ -70,3 +70,24 @@ devbox-check-tmux-config:
 devbox-ansible-ping:
   mkdir -p .cache/ansible/tmp
   ANSIBLE_LOCAL_TEMP=.cache/ansible/tmp ANSIBLE_HOME=.cache/ansible ansible -i ansible/devbox/inventory.ini devboxes -m ping
+
+bench:
+  python3 scripts/bench/run.py balanced
+
+bench-quick:
+  python3 scripts/bench/run.py quick
+
+bench-thorough:
+  python3 scripts/bench/run.py thorough
+
+bench-cold:
+  python3 scripts/bench/run.py cold
+
+bench-doctor:
+  python3 scripts/bench/run.py doctor
+
+bench-compare left right:
+  python3 scripts/bench/compare.py "{{left}}" "{{right}}"
+
+bench-clean:
+  rm -rf .cache/bench

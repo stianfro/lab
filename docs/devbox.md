@@ -45,7 +45,7 @@ devbox:
 just devbox-converge-local-base
 ```
 
-Copy personal shell and agent prompt files from the workstation:
+Copy personal shell, Neovim, and agent prompt files from the workstation:
 
 ```bash
 just devbox-sync-personal-config
@@ -71,15 +71,16 @@ Check that the repo tmux config still matches the current workstation config:
 just devbox-check-tmux-config
 ```
 
-Sync workstation fish, Codex, and Claude prompt files after local changes:
+Sync workstation fish, Neovim, Codex, and Claude prompt files after local changes:
 
 ```bash
 just devbox-sync-personal-config
 ```
 
-The sync recipe copies allowlisted files over SSH. It does not store personal
-agent config, cloud config, auth state, SSH files, kubeconfigs, sessions, or
-generated memories in Git.
+The sync recipe copies allowlisted files over SSH. It includes the workstation
+AstroNvim config from `~/.config/nvim`, but excludes the config Git metadata and
+local Neovim logs. It does not store personal agent config, cloud config, auth
+state, SSH files, kubeconfigs, sessions, or generated memories in Git.
 
 Ansible also manages home-level agent context files. `/home/stian/AGENTS.md`
 points Codex to `/home/stian/CLAUDE.md`, which tells both agents that the
@@ -89,9 +90,10 @@ devbox is a headless Ubuntu server for terminal-first server operations.
 
 Some devbox packages are installed with Homebrew for Linux when the Ubuntu
 package is missing or too old. The package list is in
-`ansible/devbox/group_vars/devboxes.yaml` under `homebrew_packages`. The first
-managed formula is `derailed/k9s/k9s`, and Ansible links `k9s` into
-`/usr/local/bin`.
+`ansible/devbox/group_vars/devboxes.yaml` under `homebrew_packages`. Ansible
+links selected binaries, including `k9s` and Homebrew's `nvim`, into
+`/usr/local/bin`. Homebrew's Neovim is used because the workstation AstroNvim
+config requires Neovim 0.10 or newer.
 
 Converge the devbox after changing the list:
 

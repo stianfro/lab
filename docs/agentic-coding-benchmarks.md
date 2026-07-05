@@ -13,6 +13,11 @@ This benchmark suite compares machines for local work that affects Codex, Claude
 
 Results are written under `.cache/bench/results/` and are not tracked by Git.
 
+
+## Published results
+
+- [July 5, 2026: lab KubeVirt devbox vs M3 Pro Mac](benchmarks/2026-07-05-devbox-vs-m3-pro.md)
+
 ## Install tools
 
 On the devbox, converge Ansible after pulling the benchmark changes:

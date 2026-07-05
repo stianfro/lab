@@ -63,6 +63,11 @@
   environment:
     HOME: "{{ devbox_home }}"
 
+- name: Enable systemd lingering for devbox user
+  ansible.builtin.command:
+    cmd: loginctl enable-linger {{ devbox_user }}
+    creates: /var/lib/systemd/linger/{{ devbox_user }}
+
 - name: Install Codex CLI
   ansible.builtin.shell: "curl -fsSL {{ codex_install_url }} | CODEX_NON_INTERACTIVE=1 sh"
   args:

@@ -129,14 +129,55 @@ filtered = {
     if key in cfg
 }
 
+# Linux-safe hooks only: register the SessionStart execution-engine hook.
+# The macOS afplay Notification/Stop hooks are intentionally dropped, and
+# statusLine is left out (its scripts are not ported to the devbox).
+filtered["hooks"] = {
+    "SessionStart": [
+        {
+            "hooks": [
+                {
+                    "type": "command",
+                    "command": 'bash "$HOME/.claude/hooks/minato-exec-engine.sh"',
+                }
+            ]
+        }
+    ]
+}
+
 dest.write_text(json.dumps(filtered, indent=2, sort_keys=True) + "\n")
 PY
 
   rsync "${rsync_flags[@]}" "$dest" "$target:~/.claude/settings.json"
 }
 
+generate_proxy_service() {
+  local dest="$tmpdir/claude-anthropic-proxy.service"
+
+  cat >"$dest" <<'UNIT'
+[Unit]
+Description=Claude Anthropic-only auto-mode proxy (mitmdump)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=%h/.local/bin/mitmdump --listen-host 127.0.0.1 --listen-port 48080 --allow-hosts 'api\\.anthropic\\.com' -s %h/code/claude-auto/inject_config.py --quiet
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target
+UNIT
+
+  rsync "${rsync_flags[@]}" "$dest" "$target:~/.config/systemd/user/claude-anthropic-proxy.service"
+
+  if [[ "$dry_run" != "1" ]]; then
+    ssh "$target" "systemctl --user daemon-reload && systemctl --user enable --now claude-anthropic-proxy.service"
+  fi
+}
+
 log "syncing to $target"
-remote_mkdir "~/.config/fish ~/.codex ~/.codex/prompts ~/.claude ~/.claude/commands ~/.claude/skills"
+remote_mkdir "~/.config/fish ~/.codex ~/.codex/prompts ~/.claude ~/.claude/commands ~/.claude/skills ~/.claude/hooks ~/.claude/engines ~/.claude/scripts ~/code/claude-auto ~/.config/systemd/user"
 
 if [[ -d "$HOME/.config/fish" ]]; then
   log "copying fish config"
@@ -177,5 +218,13 @@ if [[ -d "$HOME/.claude/skills" ]]; then
     "$HOME/.claude/skills/" "$target:~/.claude/skills/"
 fi
 generate_claude_settings
+
+log "copying agent delegation config"
+rsync_if_exists "$HOME/.claude/hooks/minato-exec-engine.sh" "$target:~/.claude/hooks/minato-exec-engine.sh"
+rsync_if_exists "$HOME/.claude/engines/minato-codex-exec.md" "$target:~/.claude/engines/minato-codex-exec.md"
+rsync_if_exists "$HOME/.claude/scripts/codex-pane.sh" "$target:~/.claude/scripts/codex-pane.sh"
+rsync_if_exists "$HOME/code/claude-auto/inject_config.py" "$target:~/code/claude-auto/inject_config.py"
+rsync_if_exists "$HOME/code/claude-auto/remote_settings_automode.py" "$target:~/code/claude-auto/remote_settings_automode.py"
+generate_proxy_service
 
 log "done"

@@ -12,10 +12,10 @@ spec:
     spec:
       domain:
         cpu:
-          cores: 4
+          cores: 8
         resources:
           requests:
-            memory: 16Gi
+            memory: 32Gi
         devices:
           disks:
             - name: rootdisk

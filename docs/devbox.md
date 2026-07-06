@@ -65,6 +65,18 @@ Open a plain SSH shell:
 just devbox-ssh
 ```
 
+Both SSH recipes start a local browser bridge on the workstation. OAuth
+authorization code flows on the devbox use `/usr/local/bin/devbox-browser`
+through `BROWSER` and the `xdg-open` wrapper. The opener sends browser URLs back
+through the SSH reverse forward, the workstation opens them in the local browser,
+and any localhost callback port from the `redirect_uri` is temporarily forwarded
+back to the devbox.
+
+If you connect without the `just` recipes, the opener prints the URL, saves it
+to `~/.cache/devbox-browser/last-url`, and tries to copy it with OSC 52. For
+flows that redirect to localhost, it also prints the matching `ssh -L` command
+to run on the Mac before opening the URL.
+
 Check that the repo tmux config still matches the current workstation config:
 
 ```bash
@@ -89,11 +101,12 @@ devbox is a headless Ubuntu server for terminal-first server operations.
 ## Homebrew packages
 
 Some devbox packages are installed with Homebrew for Linux when the Ubuntu
-package is missing or too old. The package list is in
-`ansible/devbox/group_vars/devboxes.yaml` under `homebrew_packages`. Ansible
-links selected binaries, including `k9s` and Homebrew's `nvim`, into
-`/usr/local/bin`. Homebrew's Neovim is used because the workstation AstroNvim
-config requires Neovim 0.10 or newer.
+package is missing or too old. The package lists are in
+`ansible/devbox/group_vars/devboxes.yaml` under `homebrew_packages` and
+`homebrew_casks`. Taps such as `intility/tap` are listed under
+`homebrew_taps`. Ansible links selected binaries, including `az`, `indev`,
+`k9s`, and Homebrew's `nvim`, into `/usr/local/bin`. Homebrew's Neovim is used
+because the workstation AstroNvim config requires Neovim 0.10 or newer.
 
 Converge the devbox after changing the list:
 

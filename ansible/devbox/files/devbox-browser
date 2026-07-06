@@ -1,0 +1,138 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+find_url() {
+  local arg
+  for arg in "$@"; do
+    case "$arg" in
+      http://*|https://*)
+        printf '%s\n' "$arg"
+        return 0
+        ;;
+    esac
+  done
+  return 1
+}
+
+post_to_bridge() {
+  local url="$1"
+  local port="$2"
+  python3 - "$url" "$port" <<'PY'
+import http.client
+import json
+import sys
+
+url = sys.argv[1]
+port = int(sys.argv[2])
+body = json.dumps({"url": url}).encode("utf-8")
+conn = http.client.HTTPConnection("127.0.0.1", port, timeout=2)
+try:
+    conn.request("POST", "/open", body, {"Content-Type": "application/json"})
+    response = conn.getresponse()
+    response.read()
+except OSError:
+    sys.exit(1)
+finally:
+    conn.close()
+
+sys.exit(0 if 200 <= response.status < 300 else 1)
+PY
+}
+
+redirect_port() {
+  local url="$1"
+  python3 - "$url" <<'PY'
+import sys
+import urllib.parse
+
+local_hosts = {"localhost", "127.0.0.1", "::1"}
+url = sys.argv[1]
+parsed = urllib.parse.urlparse(url)
+query_parts = [parsed.query]
+if parsed.fragment:
+    fragment = urllib.parse.urlparse(parsed.fragment)
+    query_parts.append(fragment.query or parsed.fragment)
+
+for query in query_parts:
+    for key, value in urllib.parse.parse_qsl(query, keep_blank_values=True):
+        if key != "redirect_uri" or not value:
+            continue
+        redirect = urllib.parse.urlparse(value)
+        if (redirect.hostname or "").lower() not in local_hosts:
+            continue
+        try:
+            port = redirect.port
+        except ValueError:
+            continue
+        if port:
+            print(port)
+            raise SystemExit(0)
+PY
+}
+
+terminal_output() {
+  if [[ -w /dev/tty ]]; then
+    printf '%s' /dev/tty
+  else
+    printf '%s' /dev/stderr
+  fi
+}
+
+copy_to_terminal_clipboard() {
+  local url="$1"
+  local output="$2"
+  local encoded
+  if ! command -v base64 >/dev/null 2>&1; then
+    return 0
+  fi
+  encoded="$(printf '%s' "$url" | base64 | tr -d '\n')"
+  printf '\033]52;c;%s\a' "$encoded" >"$output" 2>/dev/null || true
+}
+
+fallback_message() {
+  local url="$1"
+  local output="$2"
+  local port target
+  port="$(redirect_port "$url" || true)"
+  target="${DEVBOX_OAUTH_SSH_TARGET:-stian@192.168.1.51}"
+
+  {
+    printf '\nNo Mac browser bridge is connected.\n'
+    printf 'Open this URL in your Mac browser:\n'
+    printf '\033]8;;%s\aOpen OAuth URL on Mac\033]8;;\a\n' "$url"
+    printf '%s\n' "$url"
+    if [[ -n "$port" ]]; then
+      printf '\nThis flow redirects to localhost:%s. Run this on your Mac before opening the URL:\n' "$port"
+      printf 'ssh -N -L 127.0.0.1:%s:127.0.0.1:%s %q\n' "$port" "$port" "$target"
+    fi
+    printf '\nSaved the URL to ~/.cache/devbox-browser/last-url and tried to copy it with OSC 52.\n\n'
+  } >"$output"
+}
+
+main() {
+  local url output cache_dir bridge_port
+  url="$(find_url "$@" || true)"
+  if [[ -z "$url" ]]; then
+    if [[ "$(basename "$0")" == "xdg-open" && -x /usr/bin/xdg-open ]]; then
+      exec /usr/bin/xdg-open "$@"
+    fi
+    printf 'devbox-browser: expected an http or https URL\n' >&2
+    return 1
+  fi
+
+  bridge_port="${DEVBOX_BROWSER_BRIDGE_PORT:-48765}"
+  if post_to_bridge "$url" "$bridge_port"; then
+    return 0
+  fi
+
+  cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/devbox-browser"
+  mkdir -p "$cache_dir"
+  printf '%s\n' "$url" >"$cache_dir/last-url"
+
+  output="$(terminal_output)"
+  fallback_message "$url" "$output"
+  copy_to_terminal_clipboard "$url" "$output"
+  return 0
+}
+
+main "$@"

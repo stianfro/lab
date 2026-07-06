@@ -77,6 +77,37 @@ to `~/.cache/devbox-browser/last-url`, and tries to copy it with OSC 52. For
 flows that redirect to localhost, it also prints the matching `ssh -L` command
 to run on the Mac before opening the URL.
 
+The SSH recipes also expose a SOCKS proxy on the devbox at
+`socks5h://127.0.0.1:48767`. The proxy is backed by the Mac SSH client, so it
+can reach endpoints that are only routed by the Mac VPN. It is opt-in to avoid
+sending normal devbox traffic through the Mac.
+
+Run one command through the Mac relay:
+
+```bash
+macrelay curl https://vpn-only.example.com
+```
+
+In a fish session, turn the relay proxy environment on and off:
+
+```fish
+macrelay-on
+curl https://vpn-only.example.com
+macrelay-off
+```
+
+For POSIX shells, use `macrelay_on` and `macrelay_off`, or run
+`eval "$(devbox-mac-relay env)"`. If you already have a devbox shell open
+without the relay, keep just the relay up from the Mac:
+
+```bash
+just devbox-relay
+```
+
+This covers tools that honor `HTTP_PROXY`, `HTTPS_PROXY`, or `ALL_PROXY`. Tools
+that ignore proxy environment variables need an app-specific proxy setting or a
+dedicated SSH port forward.
+
 Check that the repo tmux config still matches the current workstation config:
 
 ```bash

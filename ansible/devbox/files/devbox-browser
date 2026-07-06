@@ -48,6 +48,22 @@ import urllib.parse
 local_hosts = {"localhost", "127.0.0.1", "::1"}
 url = sys.argv[1]
 parsed = urllib.parse.urlparse(url)
+
+def local_callback_port(candidate):
+    if candidate.scheme not in {"http", "https"}:
+        return None
+    if (candidate.hostname or "").lower() not in local_hosts:
+        return None
+    try:
+        return candidate.port
+    except ValueError:
+        return None
+
+port = local_callback_port(parsed)
+if port:
+    print(port)
+    raise SystemExit(0)
+
 query_parts = [parsed.query]
 if parsed.fragment:
     fragment = urllib.parse.urlparse(parsed.fragment)
@@ -58,12 +74,7 @@ for query in query_parts:
         if key != "redirect_uri" or not value:
             continue
         redirect = urllib.parse.urlparse(value)
-        if (redirect.hostname or "").lower() not in local_hosts:
-            continue
-        try:
-            port = redirect.port
-        except ValueError:
-            continue
+        port = local_callback_port(redirect)
         if port:
             print(port)
             raise SystemExit(0)
@@ -71,7 +82,7 @@ PY
 }
 
 terminal_output() {
-  if [[ -w /dev/tty ]]; then
+  if [[ -t 1 || -t 2 ]]; then
     printf '%s' /dev/tty
   else
     printf '%s' /dev/stderr

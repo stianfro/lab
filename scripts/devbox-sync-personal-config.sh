@@ -182,7 +182,7 @@ UNIT
 }
 
 log "syncing to $target"
-remote_mkdir "~/.config/fish ~/.config/nvim ~/.codex ~/.codex/prompts ~/.claude ~/.claude/commands ~/.claude/skills ~/.claude/hooks ~/.claude/engines ~/.claude/scripts ~/code/claude-auto ~/.config/systemd/user"
+remote_mkdir "~/.config/fish ~/.config/nvim ~/.codex ~/.codex/prompts ~/.claude ~/.claude/commands ~/.claude/skills ~/.claude/hooks ~/.claude/engines ~/.claude/scripts ~/.claude/usage ~/.local/bin ~/code/claude-auto ~/.config/systemd/user"
 
 if [[ -d "$HOME/.config/fish" ]]; then
   log "copying fish config"
@@ -233,11 +233,17 @@ fi
 generate_claude_settings
 
 log "copying Claude local settings and statusline scripts"
+rsync_if_exists "$HOME/.claude/justfile" "$target:~/.claude/justfile"
 rsync_if_exists "$HOME/.claude/settings.local.json" "$target:~/.claude/settings.local.json"
 rsync_if_exists "$HOME/.claude/scripts/statusline.sh" "$target:~/.claude/scripts/statusline.sh"
 rsync_if_exists "$HOME/.claude/scripts/statusline-spend-refresh.sh" "$target:~/.claude/scripts/statusline-spend-refresh.sh"
 rsync_if_exists "$HOME/.claude/scripts/usage-tracker.py" "$target:~/.claude/scripts/usage-tracker.py"
+rsync_if_exists "$HOME/.claude/scripts/usage-dashboard.html.tmpl" "$target:~/.claude/scripts/usage-dashboard.html.tmpl"
 rsync_if_exists "$HOME/.claude/scripts/claude-usage" "$target:~/.claude/scripts/claude-usage"
+rsync_if_exists "$HOME/.claude/usage/pricing.json" "$target:~/.claude/usage/pricing.json"
+if [[ "$dry_run" != "1" ]]; then
+  ssh "$target" "ln -sfn ~/.claude/scripts/claude-usage ~/.local/bin/claude-usage"
+fi
 
 log "copying agent delegation config"
 rsync_if_exists "$HOME/.claude/hooks/minato-exec-engine.sh" "$target:~/.claude/hooks/minato-exec-engine.sh"

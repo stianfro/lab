@@ -121,6 +121,11 @@ safe_keys = [
     "teammateMode",
     "skipAutoPermissionPrompt",
     "voiceEnabled",
+    "statusLine",
+    "enabledPlugins",
+    "extraKnownMarketplaces",
+    "disableAgentView",
+    "enableWorkflows",
 ]
 
 filtered = {
@@ -130,8 +135,8 @@ filtered = {
 }
 
 # Linux-safe hooks only: register the SessionStart execution-engine hook.
-# The macOS afplay Notification/Stop hooks are intentionally dropped, and
-# statusLine is left out (its scripts are not ported to the devbox).
+# The macOS afplay Notification/Stop hooks are intentionally dropped. The
+# statusLine scripts are cross-platform and synced by this script.
 filtered["hooks"] = {
     "SessionStart": [
         {
@@ -226,6 +231,13 @@ if [[ -d "$HOME/.claude/skills" ]]; then
     "$HOME/.claude/skills/" "$target:~/.claude/skills/"
 fi
 generate_claude_settings
+
+log "copying Claude local settings and statusline scripts"
+rsync_if_exists "$HOME/.claude/settings.local.json" "$target:~/.claude/settings.local.json"
+rsync_if_exists "$HOME/.claude/scripts/statusline.sh" "$target:~/.claude/scripts/statusline.sh"
+rsync_if_exists "$HOME/.claude/scripts/statusline-spend-refresh.sh" "$target:~/.claude/scripts/statusline-spend-refresh.sh"
+rsync_if_exists "$HOME/.claude/scripts/usage-tracker.py" "$target:~/.claude/scripts/usage-tracker.py"
+rsync_if_exists "$HOME/.claude/scripts/claude-usage" "$target:~/.claude/scripts/claude-usage"
 
 log "copying agent delegation config"
 rsync_if_exists "$HOME/.claude/hooks/minato-exec-engine.sh" "$target:~/.claude/hooks/minato-exec-engine.sh"

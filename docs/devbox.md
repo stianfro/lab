@@ -65,6 +65,33 @@ Open a plain SSH shell:
 just devbox-ssh
 ```
 
+Open devbox HTML artifacts from the Mac:
+
+```text
+http://devbox/<path>
+http://192.168.1.51/usage.html
+```
+
+Add `192.168.1.51 devbox` to the Mac hosts file for the short hostname. The
+`devbox-html-server` systemd service serves files from `~/public_html` on direct
+paths. For example, `~/public_html/reports/status.html` is available at
+`http://devbox/reports/status.html`. The `/usage.html` route refreshes
+`~/.claude/usage/usage.html` through `claude-usage html --no-open` before
+returning the page.
+
+Agents can use the `devbox-html` helper:
+
+```bash
+out="$(devbox-html path reports/status.html)"
+devbox-html url reports/status.html
+devbox-html open reports/status.html
+```
+
+Do not put secrets, tokens, private logs, auth files, kubeconfigs, SSH keys, or
+sensitive transcripts under `~/public_html`. The VM template and LoadBalancer
+publish port 80, but a running VM only picks up new KubeVirt interface ports
+after its next normal restart.
+
 Both SSH recipes start a local browser bridge on the workstation. OAuth
 authorization code flows on the devbox use `/usr/local/bin/devbox-browser`
 through `BROWSER` and the `xdg-open` wrapper. The opener sends browser URLs back

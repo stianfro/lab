@@ -1,0 +1,115 @@
+#!/usr/bin/env python3
+"""Helper for creating and opening devbox HTML artifact paths."""
+
+from __future__ import annotations
+
+import argparse
+import os
+import pathlib
+import subprocess
+import sys
+import urllib.parse
+
+
+DEFAULT_HOME = pathlib.Path("/home/stian")
+DEFAULT_ROOT = DEFAULT_HOME / "public_html"
+DEFAULT_BASE_URL = "http://devbox"
+
+
+def clean_relative(raw: str) -> pathlib.PurePosixPath:
+    value = raw.strip()
+    if not value:
+        raise ValueError("path must not be empty")
+    parsed = urllib.parse.urlsplit(value)
+    if parsed.scheme or parsed.netloc:
+        value = parsed.path
+    value = urllib.parse.unquote(value).lstrip("/")
+    rel = pathlib.PurePosixPath(value)
+    if rel.is_absolute() or ".." in rel.parts:
+        raise ValueError("path must stay under ~/public_html")
+    if str(rel) in {".", ""}:
+        raise ValueError("path must name a file or directory under ~/public_html")
+    return rel
+
+
+def resolve_path(root: pathlib.Path, rel: pathlib.PurePosixPath) -> pathlib.Path:
+    target = (root / pathlib.Path(*rel.parts)).resolve()
+    try:
+        target.relative_to(root.resolve())
+    except ValueError as exc:
+        raise ValueError("path must stay under ~/public_html") from exc
+    return target
+
+
+def url_for(base_url: str, rel: pathlib.PurePosixPath) -> str:
+    quoted = "/".join(urllib.parse.quote(part) for part in rel.parts)
+    return base_url.rstrip("/") + "/" + quoted
+
+
+def root_path() -> pathlib.Path:
+    return pathlib.Path(os.environ.get("DEVBOX_HTML_ROOT", str(DEFAULT_ROOT)))
+
+
+def base_url() -> str:
+    return os.environ.get("DEVBOX_HTML_BASE_URL", DEFAULT_BASE_URL)
+
+
+def cmd_path(args: argparse.Namespace) -> int:
+    root = root_path()
+    rel = clean_relative(args.path)
+    target = resolve_path(root, rel)
+    if args.directory:
+        target.mkdir(parents=True, exist_ok=True)
+    else:
+        target.parent.mkdir(parents=True, exist_ok=True)
+    print(target)
+    return 0
+
+
+def cmd_url(args: argparse.Namespace) -> int:
+    print(url_for(base_url(), clean_relative(args.path)))
+    return 0
+
+
+def cmd_open(args: argparse.Namespace) -> int:
+    url = url_for(base_url(), clean_relative(args.path))
+    print(url)
+    opener = os.environ.get("BROWSER") or "xdg-open"
+    try:
+        subprocess.run([opener, url], check=False)
+    except FileNotFoundError:
+        pass
+    return 0
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Work with devbox HTML artifact paths")
+    sub = parser.add_subparsers(required=True)
+
+    path_parser = sub.add_parser("path", help="print a ~/public_html path and create its parent")
+    path_parser.add_argument("path")
+    path_parser.add_argument("--directory", action="store_true", help="create the path as a directory")
+    path_parser.set_defaults(func=cmd_path)
+
+    url_parser = sub.add_parser("url", help="print the devbox URL for a public path")
+    url_parser.add_argument("path")
+    url_parser.set_defaults(func=cmd_url)
+
+    open_parser = sub.add_parser("open", help="print and open the devbox URL")
+    open_parser.add_argument("path")
+    open_parser.set_defaults(func=cmd_open)
+
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    try:
+        return args.func(args)
+    except ValueError as exc:
+        print(f"devbox-html: {exc}", file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

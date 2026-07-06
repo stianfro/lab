@@ -1,0 +1,224 @@
+#!/usr/bin/env python3
+"""Serve devbox HTML artifacts and the Claude usage dashboard."""
+
+from __future__ import annotations
+
+import argparse
+import html
+import http.server
+import mimetypes
+import os
+import pathlib
+import posixpath
+import subprocess
+import sys
+import urllib.parse
+
+
+DEFAULT_HOME = pathlib.Path("/home/stian")
+DEFAULT_PUBLIC_ROOT = DEFAULT_HOME / "public_html"
+DEFAULT_USAGE_HTML = DEFAULT_HOME / ".claude" / "usage" / "usage.html"
+DEFAULT_CLI_PATHS = (
+    DEFAULT_HOME / ".local" / "bin" / "claude-usage",
+    DEFAULT_HOME / ".claude" / "scripts" / "claude-usage",
+)
+
+
+class Config:
+    def __init__(self, public_root: pathlib.Path, usage_html: pathlib.Path) -> None:
+        self.public_root = public_root.resolve()
+        self.usage_html = usage_html
+
+
+def find_cli() -> pathlib.Path | None:
+    for path in DEFAULT_CLI_PATHS:
+        if path.exists() and os.access(path, os.X_OK):
+            return path
+    return None
+
+
+def safe_target(public_root: pathlib.Path, request_path: str) -> pathlib.Path | None:
+    raw_path = urllib.parse.unquote(request_path.split("?", 1)[0])
+    normalized = posixpath.normpath(raw_path)
+    if normalized in {".", "/"}:
+        normalized = "/"
+    rel = normalized.lstrip("/")
+    target = (public_root / rel).resolve()
+    try:
+        target.relative_to(public_root)
+    except ValueError:
+        return None
+    return target
+
+
+def html_page(title: str, body: str) -> bytes:
+    return (
+        "<!doctype html>\n"
+        "<html lang=\"en\">\n"
+        "<head>\n"
+        "<meta charset=\"utf-8\">\n"
+        "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n"
+        f"<title>{html.escape(title)}</title>\n"
+        "<style>body{font:16px system-ui,sans-serif;max-width:900px;margin:2rem auto;padding:0 1rem;line-height:1.5}"
+        "a{color:#2563eb}code{background:#f1f5f9;padding:.1rem .25rem;border-radius:.25rem}"
+        "li{margin:.25rem 0}.muted{color:#64748b}</style>\n"
+        "</head>\n"
+        f"<body>{body}</body>\n"
+        "</html>\n"
+    ).encode("utf-8")
+
+
+class DevboxHtmlHandler(http.server.BaseHTTPRequestHandler):
+    server_version = "devbox-html-server/1.0"
+
+    def do_GET(self) -> None:
+        self.handle_request(send_body=True)
+
+    def do_HEAD(self) -> None:
+        self.handle_request(send_body=False)
+
+    def handle_request(self, send_body: bool) -> None:
+        path = urllib.parse.urlsplit(self.path).path
+        if path == "/usage.html":
+            self.serve_usage(send_body)
+            return
+        self.serve_public_path(path, send_body)
+
+    @property
+    def config(self) -> Config:
+        return self.server.config  # type: ignore[attr-defined]
+
+    def serve_usage(self, send_body: bool) -> None:
+        refreshed = self.refresh_usage_html()
+        usage_html = self.config.usage_html
+        if not usage_html.is_file():
+            if refreshed:
+                self.send_error(404, "usage.html not found")
+            else:
+                self.send_error(503, "usage dashboard is not generated yet")
+            return
+        self.serve_file(usage_html, send_body, no_store=True)
+
+    def refresh_usage_html(self) -> bool:
+        cli = find_cli()
+        if cli is None:
+            print("devbox-html-server: claude-usage CLI not found", file=sys.stderr)
+            return False
+
+        env = os.environ.copy()
+        env["HOME"] = str(DEFAULT_HOME)
+        env["CLAUDE_USAGE_NO_OPEN"] = "1"
+        try:
+            subprocess.run(
+                [str(cli), "html", "--no-open"],
+                check=True,
+                env=env,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.PIPE,
+                timeout=120,
+            )
+            return True
+        except subprocess.TimeoutExpired:
+            print("devbox-html-server: claude-usage refresh timed out", file=sys.stderr)
+        except subprocess.CalledProcessError as exc:
+            stderr = exc.stderr.decode("utf-8", errors="replace").strip()
+            print(f"devbox-html-server: claude-usage refresh failed: {stderr}", file=sys.stderr)
+        return False
+
+    def serve_public_path(self, path: str, send_body: bool) -> None:
+        target = safe_target(self.config.public_root, path)
+        if target is None:
+            self.send_error(403, "outside public root")
+            return
+        if target.is_dir():
+            index = target / "index.html"
+            if index.is_file():
+                self.serve_file(index, send_body)
+            else:
+                self.serve_directory(target, path, send_body)
+            return
+        if target.is_file():
+            self.serve_file(target, send_body)
+            return
+        self.send_error(404, "not found")
+
+    def serve_file(self, path: pathlib.Path, send_body: bool, no_store: bool = False) -> None:
+        body = path.read_bytes()
+        content_type = mimetypes.guess_type(str(path))[0] or "application/octet-stream"
+        if path.suffix.lower() in {".html", ".htm"}:
+            content_type = "text/html; charset=utf-8"
+        elif content_type.startswith("text/"):
+            content_type = f"{content_type}; charset=utf-8"
+
+        self.send_response(200)
+        self.send_header("Content-Type", content_type)
+        if no_store:
+            self.send_header("Cache-Control", "no-store")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        if send_body:
+            self.wfile.write(body)
+
+    def serve_directory(self, directory: pathlib.Path, request_path: str, send_body: bool) -> None:
+        rel = directory.relative_to(self.config.public_root)
+        title = "/" if str(rel) == "." else f"/{rel.as_posix()}/"
+        base_path = urllib.parse.quote("" if str(rel) == "." else rel.as_posix().strip("/"))
+        prefix = f"/{base_path}/" if base_path else "/"
+        items = []
+        if str(rel) != ".":
+            parent = "/" + urllib.parse.quote(rel.parent.as_posix()) if str(rel.parent) != "." else "/"
+            items.append(f'<li><a href="{parent}">../</a></li>')
+        for child in sorted(directory.iterdir(), key=lambda p: (not p.is_dir(), p.name.lower())):
+            name = child.name + ("/" if child.is_dir() else "")
+            href = prefix + urllib.parse.quote(name)
+            items.append(f'<li><a href="{href}">{html.escape(name)}</a></li>')
+        body = (
+            f"<h1>{html.escape(title)}</h1>"
+            '<p class="muted">Files are served from <code>~/public_html</code>.</p>'
+            "<ul>"
+            + "\n".join(items)
+            + "</ul>"
+        )
+        payload = html_page(f"devbox {title}", body)
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(payload)))
+        self.end_headers()
+        if send_body:
+            self.wfile.write(payload)
+
+    def log_message(self, fmt: str, *args: object) -> None:
+        print(f"{self.address_string()} - {fmt % args}", file=sys.stderr)
+
+
+class DevboxHtmlServer(http.server.ThreadingHTTPServer):
+    def __init__(self, address: tuple[str, int], handler: type[DevboxHtmlHandler], config: Config) -> None:
+        self.config = config
+        super().__init__(address, handler)
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Serve ~/public_html and /usage.html")
+    parser.add_argument("--host", default="0.0.0.0")
+    parser.add_argument("--port", type=int, default=80)
+    parser.add_argument("--public-root", default=os.environ.get("DEVBOX_HTML_ROOT", str(DEFAULT_PUBLIC_ROOT)))
+    parser.add_argument("--usage-html", default=os.environ.get("DEVBOX_USAGE_HTML", str(DEFAULT_USAGE_HTML)))
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    public_root = pathlib.Path(args.public_root)
+    public_root.mkdir(parents=True, exist_ok=True)
+    config = Config(public_root=public_root, usage_html=pathlib.Path(args.usage_html))
+    server = DevboxHtmlServer((args.host, args.port), DevboxHtmlHandler, config)
+    print(
+        f"devbox-html-server: serving {config.public_root} on {args.host}:{args.port}",
+        file=sys.stderr,
+    )
+    server.serve_forever()
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

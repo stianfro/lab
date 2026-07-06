@@ -127,6 +127,15 @@
       Do not assume a GUI, clipboard, browser, or macOS tools are available. Do
       not store secrets in Git.
 
+      ## Devbox HTML Artifacts
+
+      Use the `devbox-html` skill and helper when a user asks for an HTML page,
+      visual report, static artifact, browser-viewable note, or small local web
+      app. Write public files under `/home/stian/public_html`, then share the
+      matching `http://devbox/<path>` URL. Never put secrets, tokens, private
+      logs, auth files, kubeconfigs, SSH keys, or sensitive transcripts in that
+      public directory.
+
 - name: Link Codex CLI into system path
   ansible.builtin.file:
     src: "{{ devbox_home }}/.local/bin/codex"
@@ -182,3 +191,105 @@
     dest: /usr/local/bin/cargo
     state: link
     force: true
+
+- name: Create public HTML directory
+  ansible.builtin.file:
+    path: "{{ devbox_html_root }}"
+    state: directory
+    owner: "{{ devbox_user }}"
+    group: "{{ devbox_user }}"
+    mode: "0755"
+
+- name: Install devbox HTML server
+  ansible.builtin.copy:
+    src: devbox-html-server
+    dest: /usr/local/bin/devbox-html-server
+    owner: root
+    group: root
+    mode: "0755"
+  notify: Restart devbox HTML service
+
+- name: Install devbox HTML helper
+  ansible.builtin.copy:
+    src: devbox-html
+    dest: /usr/local/bin/devbox-html
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Install Claude devbox HTML skill
+  ansible.builtin.copy:
+    src: agent-skills/devbox-html/
+    dest: "{{ devbox_home }}/.claude/skills/devbox-html/"
+    owner: "{{ devbox_user }}"
+    group: "{{ devbox_user }}"
+    mode: preserve
+
+- name: Install Codex devbox HTML skill
+  ansible.builtin.copy:
+    src: agent-skills/devbox-html/
+    dest: "{{ devbox_home }}/.codex/skills/devbox-html/"
+    owner: "{{ devbox_user }}"
+    group: "{{ devbox_user }}"
+    mode: preserve
+
+- name: Stop legacy Claude usage web service
+  ansible.builtin.systemd:
+    name: devbox-usage-web.service
+    enabled: false
+    state: stopped
+  failed_when: false
+
+- name: Remove legacy Claude usage web service unit
+  ansible.builtin.file:
+    path: /etc/systemd/system/devbox-usage-web.service
+    state: absent
+  notify: Reload systemd daemon
+
+- name: Remove legacy Claude usage web helper
+  ansible.builtin.file:
+    path: /usr/local/bin/devbox-usage-web
+    state: absent
+
+- name: Install devbox HTML service
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/devbox-html-server.service
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=Devbox HTML artifact server
+      After=network-online.target
+      Wants=network-online.target
+
+      [Service]
+      Type=simple
+      User={{ devbox_user }}
+      Group={{ devbox_user }}
+      WorkingDirectory={{ devbox_home }}
+      Environment=HOME={{ devbox_home }}
+      Environment=CLAUDE_USAGE_NO_OPEN=1
+      Environment=DEVBOX_HTML_ROOT={{ devbox_html_root }}
+      Environment=DEVBOX_HTML_BASE_URL={{ devbox_html_base_url }}
+      Environment=DEVBOX_USAGE_HTML={{ devbox_home }}/.claude/usage/usage.html
+      ExecStart=/usr/local/bin/devbox-html-server --host {{ devbox_html_bind }} --port {{ devbox_html_port }} --public-root {{ devbox_html_root }}
+      Restart=on-failure
+      RestartSec=5
+      AmbientCapabilities=CAP_NET_BIND_SERVICE
+      CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+      NoNewPrivileges=true
+      PrivateTmp=true
+
+      [Install]
+      WantedBy=multi-user.target
+  notify:
+    - Reload systemd daemon
+    - Restart devbox HTML service
+
+- name: Enable devbox HTML service
+  ansible.builtin.systemd:
+    name: devbox-html-server.service
+    enabled: true
+    state: started
+    daemon_reload: true

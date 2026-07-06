@@ -1,0 +1,6 @@
+interface:
+  display_name: "Devbox HTML"
+  short_description: "Publish HTML artifacts from the devbox"
+  default_prompt: "Use $devbox-html to publish an HTML artifact on the devbox."
+policy:
+  allow_implicit_invocation: true

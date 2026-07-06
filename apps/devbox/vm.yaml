@@ -32,6 +32,9 @@ spec:
                 - name: ssh
                   port: 22
                   protocol: TCP
+                - name: http
+                  port: 80
+                  protocol: TCP
                 - name: node-exporter
                   port: 9100
                   protocol: TCP

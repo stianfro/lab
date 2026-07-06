@@ -3,3 +3,12 @@
   ansible.builtin.command:
     cmd: apparmor_parser -r /etc/apparmor.d/bwrap
   changed_when: true
+
+- name: Reload systemd daemon
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Restart devbox HTML service
+  ansible.builtin.systemd:
+    name: devbox-html-server.service
+    state: restarted

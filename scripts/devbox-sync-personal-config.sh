@@ -3,6 +3,7 @@ set -euo pipefail
 
 target="${1:-${DEVBOX_SSH_TARGET:-devbox}}"
 dry_run="${DEVBOX_SYNC_DRY_RUN:-0}"
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 tmpdir="$(mktemp -d)"
 
 cleanup() {
@@ -182,7 +183,7 @@ UNIT
 }
 
 log "syncing to $target"
-remote_mkdir "~/.config/fish ~/.config/nvim ~/.codex ~/.codex/prompts ~/.claude ~/.claude/commands ~/.claude/skills ~/.claude/hooks ~/.claude/engines ~/.claude/scripts ~/.claude/usage ~/.local/bin ~/code/claude-auto ~/.config/systemd/user"
+remote_mkdir "~/.config/fish ~/.config/nvim ~/.codex ~/.codex/prompts ~/.codex/skills ~/.claude ~/.claude/commands ~/.claude/skills ~/.claude/hooks ~/.claude/engines ~/.claude/scripts ~/.claude/usage ~/.local/bin ~/code/claude-auto ~/.config/systemd/user"
 
 if [[ -d "$HOME/.config/fish" ]]; then
   log "copying fish config"
@@ -229,6 +230,13 @@ if [[ -d "$HOME/.claude/skills" ]]; then
   rsync "${rsync_flags[@]}" --delete \
     --exclude '.git/' \
     "$HOME/.claude/skills/" "$target:~/.claude/skills/"
+fi
+if [[ -d "$repo_root/ansible/devbox/files/agent-skills/devbox-html" ]]; then
+  log "copying repo-owned devbox HTML skill"
+  rsync "${rsync_flags[@]}" --delete \
+    "$repo_root/ansible/devbox/files/agent-skills/devbox-html/" "$target:~/.claude/skills/devbox-html/"
+  rsync "${rsync_flags[@]}" --delete \
+    "$repo_root/ansible/devbox/files/agent-skills/devbox-html/" "$target:~/.codex/skills/devbox-html/"
 fi
 generate_claude_settings
 

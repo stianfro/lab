@@ -68,6 +68,15 @@
     cmd: loginctl enable-linger {{ devbox_user }}
     creates: /var/lib/systemd/linger/{{ devbox_user }}
 
+- name: Install AppArmor profile for Codex CLI bwrap userns fix
+  ansible.builtin.copy:
+    src: bwrap
+    dest: /etc/apparmor.d/bwrap
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload bwrap AppArmor profile
+
 - name: Install Codex CLI
   ansible.builtin.shell: "curl -fsSL {{ codex_install_url }} | CODEX_NON_INTERACTIVE=1 sh"
   args:

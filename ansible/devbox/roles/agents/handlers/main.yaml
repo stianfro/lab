@@ -1,0 +1,5 @@
+---
+- name: Reload bwrap AppArmor profile
+  ansible.builtin.command:
+    cmd: apparmor_parser -r /etc/apparmor.d/bwrap
+  changed_when: true

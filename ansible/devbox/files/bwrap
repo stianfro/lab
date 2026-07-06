@@ -1,0 +1,12 @@
+# Allow bubblewrap to create unprivileged user namespaces despite Ubuntu's
+# kernel.apparmor_restrict_unprivileged_userns=1 default. Needed by the codex
+# CLI sandbox (codex exec -s workspace-write). Attachment covers the Homebrew
+# Cellar (any version) and a possible future apt-installed /usr/bin/bwrap.
+# Applied manually on the devbox on 2026-07-06 and verified working.
+abi <abi/4.0>,
+include <tunables/global>
+
+profile bwrap /{usr/bin/bwrap,home/linuxbrew/.linuxbrew/Cellar/bubblewrap/*/bin/bwrap} flags=(unconfined) {
+  userns,
+  include if exists <local/bwrap>
+}

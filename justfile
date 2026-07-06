@@ -33,15 +33,20 @@ devbox_user := "stian"
 devbox_ssh_target := devbox_user + "@" + devbox_host
 devbox_browser_bridge_port := "48765"
 devbox_browser_bridge_forward := "127.0.0.1:" + devbox_browser_bridge_port + ":127.0.0.1:" + devbox_browser_bridge_port
+devbox_mac_relay_port := "48767"
+devbox_mac_relay_forward := "127.0.0.1:" + devbox_mac_relay_port
 
 vnc-ocp-upgrade-lab:
   virtctl vnc ocp-upgrade-lab -n ocp-upgrade-lab --vnc-type=tiger --vnc-path="/Applications/TigerVNC Viewer 1.15.0.app/Contents/MacOS/TigerVNC Viewer"
 
 devbox-ssh:
-  scripts/devbox-browser-bridge.py --target {{devbox_ssh_target}} --port {{devbox_browser_bridge_port}} -- ssh -o ExitOnForwardFailure=no -R {{devbox_browser_bridge_forward}} {{devbox_ssh_target}}
+  scripts/devbox-browser-bridge.py --target {{devbox_ssh_target}} --port {{devbox_browser_bridge_port}} -- ssh -o ExitOnForwardFailure=no -R {{devbox_browser_bridge_forward}} -R {{devbox_mac_relay_forward}} {{devbox_ssh_target}}
 
 devbox-tmux:
-  scripts/devbox-browser-bridge.py --target {{devbox_ssh_target}} --port {{devbox_browser_bridge_port}} -- ssh -t -o ExitOnForwardFailure=no -R {{devbox_browser_bridge_forward}} {{devbox_ssh_target}} 'tmux new-session -A -s main'
+  scripts/devbox-browser-bridge.py --target {{devbox_ssh_target}} --port {{devbox_browser_bridge_port}} -- ssh -t -o ExitOnForwardFailure=no -R {{devbox_browser_bridge_forward}} -R {{devbox_mac_relay_forward}} {{devbox_ssh_target}} 'tmux new-session -A -s main'
+
+devbox-relay:
+  ssh -N -o ExitOnForwardFailure=yes -R {{devbox_mac_relay_forward}} {{devbox_ssh_target}}
 
 devbox-sync-personal-config:
   DEVBOX_SSH_TARGET={{devbox_ssh_target}} scripts/devbox-sync-personal-config.sh

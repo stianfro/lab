@@ -55,6 +55,14 @@
     group: root
     mode: "0755"
 
+- name: Install devbox Mac relay helper
+  ansible.builtin.copy:
+    src: devbox-mac-relay
+    dest: /usr/local/bin/devbox-mac-relay
+    owner: root
+    group: root
+    mode: "0755"
+
 - name: Link xdg-open to devbox browser opener
   ansible.builtin.file:
     src: /usr/local/bin/devbox-browser
@@ -72,6 +80,24 @@
       export BROWSER=/usr/local/bin/devbox-browser
       export DEVBOX_BROWSER_BRIDGE_PORT={{ devbox_browser_bridge_port }}
       export DEVBOX_OAUTH_SSH_TARGET={{ devbox_oauth_ssh_target }}
+      export DEVBOX_MAC_RELAY_PROXY={{ devbox_mac_relay_proxy }}
+      export DEVBOX_MAC_RELAY_NO_PROXY={{ devbox_mac_relay_no_proxy }}
+      export DEVBOX_MAC_RELAY_SSH_TARGET={{ devbox_oauth_ssh_target }}
+
+      macrelay_on() {
+        export ALL_PROXY="$DEVBOX_MAC_RELAY_PROXY"
+        export HTTPS_PROXY="$DEVBOX_MAC_RELAY_PROXY"
+        export HTTP_PROXY="$DEVBOX_MAC_RELAY_PROXY"
+        export all_proxy="$DEVBOX_MAC_RELAY_PROXY"
+        export https_proxy="$DEVBOX_MAC_RELAY_PROXY"
+        export http_proxy="$DEVBOX_MAC_RELAY_PROXY"
+        export NO_PROXY="$DEVBOX_MAC_RELAY_NO_PROXY"
+        export no_proxy="$DEVBOX_MAC_RELAY_NO_PROXY"
+      }
+
+      macrelay_off() {
+        unset ALL_PROXY HTTPS_PROXY HTTP_PROXY all_proxy https_proxy http_proxy NO_PROXY no_proxy
+      }
 
 - name: Configure devbox browser opener for fish
   ansible.builtin.copy:
@@ -83,3 +109,32 @@
       set -gx BROWSER /usr/local/bin/devbox-browser
       set -gx DEVBOX_BROWSER_BRIDGE_PORT {{ devbox_browser_bridge_port }}
       set -gx DEVBOX_OAUTH_SSH_TARGET {{ devbox_oauth_ssh_target }}
+      set -gx DEVBOX_MAC_RELAY_PROXY {{ devbox_mac_relay_proxy }}
+      set -gx DEVBOX_MAC_RELAY_NO_PROXY {{ devbox_mac_relay_no_proxy }}
+      set -gx DEVBOX_MAC_RELAY_SSH_TARGET {{ devbox_oauth_ssh_target }}
+
+      function macrelay
+          devbox-mac-relay $argv
+      end
+
+      function macrelay-on
+          set -gx ALL_PROXY $DEVBOX_MAC_RELAY_PROXY
+          set -gx HTTPS_PROXY $DEVBOX_MAC_RELAY_PROXY
+          set -gx HTTP_PROXY $DEVBOX_MAC_RELAY_PROXY
+          set -gx all_proxy $DEVBOX_MAC_RELAY_PROXY
+          set -gx https_proxy $DEVBOX_MAC_RELAY_PROXY
+          set -gx http_proxy $DEVBOX_MAC_RELAY_PROXY
+          set -gx NO_PROXY $DEVBOX_MAC_RELAY_NO_PROXY
+          set -gx no_proxy $DEVBOX_MAC_RELAY_NO_PROXY
+      end
+
+      function macrelay-off
+          set -e ALL_PROXY
+          set -e HTTPS_PROXY
+          set -e HTTP_PROXY
+          set -e all_proxy
+          set -e https_proxy
+          set -e http_proxy
+          set -e NO_PROXY
+          set -e no_proxy
+      end

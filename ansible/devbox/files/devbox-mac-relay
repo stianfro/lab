@@ -1,0 +1,172 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+proxy="${DEVBOX_MAC_RELAY_PROXY:-socks5h://127.0.0.1:48767}"
+no_proxy="${DEVBOX_MAC_RELAY_NO_PROXY:-localhost,127.0.0.1,::1}"
+ssh_target="${DEVBOX_MAC_RELAY_SSH_TARGET:-${DEVBOX_OAUTH_SSH_TARGET:-stian@192.168.1.51}}"
+
+usage() {
+  cat <<EOF
+Usage:
+  devbox-mac-relay status
+  devbox-mac-relay env
+  devbox-mac-relay fish
+  devbox-mac-relay check [url]
+  devbox-mac-relay -- command [args...]
+  devbox-mac-relay command [args...]
+
+The relay proxy is $proxy.
+Start it from the Mac with: ssh -N -R ${proxy#socks5h://} $ssh_target
+EOF
+}
+
+proxy_host_port() {
+  python3 - "$proxy" <<'PY'
+import sys
+import urllib.parse
+
+parsed = urllib.parse.urlparse(sys.argv[1])
+if not parsed.hostname or not parsed.port:
+    raise SystemExit("proxy must include host and port")
+print(parsed.hostname)
+print(parsed.port)
+PY
+}
+
+relay_available() {
+  local host port
+  mapfile -t parts < <(proxy_host_port)
+  host="${parts[0]}"
+  port="${parts[1]}"
+  python3 - "$host" "$port" <<'PY'
+import socket
+import sys
+
+host = sys.argv[1]
+port = int(sys.argv[2])
+try:
+    with socket.create_connection((host, port), timeout=2):
+        pass
+except OSError:
+    sys.exit(1)
+PY
+}
+
+print_missing() {
+  cat >&2 <<EOF
+Mac relay is not connected on the devbox.
+
+Start a relay-backed session from your Mac:
+  just devbox-tmux
+
+Or keep only the relay open from your Mac:
+  ssh -N -R ${proxy#socks5h://} $ssh_target
+EOF
+}
+
+export_proxy_env() {
+  export ALL_PROXY="$proxy"
+  export HTTPS_PROXY="$proxy"
+  export HTTP_PROXY="$proxy"
+  export all_proxy="$proxy"
+  export https_proxy="$proxy"
+  export http_proxy="$proxy"
+  export NO_PROXY="$no_proxy"
+  export no_proxy="$no_proxy"
+}
+
+print_posix_env() {
+  cat <<EOF
+export ALL_PROXY='$proxy'
+export HTTPS_PROXY='$proxy'
+export HTTP_PROXY='$proxy'
+export all_proxy='$proxy'
+export https_proxy='$proxy'
+export http_proxy='$proxy'
+export NO_PROXY='$no_proxy'
+export no_proxy='$no_proxy'
+EOF
+}
+
+print_fish_env() {
+  cat <<EOF
+set -gx ALL_PROXY '$proxy'
+set -gx HTTPS_PROXY '$proxy'
+set -gx HTTP_PROXY '$proxy'
+set -gx all_proxy '$proxy'
+set -gx https_proxy '$proxy'
+set -gx http_proxy '$proxy'
+set -gx NO_PROXY '$no_proxy'
+set -gx no_proxy '$no_proxy'
+EOF
+}
+
+check_url() {
+  local url="${1:-https://example.com}"
+  if ! relay_available; then
+    print_missing
+    return 1
+  fi
+  if ! command -v curl >/dev/null 2>&1; then
+    printf 'Relay is connected, but curl is not installed.\n'
+    return 0
+  fi
+  curl --fail --silent --show-error --head --max-time 10 --proxy "$proxy" "$url" >/dev/null
+  printf 'Mac relay is connected and %s is reachable through it.\n' "$url"
+}
+
+main() {
+  local command="${1:-}"
+  case "$command" in
+    "")
+      if relay_available; then
+        printf 'Mac relay is connected at %s.\n\n' "$proxy"
+      else
+        print_missing
+        printf '\n'
+      fi
+      usage
+      ;;
+    status)
+      if relay_available; then
+        printf 'Mac relay is connected at %s.\n' "$proxy"
+      else
+        print_missing
+        return 1
+      fi
+      ;;
+    env)
+      print_posix_env
+      ;;
+    fish)
+      print_fish_env
+      ;;
+    check)
+      shift
+      check_url "${1:-https://example.com}"
+      ;;
+    --)
+      shift
+      if [[ "$#" -eq 0 ]]; then
+        usage >&2
+        return 2
+      fi
+      if ! relay_available; then
+        print_missing
+        return 1
+      fi
+      export_proxy_env
+      exec "$@"
+      ;;
+    *)
+      if ! relay_available; then
+        print_missing
+        return 1
+      fi
+      export_proxy_env
+      exec "$@"
+      ;;
+  esac
+}
+
+main "$@"

@@ -26,15 +26,23 @@ LOCAL_HOSTS = {"localhost", "127.0.0.1", "::1"}
 
 @dataclass
 class Forward:
-    process: subprocess.Popen[str]
+    process: subprocess.Popen[str] | None
     expires_at: float
+    cancel_cmd: list[str] | None = None
 
 
 class BridgeState:
-    def __init__(self, target: str | None, forward_ttl: int, dry_run: bool) -> None:
+    def __init__(
+        self,
+        target: str | None,
+        forward_ttl: int,
+        dry_run: bool,
+        ssh_control_path: str | None,
+    ) -> None:
         self.target = target
         self.forward_ttl = forward_ttl
         self.dry_run = dry_run
+        self.ssh_control_path = ssh_control_path
         self.forwards: dict[int, Forward] = {}
         self.lock = threading.Lock()
         self.stopping = threading.Event()
@@ -54,7 +62,7 @@ class BridgeState:
         now = time.time()
         with self.lock:
             existing = self.forwards.get(port)
-            if existing and existing.process.poll() is None:
+            if existing and self.forward_active(existing):
                 existing.expires_at = now + self.forward_ttl
                 self.log(f"reusing localhost:{port} callback forward")
                 return
@@ -62,37 +70,113 @@ class BridgeState:
                 self.forwards.pop(port, None)
 
             if self.dry_run:
-                self.log(f"would forward localhost:{port} to {self.target}")
-                return
-
-            cmd = [
-                "ssh",
-                "-N",
-                "-L",
-                f"127.0.0.1:{port}:127.0.0.1:{port}",
-                "-o",
-                "ExitOnForwardFailure=yes",
-                "-o",
-                "BatchMode=yes",
-                self.target,
-            ]
-            process = subprocess.Popen(
-                cmd,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.PIPE,
-                text=True,
-            )
-            time.sleep(0.25)
-            if process.poll() is not None:
-                stderr = (process.stderr.read() if process.stderr else "").strip()
-                if stderr:
-                    self.log(f"failed to forward localhost:{port}: {stderr}")
+                if self.ssh_control_path:
+                    self.log(
+                        f"would request callback forward localhost:{port} "
+                        f"through SSH control socket {self.ssh_control_path}",
+                    )
                 else:
-                    self.log(f"failed to forward localhost:{port}")
+                    self.log(f"would start background callback forward localhost:{port} to {self.target}")
                 return
 
-            self.forwards[port] = Forward(process=process, expires_at=now + self.forward_ttl)
-            self.log(f"forwarding localhost:{port} to devbox for OAuth callback")
+            forward = self.start_forward(port, now)
+            if forward:
+                self.forwards[port] = forward
+
+    def forward_active(self, forward: Forward) -> bool:
+        return forward.process is None or forward.process.poll() is None
+
+    def forward_spec(self, port: int) -> str:
+        return f"127.0.0.1:{port}:127.0.0.1:{port}"
+
+    def start_forward(self, port: int, now: float) -> Forward | None:
+        if self.ssh_control_path and self.target:
+            forward = self.start_control_forward(port, now)
+            if forward:
+                return forward
+            self.log(f"falling back to a background SSH callback forward for localhost:{port}")
+        return self.start_background_forward(port, now)
+
+    def start_control_forward(self, port: int, now: float) -> Forward | None:
+        if not self.ssh_control_path or not self.target:
+            return None
+
+        cmd = [
+            "ssh",
+            "-S",
+            self.ssh_control_path,
+            "-O",
+            "forward",
+            "-L",
+            self.forward_spec(port),
+            "-o",
+            "ExitOnForwardFailure=yes",
+            "-o",
+            "BatchMode=yes",
+            "-o",
+            "ConnectTimeout=5",
+            self.target,
+        ]
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10, check=False)
+        except subprocess.TimeoutExpired:
+            self.log(f"timed out requesting SSH control callback forward for localhost:{port}")
+            return None
+        if result.returncode != 0:
+            stderr = result.stderr.strip()
+            if stderr:
+                self.log(f"failed to request SSH control callback forward for localhost:{port}: {stderr}")
+            else:
+                self.log(f"failed to request SSH control callback forward for localhost:{port}")
+            return None
+
+        cancel_cmd = [
+            "ssh",
+            "-S",
+            self.ssh_control_path,
+            "-O",
+            "cancel",
+            "-L",
+            self.forward_spec(port),
+            "-o",
+            "BatchMode=yes",
+            self.target,
+        ]
+        self.log(f"forwarding localhost:{port} to devbox through existing SSH session")
+        return Forward(process=None, expires_at=now + self.forward_ttl, cancel_cmd=cancel_cmd)
+
+    def start_background_forward(self, port: int, now: float) -> Forward | None:
+        if not self.target:
+            return None
+
+        cmd = [
+            "ssh",
+            "-N",
+            "-L",
+            self.forward_spec(port),
+            "-o",
+            "ExitOnForwardFailure=yes",
+            "-o",
+            "BatchMode=yes",
+            self.target,
+        ]
+        process = subprocess.Popen(
+            cmd,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        time.sleep(0.25)
+        if process.poll() is not None:
+            stderr = (process.stderr.read() if process.stderr else "").strip()
+            if stderr:
+                self.log(f"failed to start background callback forward for localhost:{port}: {stderr}")
+            else:
+                self.log(f"failed to start background callback forward for localhost:{port}")
+            return None
+
+        self.log(f"forwarding localhost:{port} to devbox with background SSH process")
+        return Forward(process=process, expires_at=now + self.forward_ttl)
 
     def cleanup_loop(self) -> None:
         while not self.stopping.wait(5):
@@ -110,7 +194,9 @@ class BridgeState:
             forward = self.forwards.pop(port, None)
         if not forward:
             return
-        if forward.process.poll() is None:
+        if forward.cancel_cmd:
+            subprocess.run(forward.cancel_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+        if forward.process and forward.process.poll() is None:
             forward.process.terminate()
             try:
                 forward.process.wait(timeout=5)
@@ -253,6 +339,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--target", help="SSH target for callback forwards, such as stian@192.168.1.51")
     parser.add_argument("--port", type=int, default=48765, help="local browser bridge port")
     parser.add_argument("--forward-ttl", type=int, default=900, help="seconds to keep callback forwards")
+    parser.add_argument(
+        "--ssh-control-path",
+        help="SSH ControlPath for attaching callback forwards to the existing devbox session",
+    )
     parser.add_argument("--dry-run", action="store_true", help="log actions without opening URLs or starting forwards")
     parser.add_argument("command", nargs=argparse.REMAINDER, help="optional command to run while the bridge is active")
     args = parser.parse_args()
@@ -263,7 +353,12 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    state = BridgeState(target=args.target, forward_ttl=args.forward_ttl, dry_run=args.dry_run)
+    state = BridgeState(
+        target=args.target,
+        forward_ttl=args.forward_ttl,
+        dry_run=args.dry_run,
+        ssh_control_path=args.ssh_control_path,
+    )
     handler = make_handler(state)
 
     server = http.server.ThreadingHTTPServer(("127.0.0.1", args.port), handler)

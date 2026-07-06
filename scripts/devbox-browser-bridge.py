@@ -12,7 +12,6 @@ from __future__ import annotations
 import argparse
 import http.server
 import json
-import os
 import platform
 import subprocess
 import sys
@@ -148,19 +147,24 @@ class BridgeState:
 
 def extract_redirect_ports(url: str) -> list[int]:
     ports: list[int] = []
+    append_local_callback_port(url, ports)
     for redirect_uri in extract_redirect_uris(url):
-        parsed = urllib.parse.urlparse(redirect_uri)
-        if parsed.scheme not in {"http", "https"}:
-            continue
-        if (parsed.hostname or "").lower() not in LOCAL_HOSTS:
-            continue
-        try:
-            port = parsed.port
-        except ValueError:
-            continue
-        if port and port not in ports:
-            ports.append(port)
+        append_local_callback_port(redirect_uri, ports)
     return ports
+
+
+def append_local_callback_port(uri: str, ports: list[int]) -> None:
+    parsed = urllib.parse.urlparse(uri)
+    if parsed.scheme not in {"http", "https"}:
+        return
+    if (parsed.hostname or "").lower() not in LOCAL_HOSTS:
+        return
+    try:
+        port = parsed.port
+    except ValueError:
+        return
+    if port and port not in ports:
+        ports.append(port)
 
 
 def extract_redirect_uris(url: str) -> Iterable[str]:

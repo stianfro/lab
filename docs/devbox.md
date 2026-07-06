@@ -70,7 +70,9 @@ authorization code flows on the devbox use `/usr/local/bin/devbox-browser`
 through `BROWSER` and the `xdg-open` wrapper. The opener sends browser URLs back
 through the SSH reverse forward, the workstation opens them in the local browser,
 and any localhost callback port from the URL itself or the `redirect_uri` is
-temporarily forwarded back to the devbox.
+temporarily forwarded back to the devbox. The callback forward is added to the
+existing SSH connection with SSH ControlMaster, so it keeps working after the Mac
+VPN starts as long as the original devbox SSH session is still alive.
 
 If you connect without the `just` recipes, the opener prints the URL, saves it
 to `~/.cache/devbox-browser/last-url`, and tries to copy it with OSC 52. For

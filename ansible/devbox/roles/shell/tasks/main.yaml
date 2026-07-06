@@ -38,3 +38,48 @@
       fish_add_path --move --path $HOME/.local/bin
       fish_add_path --move --path $HOME/.cargo/bin
       fish_add_path --move --path /usr/local/go/bin
+
+- name: Create system fish config directory
+  ansible.builtin.file:
+    path: /etc/fish/conf.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Install devbox browser opener
+  ansible.builtin.copy:
+    src: devbox-browser
+    dest: /usr/local/bin/devbox-browser
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Link xdg-open to devbox browser opener
+  ansible.builtin.file:
+    src: /usr/local/bin/devbox-browser
+    dest: /usr/local/bin/xdg-open
+    state: link
+    force: true
+
+- name: Configure devbox browser opener for POSIX shells
+  ansible.builtin.copy:
+    dest: /etc/profile.d/devbox-browser.sh
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      export BROWSER=/usr/local/bin/devbox-browser
+      export DEVBOX_BROWSER_BRIDGE_PORT={{ devbox_browser_bridge_port }}
+      export DEVBOX_OAUTH_SSH_TARGET={{ devbox_oauth_ssh_target }}
+
+- name: Configure devbox browser opener for fish
+  ansible.builtin.copy:
+    dest: /etc/fish/conf.d/devbox-browser.fish
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      set -gx BROWSER /usr/local/bin/devbox-browser
+      set -gx DEVBOX_BROWSER_BRIDGE_PORT {{ devbox_browser_bridge_port }}
+      set -gx DEVBOX_OAUTH_SSH_TARGET {{ devbox_oauth_ssh_target }}

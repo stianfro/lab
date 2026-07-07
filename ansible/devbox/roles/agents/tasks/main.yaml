@@ -115,8 +115,8 @@
       server in the homelab. It is reached over SSH and is not a Mac workstation
       or desktop environment.
 
-      Use terminal-first workflows. Prefer tmux for long-running work. The home
-      directory is `/home/stian`, and repositories usually live under
+      Use terminal-first workflows. Prefer tmux or Herdr for long-running work.
+      The home directory is `/home/stian`, and repositories usually live under
       `/home/stian/src`.
 
       The devbox runs in KubeVirt on the lab Kubernetes cluster with persistent

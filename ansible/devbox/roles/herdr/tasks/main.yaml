@@ -1,0 +1,78 @@
+---
+- name: Create Herdr config directory
+  ansible.builtin.file:
+    path: "{{ devbox_home }}/.config/herdr"
+    state: directory
+    owner: "{{ devbox_user }}"
+    group: "{{ devbox_user }}"
+    mode: "0755"
+
+- name: Install Herdr config
+  ansible.builtin.copy:
+    dest: "{{ devbox_home }}/.config/herdr/config.toml"
+    owner: "{{ devbox_user }}"
+    group: "{{ devbox_user }}"
+    mode: "0644"
+    content: |
+      # Managed by the lab repo Ansible devbox configuration.
+      onboarding = false
+
+      [keys]
+      prefix = "ctrl+space"
+
+      [session]
+      resume_agents_on_restore = true
+
+- name: Create agent config directories for Herdr integrations
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ devbox_user }}"
+    group: "{{ devbox_user }}"
+    mode: "0755"
+  loop:
+    - "{{ devbox_home }}/.claude"
+    - "{{ devbox_home }}/.claude/hooks"
+    - "{{ devbox_home }}/.codex"
+
+- name: Install Herdr Claude integration
+  ansible.builtin.command:
+    argv:
+      - "{{ homebrew_prefix }}/bin/herdr"
+      - integration
+      - install
+      - claude
+  changed_when: false
+  become_user: "{{ devbox_user }}"
+  environment:
+    HOME: "{{ devbox_home }}"
+    PATH: "{{ homebrew_path_entries | join(':') }}"
+
+- name: Install Herdr Codex integration
+  ansible.builtin.command:
+    argv:
+      - "{{ homebrew_prefix }}/bin/herdr"
+      - integration
+      - install
+      - codex
+  changed_when: false
+  become_user: "{{ devbox_user }}"
+  environment:
+    HOME: "{{ devbox_home }}"
+    PATH: "{{ homebrew_path_entries | join(':') }}"
+
+- name: Install Claude Herdr skill
+  ansible.builtin.copy:
+    src: agent-skills/herdr/
+    dest: "{{ devbox_home }}/.claude/skills/herdr/"
+    owner: "{{ devbox_user }}"
+    group: "{{ devbox_user }}"
+    mode: preserve
+
+- name: Install Codex Herdr skill
+  ansible.builtin.copy:
+    src: agent-skills/herdr/
+    dest: "{{ devbox_home }}/.codex/skills/herdr/"
+    owner: "{{ devbox_user }}"
+    group: "{{ devbox_user }}"
+    mode: preserve

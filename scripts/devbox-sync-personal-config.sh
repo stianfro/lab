@@ -79,8 +79,16 @@ for key in top_level_keys:
         lines.append(f"{key} = {str(value).lower()}")
 
 features = cfg.get("features", {})
+feature_lines = []
 if isinstance(features, dict) and features.get("memories") is True:
-    lines.extend(["", "[features]", "memories = true"])
+    feature_lines.append("memories = true")
+
+# The devbox installs the Herdr Codex integration. Keep hooks enabled when
+# personal config is regenerated from the workstation.
+feature_lines.append("hooks = true")
+
+if feature_lines:
+    lines.extend(["", "[features]", *feature_lines])
 
 dest.write_text("\n".join(lines).rstrip() + "\n")
 PY
@@ -147,7 +155,17 @@ filtered["hooks"] = {
                     "command": 'bash "$HOME/.claude/hooks/minato-exec-engine.sh"',
                 }
             ]
-        }
+        },
+        {
+            "matcher": "*",
+            "hooks": [
+                {
+                    "type": "command",
+                    "timeout": 10,
+                    "command": 'bash "$HOME/.claude/hooks/herdr-agent-state.sh" session',
+                }
+            ],
+        },
     ]
 }
 
@@ -238,6 +256,13 @@ if [[ -d "$repo_root/ansible/devbox/files/agent-skills/devbox-html" ]]; then
   rsync "${rsync_flags[@]}" --delete \
     "$repo_root/ansible/devbox/files/agent-skills/devbox-html/" "$target:~/.codex/skills/devbox-html/"
 fi
+if [[ -d "$repo_root/ansible/devbox/files/agent-skills/herdr" ]]; then
+  log "copying repo-owned Herdr skill"
+  rsync "${rsync_flags[@]}" --delete \
+    "$repo_root/ansible/devbox/files/agent-skills/herdr/" "$target:~/.claude/skills/herdr/"
+  rsync "${rsync_flags[@]}" --delete \
+    "$repo_root/ansible/devbox/files/agent-skills/herdr/" "$target:~/.codex/skills/herdr/"
+fi
 generate_claude_settings
 
 log "copying Claude local settings and statusline scripts"
@@ -245,6 +270,7 @@ rsync_if_exists "$HOME/.claude/justfile" "$target:~/.claude/justfile"
 rsync_if_exists "$HOME/.claude/settings.local.json" "$target:~/.claude/settings.local.json"
 rsync_if_exists "$HOME/.claude/scripts/statusline.sh" "$target:~/.claude/scripts/statusline.sh"
 rsync_if_exists "$HOME/.claude/scripts/statusline-spend-refresh.sh" "$target:~/.claude/scripts/statusline-spend-refresh.sh"
+rsync_if_exists "$HOME/.claude/scripts/agent-pane.sh" "$target:~/.claude/scripts/agent-pane.sh"
 rsync_if_exists "$HOME/.claude/scripts/usage-tracker.py" "$target:~/.claude/scripts/usage-tracker.py"
 rsync_if_exists "$HOME/.claude/scripts/usage-dashboard.html.tmpl" "$target:~/.claude/scripts/usage-dashboard.html.tmpl"
 rsync_if_exists "$HOME/.claude/scripts/claude-usage" "$target:~/.claude/scripts/claude-usage"

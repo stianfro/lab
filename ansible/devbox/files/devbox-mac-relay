@@ -58,6 +58,7 @@ Mac relay is not connected on the devbox.
 
 Start a relay-backed session from your Mac:
   just devbox-tmux
+  just devbox-herdr
 
 Or keep only the relay open from your Mac:
   ssh -N -R ${proxy#socks5h://} $ssh_target

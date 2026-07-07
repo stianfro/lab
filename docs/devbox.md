@@ -59,6 +59,12 @@ Attach to the persistent tmux session:
 just devbox-tmux
 ```
 
+Attach to the persistent Herdr session:
+
+```bash
+just devbox-herdr
+```
+
 Open a plain SSH shell:
 
 ```bash
@@ -143,6 +149,19 @@ Check that the repo tmux config still matches the current workstation config:
 just devbox-check-tmux-config
 ```
 
+Herdr is managed by Ansible as an optional tmux alternative. The devbox config
+sets the Herdr prefix to `ctrl+space`, matching the tmux prefix, and installs
+the Claude and Codex integrations so Herdr can track agent session identity.
+Use `ctrl+space` then `q` to detach. Reattach with `just devbox-herdr`.
+
+Check Herdr after converging:
+
+```bash
+herdr --version
+herdr integration status
+cat ~/.config/herdr/config.toml
+```
+
 Sync workstation fish, Neovim, Codex, and Claude prompt files after local changes:
 
 ```bash
@@ -156,7 +175,9 @@ state, SSH files, kubeconfigs, sessions, or generated memories in Git.
 
 Ansible also manages home-level agent context files. `/home/stian/AGENTS.md`
 points Codex to `/home/stian/CLAUDE.md`, which tells both agents that the
-devbox is a headless Ubuntu server for terminal-first server operations.
+devbox is a headless Ubuntu server for terminal-first server operations. The
+sync recipe also installs the repo-owned `devbox-html` and `herdr` skills for
+Claude and Codex.
 
 ## Homebrew packages
 
@@ -202,6 +223,9 @@ kernel or system library updates when convenient.
 ## Recovery
 
 If SSH disconnects, reconnect with `just devbox-tmux`. The tmux session keeps running while the VM is up.
+
+If you are using Herdr, reconnect with `just devbox-herdr`. The Herdr server
+keeps panes running while the VM is up.
 
 If the VM reboots, running processes stop, but repositories, auth files, agent transcripts, and tool state remain on the Longhorn root disk.
 

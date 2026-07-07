@@ -48,6 +48,10 @@ devbox-tmux:
   mkdir -p .cache/ssh
   scripts/devbox-browser-bridge.py --target {{devbox_ssh_target}} --port {{devbox_browser_bridge_port}} --ssh-control-path {{devbox_ssh_control_path}} -- ssh -t -S {{devbox_ssh_control_path}} -o ControlMaster=auto -o ExitOnForwardFailure=no -R {{devbox_browser_bridge_forward}} -R {{devbox_mac_relay_forward}} {{devbox_ssh_target}} 'tmux new-session -A -s main'
 
+devbox-herdr:
+  mkdir -p .cache/ssh
+  scripts/devbox-browser-bridge.py --target {{devbox_ssh_target}} --port {{devbox_browser_bridge_port}} --ssh-control-path {{devbox_ssh_control_path}} -- ssh -t -S {{devbox_ssh_control_path}} -o ControlMaster=auto -o ExitOnForwardFailure=no -R {{devbox_browser_bridge_forward}} -R {{devbox_mac_relay_forward}} {{devbox_ssh_target}} 'herdr'
+
 devbox-relay:
   ssh -N -o ExitOnForwardFailure=yes -R {{devbox_mac_relay_forward}} {{devbox_ssh_target}}
 

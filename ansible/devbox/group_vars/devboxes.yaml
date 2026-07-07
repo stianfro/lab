@@ -44,11 +44,13 @@ homebrew_taps:
 homebrew_packages:
   - azure-cli
   - derailed/k9s/k9s
+  - herdr
   - neovim
 homebrew_casks:
   - intility/tap/indev
 homebrew_binary_links:
   - az
+  - herdr
   - indev
   - k9s
   - nvim

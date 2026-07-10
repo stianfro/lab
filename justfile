@@ -78,6 +78,11 @@ devbox-converge-local: _devbox-local-inventory
 devbox-converge-local-base: _devbox-local-inventory
   ANSIBLE_LOCAL_TEMP=.cache/ansible/tmp ANSIBLE_HOME=.cache/ansible UV_CACHE_DIR=.cache/uv uvx --from ansible-core ansible-playbook -i .cache/ansible/local-inventory.ini ansible/devbox/playbook.yaml --tags base
 
+devbox-validate:
+  mkdir -p .cache/ansible/tmp .cache/uv
+  yq eval -e '(.homebrew_taps | contains(["anomalyco/tap"])) and (.homebrew_packages | contains(["anomalyco/tap/opencode"])) and (.homebrew_binary_links | contains(["opencode"]))' ansible/devbox/group_vars/devboxes.yaml
+  ANSIBLE_LOCAL_TEMP=.cache/ansible/tmp ANSIBLE_HOME=.cache/ansible UV_CACHE_DIR=.cache/uv uvx --from ansible-core ansible-playbook -i ansible/devbox/inventory.ini ansible/devbox/playbook.yaml --syntax-check
+
 devbox-check-tmux-config:
   diff -u /Users/stianfroystein/.config/tmux/tmux.conf ansible/devbox/files/tmux.conf
 

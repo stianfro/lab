@@ -40,8 +40,10 @@ homebrew_path_entries:
   - /bin
 homebrew_install_url: https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh
 homebrew_taps:
+  - anomalyco/tap
   - intility/tap
 homebrew_packages:
+  - anomalyco/tap/opencode
   - azure-cli
   - derailed/k9s/k9s
   - herdr
@@ -54,6 +56,7 @@ homebrew_binary_links:
   - indev
   - k9s
   - nvim
+  - opencode
 rustup_init_url: https://sh.rustup.rs
 uv_install_url: https://astral.sh/uv/install.sh
 apt_daily_on_calendar: "*-*-* 02:00 Asia/Tokyo"

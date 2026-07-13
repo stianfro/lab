@@ -46,9 +46,10 @@ Expected results:
 
 ## Backup and restore test
 
-The daily custom-format dumps are stored on the NFS server below
-`/mnt/user/backup/umami`. Daily files are kept for 14 days and first-of-month
-copies for about six months.
+The job mounts the existing `/mnt/user/backup` NFS export and creates the
+`umami/daily` and `umami/monthly` directories itself. The resulting storage
+path is `/mnt/user/backup/umami`. Daily files are kept for 14 days and
+first-of-month copies for about six months.
 
 After the first backup succeeds, create a temporary database in the CNPG
 cluster, restore the newest dump with `pg_restore`, compare the table list and

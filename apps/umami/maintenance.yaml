@@ -92,14 +92,14 @@ spec:
               args:
                 - |
                   timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
-                  daily="/backup/daily/umami-${timestamp}.dump"
-                  mkdir -p /backup/daily /backup/monthly
+                  daily="/backup/umami/daily/umami-${timestamp}.dump"
+                  mkdir -p /backup/umami/daily /backup/umami/monthly
                   pg_dump --format=custom --file="$daily" "$DATABASE_URL"
                   if [ "$(date -u +%d)" = "01" ]; then
-                    cp "$daily" "/backup/monthly/umami-${timestamp}.dump"
+                    cp "$daily" "/backup/umami/monthly/umami-${timestamp}.dump"
                   fi
-                  find /backup/daily -type f -name 'umami-*.dump' -mtime +14 -delete
-                  find /backup/monthly -type f -name 'umami-*.dump' -mtime +186 -delete
+                  find /backup/umami/daily -type f -name 'umami-*.dump' -mtime +14 -delete
+                  find /backup/umami/monthly -type f -name 'umami-*.dump' -mtime +186 -delete
               env:
                 - name: DATABASE_URL
                   valueFrom:
@@ -128,4 +128,4 @@ spec:
             - name: backup
               nfs:
                 server: 192.168.1.10
-                path: /mnt/user/backup/umami
+                path: /mnt/user/backup

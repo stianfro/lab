@@ -19,7 +19,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: umami
-          image: docker.umami.is/umami-software/umami:postgresql-v3.2.0
+          image: ghcr.io/umami-software/umami:3.2.0@sha256:8edfe4beaef13f9d1300619fa264ef250a3688df9cc54d24ca830ca31cb475ec
           imagePullPolicy: IfNotPresent
           env:
             - name: DATABASE_URL

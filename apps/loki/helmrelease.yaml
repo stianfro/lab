@@ -35,9 +35,9 @@ spec:
               prefix: loki_index_
               period: 24h
       limits_config:
-        retention_period: 168h
+        retention_period: 336h
         max_query_series: 100000
-        max_query_lookback: 168h
+        max_query_lookback: 336h
       rulerConfig:
         storage:
           type: local

@@ -1,0 +1,103 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: froystein-log-collector
+  namespace: flux-system
+spec:
+  interval: 10m
+  releaseName: froystein-log-collector
+  targetNamespace: froystein-log-collector
+  install:
+    createNamespace: true
+  chart:
+    spec:
+      chart: opentelemetry-collector
+      version: 0.139.1
+      sourceRef:
+        kind: HelmRepository
+        name: opentelemetry
+        namespace: flux-system
+  values:
+    mode: daemonset
+    image:
+      repository: otel/opentelemetry-collector-contrib
+      tag: 0.139.0
+    presets:
+      logsCollection:
+        enabled: true
+        includeCollectorLogs: false
+      kubernetesAttributes:
+        enabled: true
+      kubeletMetrics:
+        enabled: false
+    config:
+      receivers:
+        filelog:
+          include:
+            - /var/log/pods/froystein-jp_*/*/*.log
+            - /var/log/pods/froystein-jp-dev_*/*/*.log
+          exclude:
+            - /var/log/pods/froystein-log-collector_*/*/*.log
+          include_file_path: true
+          start_at: end
+          operators:
+            - id: container-parser
+              type: container
+      processors:
+        filter/froystein:
+          logs:
+            log_record:
+              - 'resource.attributes["k8s.namespace.name"] != "froystein-jp" and resource.attributes["k8s.namespace.name"] != "froystein-jp-dev"'
+        resource/froystein:
+          attributes:
+            - key: service.name
+              value: froystein-jp-nginx
+              action: upsert
+            - key: k8s.pod.name
+              action: delete
+            - key: k8s.pod.uid
+              action: delete
+            - key: service.instance.id
+              action: delete
+        batch:
+          timeout: 10s
+          send_batch_size: 1024
+      exporters:
+        otlphttp/loki:
+          endpoint: http://loki-gateway.loki.svc.cluster.local/otlp
+          tls:
+            insecure: true
+      service:
+        pipelines:
+          logs:
+            receivers: [filelog]
+            processors: [k8sattributes, filter/froystein, resource/froystein, batch]
+            exporters: [otlphttp/loki]
+        telemetry:
+          logs:
+            level: info
+    resources:
+      limits:
+        memory: 256Mi
+      requests:
+        cpu: 25m
+        memory: 128Mi
+    service:
+      enabled: false
+    ports:
+      jaeger-compact:
+        enabled: false
+      jaeger-grpc:
+        enabled: false
+      jaeger-thrift:
+        enabled: false
+      metrics:
+        enabled: false
+      otlp:
+        enabled: false
+      otlp-http:
+        enabled: false
+      zipkin:
+        enabled: false
+  driftDetection:
+    mode: enabled

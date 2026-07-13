@@ -5,6 +5,7 @@ metadata:
   namespace: umami
 spec:
   instances: 1
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.0@sha256:f06cae6ae14e2f101392130dce800b504bf9c5110b5db5fc0266782464882dbb
   bootstrap:
     initdb:
       database: umami

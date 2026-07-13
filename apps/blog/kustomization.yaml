@@ -3,3 +3,11 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - https://raw.githubusercontent.com/stianfro/blog/env/prod/manifests.yaml
+  - analytics-route.yaml
+configMapGenerator:
+  - name: blog-analytics-config
+    namespace: blog
+    files:
+      - analytics-config.js
+patches:
+  - path: deployment-patch.yaml

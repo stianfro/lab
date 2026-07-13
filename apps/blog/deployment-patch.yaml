@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blog
+  namespace: blog
+spec:
+  template:
+    spec:
+      containers:
+        - name: web
+          image: ghcr.io/stianfro/blog:sha-12e7d26@sha256:54e7cf430144773d5ab6809007ecda37d5f9fe337531abadcac0b2cc509d122f
+          volumeMounts:
+            - name: analytics-config
+              mountPath: /usr/share/nginx/html/analytics-config.js
+              subPath: analytics-config.js
+              readOnly: true
+      volumes:
+        - name: analytics-config
+          configMap:
+            name: blog-analytics-config

@@ -369,6 +369,28 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
+  name: umami
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: authentik
+    - name: cnpg
+    - name: gateway-public
+    - name: monitoring
+    - name: network-monitor
+    - name: vault-config
+  interval: 10m
+  path: ./apps/umami
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 15m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
   name: cloudflare-tunnel
   namespace: flux-system
 spec:

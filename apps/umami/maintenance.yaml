@@ -1,0 +1,131 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: umami-retention
+  namespace: umami
+spec:
+  schedule: "17 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 600
+      ttlSecondsAfterFinished: 86400
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: retention
+              image: postgres:16.8-alpine
+              command: ["/bin/sh", "-ec"]
+              args:
+                - |
+                  psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+                  UPDATE session SET region = NULL, city = NULL
+                  WHERE region IS NOT NULL OR city IS NOT NULL;
+
+                  DELETE FROM event_data
+                  USING website_event
+                  WHERE event_data.website_event_id = website_event.event_id
+                    AND website_event.created_at < NOW() - INTERVAL '13 months';
+                  DELETE FROM website_event
+                  WHERE created_at < NOW() - INTERVAL '13 months';
+                  DELETE FROM session_data
+                  WHERE created_at < NOW() - INTERVAL '13 months';
+                  DELETE FROM revenue
+                  WHERE created_at < NOW() - INTERVAL '13 months';
+                  DELETE FROM session
+                  WHERE created_at < NOW() - INTERVAL '13 months'
+                    AND NOT EXISTS (
+                      SELECT 1 FROM website_event
+                      WHERE website_event.session_id = session.session_id
+                    );
+                  DELETE FROM session_replay
+                  WHERE created_at < NOW() - INTERVAL '13 months';
+                  DELETE FROM heatmap_event
+                  WHERE created_at < NOW() - INTERVAL '13 months';
+                  SQL
+              env:
+                - name: DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: umami-pg-app
+                      key: uri
+              resources:
+                requests:
+                  cpu: 25m
+                  memory: 32Mi
+                limits:
+                  cpu: 250m
+                  memory: 256Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+                runAsNonRoot: true
+                runAsUser: 70
+                seccompProfile:
+                  type: RuntimeDefault
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: umami-backup
+  namespace: umami
+spec:
+  schedule: "43 2 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 1800
+      ttlSecondsAfterFinished: 86400
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: backup
+              image: postgres:16.8-alpine
+              command: ["/bin/sh", "-ec"]
+              args:
+                - |
+                  timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
+                  daily="/backup/daily/umami-${timestamp}.dump"
+                  mkdir -p /backup/daily /backup/monthly
+                  pg_dump --format=custom --file="$daily" "$DATABASE_URL"
+                  if [ "$(date -u +%d)" = "01" ]; then
+                    cp "$daily" "/backup/monthly/umami-${timestamp}.dump"
+                  fi
+                  find /backup/daily -type f -name 'umami-*.dump' -mtime +14 -delete
+                  find /backup/monthly -type f -name 'umami-*.dump' -mtime +186 -delete
+              env:
+                - name: DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: umami-pg-app
+                      key: uri
+              resources:
+                requests:
+                  cpu: 25m
+                  memory: 32Mi
+                limits:
+                  cpu: 250m
+                  memory: 256Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+                runAsNonRoot: true
+                runAsUser: 70
+                seccompProfile:
+                  type: RuntimeDefault
+              volumeMounts:
+                - name: backup
+                  mountPath: /backup
+          volumes:
+            - name: backup
+              nfs:
+                server: 192.168.1.10
+                path: /mnt/user/backup/umami

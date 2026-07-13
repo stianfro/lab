@@ -2,3 +2,4 @@ resources:
   - namespace.yaml
   - helmrelease.yaml
   - httproute.yaml
+  - blueprint-umami.yaml

@@ -21,6 +21,11 @@ spec:
               command: ["/bin/sh", "-ec"]
               args:
                 - |
+                  if [ "$(psql "$DATABASE_URL" -Atqc "SELECT to_regclass('public.session') IS NOT NULL")" != "t" ]; then
+                    echo "Umami schema is not initialized; skipping retention"
+                    exit 0
+                  fi
+
                   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
                   UPDATE session SET region = NULL, city = NULL
                   WHERE region IS NOT NULL OR city IS NOT NULL;

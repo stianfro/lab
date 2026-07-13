@@ -8,7 +8,7 @@ spec:
     spec:
       containers:
         - name: web
-          image: ghcr.io/stianfro/froystein.jp:pr-37-56a8655@sha256:912d187a896a925e7ea0596b1dc0974ee4f79e361dd2741bdd5509aec25cbdd7
+          image: ghcr.io/stianfro/froystein.jp:pr-37-7784c8d@sha256:15f23b072b23602a07a9e8e0b729651773651d495d98d3cd96c55e090a52d177
           volumeMounts:
             - name: analytics-config
               mountPath: /usr/share/nginx/html/analytics-config.js

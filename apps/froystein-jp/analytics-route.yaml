@@ -1,0 +1,55 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: froystein-jp-analytics
+  namespace: froystein-jp
+spec:
+  parentRefs:
+    - name: eg-public
+      namespace: envoy-gateway-system
+  hostnames:
+    - www.froystein.jp
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /_analytics/script.js
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplaceFullPath
+              replaceFullPath: /script.js
+      backendRefs:
+        - name: umami
+          namespace: umami
+          port: 3000
+    - matches:
+        - path:
+            type: Exact
+            value: /_analytics/api/send
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplaceFullPath
+              replaceFullPath: /api/send
+      backendRefs:
+        - name: umami
+          namespace: umami
+          port: 3000
+---
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: froystein-jp-analytics
+  namespace: umami
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: froystein-jp
+  to:
+    - group: ""
+      kind: Service
+      name: umami

@@ -1,0 +1,36 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: umami
+  namespace: umami
+  labels:
+    release: kube-prom-stack
+spec:
+  jobName: umami
+  prober:
+    url: blackbox-exporter-prometheus-blackbox-exporter.network-monitor.svc.cluster.local:9115
+    path: /probe
+  module: http_2xx
+  interval: 60s
+  scrapeTimeout: 15s
+  targets:
+    staticConfig:
+      static:
+        - http://umami.umami.svc.cluster.local:3000/api/heartbeat
+      labels:
+        app: umami
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: umami-pg
+  namespace: umami
+  labels:
+    release: kube-prom-stack
+spec:
+  selector:
+    matchLabels:
+      cnpg.io/cluster: umami-pg
+  podMetricsEndpoints:
+    - port: metrics
+      interval: 60s

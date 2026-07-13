@@ -1,0 +1,107 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: umami-dashboard
+  namespace: umami
+spec:
+  parentRefs:
+    - name: eg
+      namespace: envoy-gateway-system
+  hostnames:
+    - analytics.talos.froystein.jp
+  rules:
+    - backendRefs:
+        - name: umami
+          port: 3000
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: umami-dashboard-authentik
+  namespace: umami
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: umami-dashboard
+  extAuth:
+    failOpen: false
+    headersToExtAuth:
+      - Cookie
+      - X-Forwarded-Host
+      - X-Forwarded-Method
+      - X-Forwarded-Proto
+      - X-Forwarded-Uri
+    http:
+      backendRefs:
+        - name: authentik-chart-server
+          namespace: authentik
+          port: 80
+      path: /outpost.goauthentik.io/auth/envoy
+      headersToBackend:
+        - Set-Cookie
+        - X-Authentik-Email
+        - X-Authentik-Groups
+        - X-Authentik-Name
+        - X-Authentik-Uid
+        - X-Authentik-Username
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: umami-collector
+  namespace: umami
+spec:
+  parentRefs:
+    - name: eg-public
+      namespace: envoy-gateway-system
+  hostnames:
+    - www.froystein.jp
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /_analytics/script.js
+      backendRefs:
+        - name: umami
+          port: 3000
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplaceFullPath
+              replaceFullPath: /script.js
+    - matches:
+        - path:
+            type: Exact
+            value: /_analytics/api/send
+      backendRefs:
+        - name: umami
+          port: 3000
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplaceFullPath
+              replaceFullPath: /api/send
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: umami-authentik-callback
+  namespace: umami
+spec:
+  parentRefs:
+    - name: eg
+      namespace: envoy-gateway-system
+  hostnames:
+    - analytics.talos.froystein.jp
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /outpost.goauthentik.io
+      backendRefs:
+        - name: authentik-chart-server
+          namespace: authentik
+          port: 80

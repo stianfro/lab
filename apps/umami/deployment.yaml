@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: umami
+  namespace: umami
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: umami
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: umami
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: umami
+          image: docker.umami.is/umami-software/umami:postgresql-v3.2.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: umami-pg-app
+                  key: uri
+            - name: APP_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: umami-app
+                  key: app-secret
+            - name: DATABASE_TYPE
+              value: postgresql
+            - name: DISABLE_TELEMETRY
+              value: "1"
+            - name: DISABLE_UPDATES
+              value: "1"
+            - name: FORCE_SSL
+              value: "1"
+            - name: CLIENT_IP_HEADER
+              value: X-Forwarded-For
+          ports:
+            - name: http
+              containerPort: 3000
+          readinessProbe:
+            httpGet:
+              path: /api/heartbeat
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/heartbeat
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: next-cache
+              mountPath: /app/.next/cache
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: next-cache
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: umami
+  namespace: umami
+spec:
+  selector:
+    app.kubernetes.io/name: umami
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http

@@ -6,7 +6,6 @@ resources:
   - vaultstaticsecret.yaml
   - deployment.yaml
   - routes.yaml
-  - authentik-referencegrant.yaml
   - maintenance.yaml
   - monitoring.yaml
   - networkpolicy.yaml

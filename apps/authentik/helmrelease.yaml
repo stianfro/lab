@@ -18,9 +18,6 @@ spec:
         name: authentik
         namespace: flux-system
   values:
-    blueprints:
-      configMaps:
-        - authentik-blueprint-umami
     authentik:
       postgresql:
         enabled: false

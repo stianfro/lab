@@ -21,35 +21,93 @@ spec:
               command: ["/bin/sh", "-ec"]
               args:
                 - |
-                  if [ "$(psql "$DATABASE_URL" -Atqc "SELECT to_regclass('public.session') IS NOT NULL")" != "t" ]; then
+                  if [ "$(psql "$DATABASE_URL" -Atqc "SELECT every(to_regclass(name) IS NOT NULL) FROM unnest(ARRAY['public.session','public.website_event','public.event_data','public.session_data','public.revenue','public.session_replay','public.heatmap_event']) AS name")" != "t" ]; then
                     echo "Umami schema is not initialized; skipping retention"
                     exit 0
                   fi
 
                   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
-                  UPDATE session SET region = NULL, city = NULL
-                  WHERE region IS NOT NULL OR city IS NOT NULL;
+                  BEGIN;
 
-                  DELETE FROM event_data
-                  USING website_event
-                  WHERE event_data.website_event_id = website_event.event_id
-                    AND website_event.created_at < NOW() - INTERVAL '13 months';
-                  DELETE FROM website_event
-                  WHERE created_at < NOW() - INTERVAL '13 months';
-                  DELETE FROM session_data
-                  WHERE created_at < NOW() - INTERVAL '13 months';
-                  DELETE FROM revenue
-                  WHERE created_at < NOW() - INTERVAL '13 months';
-                  DELETE FROM session
-                  WHERE created_at < NOW() - INTERVAL '13 months'
-                    AND NOT EXISTS (
-                      SELECT 1 FROM website_event
-                      WHERE website_event.session_id = session.session_id
-                    );
-                  DELETE FROM session_replay
-                  WHERE created_at < NOW() - INTERVAL '13 months';
-                  DELETE FROM heatmap_event
-                  WHERE created_at < NOW() - INTERVAL '13 months';
+                  WITH changed AS (
+                    UPDATE session SET region = NULL, city = NULL
+                    WHERE region IS NOT NULL OR city IS NOT NULL
+                    RETURNING 1
+                  ) SELECT count(*) AS redacted_sessions FROM changed
+                  \gset
+                  \echo redacted_sessions=:redacted_sessions
+
+                  WITH removed AS (
+                    DELETE FROM event_data
+                    USING website_event
+                    WHERE event_data.website_event_id = website_event.event_id
+                      AND website_event.created_at < NOW() - INTERVAL '13 months'
+                    RETURNING 1
+                  ) SELECT count(*) AS deleted_event_data FROM removed
+                  \gset
+                  \echo deleted_event_data=:deleted_event_data
+
+                  WITH removed AS (
+                    DELETE FROM session_data
+                    WHERE created_at < NOW() - INTERVAL '13 months'
+                    RETURNING 1
+                  ) SELECT count(*) AS deleted_session_data FROM removed
+                  \gset
+                  \echo deleted_session_data=:deleted_session_data
+
+                  WITH removed AS (
+                    DELETE FROM revenue
+                    WHERE created_at < NOW() - INTERVAL '13 months'
+                    RETURNING 1
+                  ) SELECT count(*) AS deleted_revenue FROM removed
+                  \gset
+                  \echo deleted_revenue=:deleted_revenue
+
+                  WITH removed AS (
+                    DELETE FROM session_replay
+                    WHERE created_at < NOW() - INTERVAL '13 months'
+                    RETURNING 1
+                  ) SELECT count(*) AS deleted_session_replay FROM removed
+                  \gset
+                  \echo deleted_session_replay=:deleted_session_replay
+
+                  WITH removed AS (
+                    DELETE FROM heatmap_event
+                    WHERE created_at < NOW() - INTERVAL '13 months'
+                    RETURNING 1
+                  ) SELECT count(*) AS deleted_heatmap_event FROM removed
+                  \gset
+                  \echo deleted_heatmap_event=:deleted_heatmap_event
+
+                  WITH removed AS (
+                    DELETE FROM website_event
+                    WHERE created_at < NOW() - INTERVAL '13 months'
+                    RETURNING 1
+                  ) SELECT count(*) AS deleted_website_event FROM removed
+                  \gset
+                  \echo deleted_website_event=:deleted_website_event
+
+                  WITH removed AS (
+                    DELETE FROM session
+                    WHERE created_at < NOW() - INTERVAL '13 months'
+                      AND NOT EXISTS (
+                        SELECT 1 FROM website_event
+                        WHERE website_event.session_id = session.session_id
+                      )
+                      AND NOT EXISTS (
+                        SELECT 1 FROM session_data
+                        WHERE session_data.session_id = session.session_id
+                      )
+                      AND NOT EXISTS (
+                        SELECT 1 FROM revenue
+                        WHERE revenue.session_id = session.session_id
+                      )
+                    RETURNING 1
+                  ) SELECT count(*) AS deleted_sessions FROM removed
+                  \gset
+                  \echo deleted_sessions=:deleted_sessions
+
+                  COMMIT;
                   SQL
               env:
                 - name: DATABASE_URL

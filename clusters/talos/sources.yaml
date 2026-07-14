@@ -118,3 +118,14 @@ metadata:
 spec:
   interval: 1h
   url: https://zotregistry.dev/helm-charts
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: froystein-jp-prod
+  namespace: flux-system
+spec:
+  interval: 1m
+  ref:
+    branch: env/prod
+  url: https://github.com/stianfro/froystein.jp.git

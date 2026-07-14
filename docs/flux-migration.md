@@ -142,7 +142,8 @@ Fresh bootstrap expectation:
 - Repair or rebuild `authentik-pg-1`.
 - Decide whether to move `authentik-secrets` and `grafana-github-oauth` into
   VaultStaticSecret resources.
-- Add `kustomization.yaml` to external `blog` and `froystein.jp` env branches.
+- Add `kustomization.yaml` to the external `blog` env branches. The
+  `froystein.jp` production branch is now a direct Flux source.
 - The Kargo finalizer incident is documented in
   `docs/postmortems/2026-06-30-kargo-finalizer-outage.md`. Before any further
   controller or CRD cleanup, run `just controller-decommission-preflight

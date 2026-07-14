@@ -715,12 +715,13 @@ metadata:
 spec:
   dependsOn:
     - name: gateway-public
-  interval: 5m
-  path: ./apps/froystein-jp
+    - name: umami
+  interval: 1m
+  path: ./
   prune: true
   sourceRef:
     kind: GitRepository
-    name: lab
+    name: froystein-jp-prod
   timeout: 5m
   wait: true
 ---

@@ -1,6 +1,6 @@
 # Personal Devbox
 
-The devbox is a personal Ubuntu LTS VM for terminal-first coding agent work. It runs in KubeVirt, stores state on a 140 GiB Longhorn root disk, and is exposed only on the local network through a MetalLB SSH service.
+The devbox is a personal Ubuntu LTS VM for terminal-first coding agent work. It runs in KubeVirt, stores state on a 140 GiB Longhorn root disk, and is exposed only on the local network through a MetalLB service.
 
 ## Access
 
@@ -71,6 +71,29 @@ Open a plain SSH shell:
 just devbox-ssh
 ```
 
+Open the permanent OpenCode web server from the local network:
+
+```text
+http://devbox:4096
+```
+
+The system `opencode-web.service` runs `opencode web` from
+`/home/stian/src/github.com/stianfro`. Ansible creates its username and a random
+password once in `~/.config/opencode/web.env`, with permissions that allow only
+the devbox user to read it. The credentials are not stored in Git. On the
+devbox, print the URL, service status, username, and password with:
+
+```bash
+just devbox-opencode-web-info
+```
+
+This recipe prints the password in the terminal. Run it only in a private
+session, and do not copy its output into Git, logs, or public HTML files.
+The server uses plain HTTP with Basic authentication, so credentials and
+session traffic are not encrypted. Use this endpoint only on the trusted home
+network. Use an encrypted tunnel instead when connecting through another
+network.
+
 Open devbox HTML artifacts from the Mac:
 
 ```text
@@ -95,8 +118,9 @@ devbox-html open reports/status.html
 
 Do not put secrets, tokens, private logs, auth files, kubeconfigs, SSH keys, or
 sensitive transcripts under `~/public_html`. The VM template and LoadBalancer
-publish port 80, but a running VM only picks up new KubeVirt interface ports
-after its next normal restart.
+publish ports 80 and 4096, but a running VM only picks up new KubeVirt interface
+ports after its next normal restart. Restart the VM after reconciling the port
+4096 change, then run `just devbox-converge` to install and start OpenCode.
 
 Both SSH recipes start a local browser bridge on the workstation. OAuth
 authorization code flows on the devbox use `/usr/local/bin/devbox-browser`
@@ -184,10 +208,11 @@ Claude and Codex.
 Some devbox packages are installed with Homebrew for Linux when the Ubuntu
 package is missing or too old. The package lists are in
 `ansible/devbox/group_vars/devboxes.yaml` under `homebrew_packages` and
-`homebrew_casks`. Taps such as `intility/tap` are listed under
+`homebrew_casks`. Taps such as `anomalyco/tap` and `intility/tap` are listed under
 `homebrew_taps`. Ansible links selected binaries, including `az`, `indev`,
-`k9s`, and Homebrew's `nvim`, into `/usr/local/bin`. Homebrew's Neovim is used
-because the workstation AstroNvim config requires Neovim 0.10 or newer.
+`k9s`, `opencode`, and Homebrew's `nvim`, into `/usr/local/bin`. Homebrew's
+Neovim is used because the workstation AstroNvim config requires Neovim 0.10 or
+newer.
 
 Converge the devbox after changing the list:
 

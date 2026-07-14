@@ -18,3 +18,7 @@ spec:
       port: 80
       targetPort: 80
       protocol: TCP
+    - name: opencode-web
+      port: 4096
+      targetPort: 4096
+      protocol: TCP

@@ -12,3 +12,8 @@
   ansible.builtin.systemd:
     name: devbox-html-server.service
     state: restarted
+
+- name: Restart OpenCode web service
+  ansible.builtin.systemd:
+    name: opencode-web.service
+    state: restarted

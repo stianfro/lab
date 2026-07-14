@@ -36,6 +36,7 @@ devbox_browser_bridge_port := "48765"
 devbox_browser_bridge_forward := "127.0.0.1:" + devbox_browser_bridge_port + ":127.0.0.1:" + devbox_browser_bridge_port
 devbox_mac_relay_port := "48767"
 devbox_mac_relay_forward := "127.0.0.1:" + devbox_mac_relay_port
+devbox_opencode_web_port := "4096"
 
 vnc-ocp-upgrade-lab:
   virtctl vnc ocp-upgrade-lab -n ocp-upgrade-lab --vnc-type=tiger --vnc-path="/Applications/TigerVNC Viewer 1.15.0.app/Contents/MacOS/TigerVNC Viewer"
@@ -82,6 +83,19 @@ devbox-validate:
   mkdir -p .cache/ansible/tmp .cache/uv
   yq eval -e '(.homebrew_taps | contains(["anomalyco/tap"])) and (.homebrew_packages | contains(["anomalyco/tap/opencode"])) and (.homebrew_binary_links | contains(["opencode"]))' ansible/devbox/group_vars/devboxes.yaml
   ANSIBLE_LOCAL_TEMP=.cache/ansible/tmp ANSIBLE_HOME=.cache/ansible UV_CACHE_DIR=.cache/uv uvx --from ansible-core ansible-playbook -i ansible/devbox/inventory.ini ansible/devbox/playbook.yaml --syntax-check
+
+devbox-opencode-web-info:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  if [[ "$(hostname -s)" != "{{devbox_hostname}}" ]]; then
+    printf '%s\n' 'This recipe must be run on devbox.' >&2
+    exit 1
+  fi
+  credentials="$HOME/.config/opencode/web.env"
+  printf 'URL: http://%s:%s\n' '{{devbox_hostname}}' '{{devbox_opencode_web_port}}'
+  printf 'Status: %s\n' "$(systemctl is-active opencode-web.service || true)"
+  printf 'Username: %s\n' "$(sed -n 's/^OPENCODE_SERVER_USERNAME=//p' "$credentials")"
+  printf 'Password: %s\n' "$(sed -n 's/^OPENCODE_SERVER_PASSWORD=//p' "$credentials")"
 
 devbox-check-tmux-config:
   diff -u /Users/stianfroystein/.config/tmux/tmux.conf ansible/devbox/files/tmux.conf

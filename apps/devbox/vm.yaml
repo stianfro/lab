@@ -35,6 +35,9 @@ spec:
                 - name: http
                   port: 80
                   protocol: TCP
+                - name: opencode-web
+                  port: 4096
+                  protocol: TCP
                 - name: node-exporter
                   port: 9100
                   protocol: TCP

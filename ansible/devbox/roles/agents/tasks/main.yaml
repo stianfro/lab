@@ -293,3 +293,88 @@
     enabled: true
     state: started
     daemon_reload: true
+
+- name: Create OpenCode configuration directory
+  ansible.builtin.file:
+    path: "{{ devbox_home }}/.config/opencode"
+    state: directory
+    owner: "{{ devbox_user }}"
+    group: "{{ devbox_user }}"
+    mode: "0700"
+
+- name: Create OpenCode working directory
+  ansible.builtin.file:
+    path: "{{ devbox_opencode_working_directory }}"
+    state: directory
+    owner: "{{ devbox_user }}"
+    group: "{{ devbox_user }}"
+    mode: "0755"
+
+- name: Create OpenCode web credentials
+  ansible.builtin.shell: |
+    set -euo pipefail
+    umask 077
+    credentials_file={{ devbox_opencode_environment_file | quote }}
+    temporary_file="${credentials_file}.tmp"
+    trap 'rm -f "$temporary_file"' EXIT
+    {
+      printf '%s\n' 'OPENCODE_SERVER_USERNAME=opencode'
+      printf 'OPENCODE_SERVER_PASSWORD=%s\n' "$(python3 -c 'import secrets; print(secrets.token_hex(32))')"
+    } > "$temporary_file"
+    chmod 0400 "$temporary_file"
+    mv "$temporary_file" "$credentials_file"
+    trap - EXIT
+  args:
+    creates: "{{ devbox_opencode_environment_file }}"
+    executable: /bin/bash
+  become: true
+  become_user: "{{ devbox_user }}"
+  environment:
+    HOME: "{{ devbox_home }}"
+  notify: Restart OpenCode web service
+
+- name: Secure OpenCode web credentials
+  ansible.builtin.file:
+    path: "{{ devbox_opencode_environment_file }}"
+    state: file
+    owner: "{{ devbox_user }}"
+    group: "{{ devbox_user }}"
+    mode: "0400"
+
+- name: Install OpenCode web service
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/opencode-web.service
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=OpenCode web server
+      After=network-online.target
+      Wants=network-online.target
+
+      [Service]
+      Type=simple
+      User={{ devbox_user }}
+      Group={{ devbox_user }}
+      WorkingDirectory={{ devbox_opencode_working_directory }}
+      Environment=HOME={{ devbox_home }}
+      Environment=PATH={{ homebrew_path_entries | join(':') }}
+      Environment=BROWSER=/bin/true
+      EnvironmentFile={{ devbox_opencode_environment_file }}
+      ExecStart=/usr/local/bin/opencode web --hostname {{ devbox_opencode_bind }} --port {{ devbox_opencode_port }}
+      Restart=on-failure
+      RestartSec=5
+
+      [Install]
+      WantedBy=multi-user.target
+  notify:
+    - Reload systemd daemon
+    - Restart OpenCode web service
+
+- name: Enable OpenCode web service
+  ansible.builtin.systemd:
+    name: opencode-web.service
+    enabled: true
+    state: started
+    daemon_reload: true

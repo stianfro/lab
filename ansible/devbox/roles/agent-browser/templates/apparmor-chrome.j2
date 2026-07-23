@@ -1,0 +1,10 @@
+# Allow agent-browser Chrome to create user namespaces so it keeps its
+# own sandbox on Ubuntu. The profile is attached unconfined with an
+# explicit userns rule. Do not add --no-sandbox to Chrome invocations.
+abi <abi/4.0>,
+include <tunables/global>
+
+profile agent-browser-chrome {{ devbox_home }}/.agent-browser/browsers/chrome-*/chrome flags=(unconfined) {
+  userns,
+  include if exists <local/agent-browser-chrome>
+}

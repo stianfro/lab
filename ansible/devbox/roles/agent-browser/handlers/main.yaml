@@ -1,0 +1,5 @@
+---
+- name: Reload agent-browser Chrome AppArmor profile
+  ansible.builtin.command:
+    cmd: apparmor_parser -r /etc/apparmor.d/agent-browser-chrome
+  changed_when: true

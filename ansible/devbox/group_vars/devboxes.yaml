@@ -65,4 +65,5 @@ rustup_init_url: https://sh.rustup.rs
 uv_install_url: https://astral.sh/uv/install.sh
 apt_daily_on_calendar: "*-*-* 02:00 Asia/Tokyo"
 apt_daily_upgrade_on_calendar: "*-*-* 03:00 Asia/Tokyo"
+agent_browser_version: "0.32.4"
 apt_daily_randomized_delay_sec: 30m

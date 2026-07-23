@@ -80,8 +80,51 @@ devbox-converge-local-base: _devbox-local-inventory
   ANSIBLE_LOCAL_TEMP=.cache/ansible/tmp ANSIBLE_HOME=.cache/ansible UV_CACHE_DIR=.cache/uv uvx --from ansible-core ansible-playbook -i .cache/ansible/local-inventory.ini ansible/devbox/playbook.yaml --tags base
 
 devbox-validate:
-  mkdir -p .cache/ansible/tmp .cache/uv
+  #!/usr/bin/env bash
+  set -euo pipefail
+  tmpdir="$(mktemp -d)"
+  trap 'rm -rf "$tmpdir"' EXIT
+
+  # yq validation for group_vars YAML.
   yq eval -e '(.homebrew_taps | contains(["anomalyco/tap"])) and (.homebrew_packages | contains(["anomalyco/tap/opencode"])) and (.homebrew_binary_links | contains(["opencode"]))' ansible/devbox/group_vars/devboxes.yaml
+
+  # yq validation for every YAML file under ansible/.
+  while IFS= read -r -d '' yfile; do
+    yq eval '.' "$yfile" >/dev/null
+  done < <(find ansible/ \( -name '*.yaml' -o -name '*.yml' \) -print0 | sort -z)
+
+  # jq validation for managed agent-browser config JSON.
+  jq '.' ansible/devbox/roles/agent-browser/files/config.json >/dev/null
+
+  # Python compile check for MCP checker without repository cache files.
+  python3 -c 'import py_compile; py_compile.compile("scripts/devbox-agent-browser-mcp-check.py", cfile="'"$tmpdir"'/devbox-agent-browser-mcp-check.pyc", doraise=True)'
+
+  # shellcheck for agent-browser wrapper and changed shell scripts.
+  shellcheck \
+    ansible/devbox/roles/agent-browser/files/agent-browser-wrapper \
+    scripts/devbox-agent-browser-check.sh \
+    scripts/devbox-sync-personal-config.sh
+
+  # Generate and parse the personal Codex configuration without a remote sync.
+  mkdir -p "$tmpdir/home/.codex"
+  printf '%s\n' 'model = "gpt-5.6-sol"' > "$tmpdir/home/.codex/config.toml"
+  HOME="$tmpdir/home" DEVBOX_SYNC_CODEX_OUTPUT="$tmpdir/codex.toml" \
+    scripts/devbox-sync-personal-config.sh
+  python3 - "$tmpdir/codex.toml" <<'PY'
+  from pathlib import Path
+  import sys
+  import tomllib
+
+  toml_path = Path(sys.argv[1])
+  cfg = tomllib.loads(toml_path.read_text())
+  ab = cfg.get("mcp_servers", {}).get("agent-browser", {})
+  assert ab.get("command") == "/usr/local/bin/agent-browser", f"command mismatch: {ab.get('command')}"
+  assert ab.get("args") == ["mcp", "--tools", "core"], f"args mismatch: {ab.get('args')}"
+  print("Codex TOML validation passed")
+  PY
+
+  # Ansible syntax check.
+  mkdir -p .cache/ansible/tmp .cache/uv
   ANSIBLE_LOCAL_TEMP=.cache/ansible/tmp ANSIBLE_HOME=.cache/ansible UV_CACHE_DIR=.cache/uv uvx --from ansible-core ansible-playbook -i ansible/devbox/inventory.ini ansible/devbox/playbook.yaml --syntax-check
 
 devbox-opencode-web-info:
@@ -99,6 +142,35 @@ devbox-opencode-web-info:
 
 devbox-check-tmux-config:
   diff -u /Users/stianfroystein/.config/tmux/tmux.conf ansible/devbox/files/tmux.conf
+
+devbox-agent-browser-check:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  if [[ "$(hostname -s)" != "{{devbox_hostname}}" ]]; then
+    printf '%s\n' 'This recipe must be run on devbox.' >&2
+    exit 1
+  fi
+  scripts/devbox-agent-browser-check.sh
+
+devbox-agent-browser-dashboard:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  if [[ "$(hostname -s)" != "{{devbox_hostname}}" ]]; then
+    printf '%s\n' 'This recipe must be run on devbox.' >&2
+    exit 1
+  fi
+  lsof -ti :4848 -sTCP:LISTEN 2>/dev/null | xargs kill 2>/dev/null || true
+  /usr/local/bin/agent-browser dashboard start --port 4848
+  if ! ss -ltn 'sport = :4848' | grep -q '127.0.0.1:4848'; then
+    printf '%s\n' 'Dashboard did not bind to 127.0.0.1:4848.' >&2
+    exit 1
+  fi
+  devbox-browser http://localhost:4848
+
+devbox-agent-browser-dashboard-stop:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  lsof -ti :4848 -sTCP:LISTEN 2>/dev/null | xargs kill 2>/dev/null || true
 
 devbox-ansible-ping:
   mkdir -p .cache/ansible/tmp

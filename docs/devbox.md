@@ -267,6 +267,106 @@ just bench
 
 See `docs/agentic-coding-benchmarks.md` for macOS setup, profiles, result files, and comparison commands.
 
+## agent-browser
+
+agent-browser provides headless Chrome automation on the devbox. It is
+installed and pinned by Ansible. The version is set in
+`ansible/devbox/group_vars/devboxes.yaml` as `agent_browser_version`. To
+change the pinned version, update that variable and run
+`just devbox-converge`.
+
+The Ansible `agent-browser` role runs after the `agents` role, which
+installs Node.js and npm. The role installs apt dependencies (using the
+t64 package names for Ubuntu 24.04 Noble), installs the pinned npm
+package, downloads Chrome for the browser, generates an encryption key,
+manages the config file, deploys an AppArmor profile and shell wrapper,
+links the official skill, and registers the MCP server for both Claude
+and Codex.
+
+After the first installation, restart Claude and Codex so they pick up
+the new MCP server registration.
+
+### Mac relay proxy conversion
+
+The devbox SSH recipes expose a SOCKS proxy at
+`socks5h://127.0.0.1:48767` backed by the Mac. The agent-browser wrapper
+converts `socks5h://` to `socks5://` because Chrome does not support
+`socks5h://`. This conversion happens automatically when `ALL_PROXY`,
+`HTTPS_PROXY`, or `HTTP_PROXY` is set and `AGENT_BROWSER_PROXY` is not
+set.
+
+To override the auto-derived proxy, set `AGENT_BROWSER_PROXY` explicitly
+before running agent-browser:
+
+```bash
+AGENT_BROWSER_PROXY=socks5://127.0.0.1:48767 agent-browser open https://example.com
+```
+
+An explicitly set `AGENT_BROWSER_PROXY` is always preserved as-is, even
+if it uses `socks5h://`. Only the auto-derived fallback undergoes the
+conversion.
+
+### Worktree-hash sessions and cleanup
+
+Session names must be scoped to the Git worktree root to prevent
+collisions between concurrent worktrees. Derive the name from a hash of
+the absolute worktree path:
+
+```bash
+root="$(git rev-parse --show-toplevel)"
+session="ab-$(printf '%s' "$root" | sha256sum | cut -c1-12)-task"
+```
+
+Named sessions must always set a cleanup trap to close the session on
+exit, so abandoned sessions do not leak Chrome processes:
+
+```bash
+trap 'agent-browser --session "$session" close' EXIT
+```
+
+### Loopback dashboard access
+
+The agent-browser dashboard is available on the devbox at
+`http://127.0.0.1:4848`. It binds only to loopback so it is not exposed
+on the LAN.
+
+Start the dashboard and open it in the devbox browser:
+
+```bash
+just devbox-agent-browser-dashboard
+```
+
+Stop the dashboard:
+
+```bash
+just devbox-agent-browser-dashboard-stop
+```
+
+### Client restart after installation
+
+After the first `just devbox-converge` that installs agent-browser,
+restart Claude and Codex so they detect the new MCP server. Subsequent
+converges do not require a restart if the registration is unchanged.
+
+### Secrets, auth, and profile state
+
+The encryption key at `~/.agent-browser/.encryption-key` is generated
+once with mode 0600 and correct ownership. It is never logged, never
+replaced after creation, never synced to the repository, and never
+committed to Git. The Ansible role uses `no_log: true` for the key
+generation task and reports changed only when the key is first created.
+
+The `~/.agent-browser/` directory may contain browser profiles, cached
+credentials, session state, and auth tokens. Never sync or commit these
+files. The rsync personal config sync excludes `agent-browser/` from
+the Claude skills directory to preserve the Ansible-managed symlink.
+
+Run the full integration check on the devbox:
+
+```bash
+just devbox-agent-browser-check
+```
+
 ## Storage performance
 
 The current devbox root disk is a one-replica Longhorn volume. It was originally created with disabled data locality, which allowed the VM to run on one node while the Longhorn replica lived on another node. That path adds network IO to every disk operation.

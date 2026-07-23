@@ -18,5 +18,7 @@
       tags: kubernetes-tools
     - role: agents
       tags: agents
+    - role: agent-browser
+      tags: agent-browser
     - role: herdr
       tags: herdr

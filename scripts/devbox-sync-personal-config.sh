@@ -21,6 +21,7 @@ log() {
 }
 
 remote_mkdir() {
+  # shellcheck disable=SC2029
   ssh "$target" "mkdir -p $*"
 }
 
@@ -90,10 +91,26 @@ feature_lines.append("hooks = true")
 if feature_lines:
     lines.extend(["", "[features]", *feature_lines])
 
+# The devbox agent-browser role registers the Codex MCP server through
+# Ansible. Emit the same table here so a later sync keeps it present.
+lines.extend([
+    "",
+    "[mcp_servers.agent-browser]",
+    'command = "/usr/local/bin/agent-browser"',
+    'args = ["mcp", "--tools", "core"]',
+])
+
 dest.write_text("\n".join(lines).rstrip() + "\n")
+
+# Validate the generated TOML can be parsed back.
+tomllib.loads(dest.read_text())
 PY
 
-  rsync "${rsync_flags[@]}" "$dest" "$target:~/.codex/config.toml"
+  if [[ -n "${DEVBOX_SYNC_CODEX_OUTPUT:-}" ]]; then
+    cp "$dest" "$DEVBOX_SYNC_CODEX_OUTPUT"
+  else
+    rsync "${rsync_flags[@]}" "$dest" "$target:~/.codex/config.toml"
+  fi
 }
 
 generate_claude_settings() {
@@ -200,7 +217,14 @@ UNIT
   fi
 }
 
+if [[ -n "${DEVBOX_SYNC_CODEX_OUTPUT:-}" ]]; then
+  generate_codex_config
+  exit 0
+fi
+
 log "syncing to $target"
+# The quoted tildes must reach the remote shell for expansion.
+# shellcheck disable=SC2088
 remote_mkdir "~/.config/fish ~/.config/nvim ~/.codex ~/.codex/prompts ~/.codex/skills ~/.claude ~/.claude/commands ~/.claude/skills ~/.claude/hooks ~/.claude/engines ~/.claude/scripts ~/.claude/usage ~/.local/bin ~/code/claude-auto ~/.config/systemd/user"
 
 if [[ -d "$HOME/.config/fish" ]]; then
@@ -247,6 +271,7 @@ fi
 if [[ -d "$HOME/.claude/skills" ]]; then
   rsync "${rsync_flags[@]}" --delete \
     --exclude '.git/' \
+    --exclude 'agent-browser/' \
     "$HOME/.claude/skills/" "$target:~/.claude/skills/"
 fi
 if [[ -d "$repo_root/ansible/devbox/files/agent-skills/devbox-html" ]]; then

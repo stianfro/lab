@@ -1,0 +1,5 @@
+{
+  "contentBoundaries": true,
+  "maxOutput": 50000,
+  "idleTimeout": "15m"
+}

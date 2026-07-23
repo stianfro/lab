@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Load encryption key from file without printing it.
+if [[ -z "${AGENT_BROWSER_ENCRYPTION_KEY:-}" ]]; then
+  _key_file="${HOME}/.agent-browser/.encryption-key"
+  if [[ -r "$_key_file" ]]; then
+    AGENT_BROWSER_ENCRYPTION_KEY="$(cat "$_key_file")"
+    export AGENT_BROWSER_ENCRYPTION_KEY
+  fi
+fi
+
+# Proxy: preserve an explicitly set AGENT_BROWSER_PROXY. When unset,
+# derive from ALL_PROXY, HTTPS_PROXY, or HTTP_PROXY. Convert socks5h://
+# to socks5:// because Chrome does not accept socks5h.
+if [[ -z "${AGENT_BROWSER_PROXY:-}" ]]; then
+  _fallback="${ALL_PROXY:-${all_proxy:-}}"
+  if [[ -z "$_fallback" ]]; then
+    _fallback="${HTTPS_PROXY:-${https_proxy:-}}"
+  fi
+  if [[ -z "$_fallback" ]]; then
+    _fallback="${HTTP_PROXY:-${http_proxy:-}}"
+  fi
+  if [[ -n "$_fallback" ]]; then
+    case "$_fallback" in
+      socks5h://*)
+        AGENT_BROWSER_PROXY="socks5://${_fallback#socks5h://}"
+        ;;
+      *)
+        AGENT_BROWSER_PROXY="$_fallback"
+        ;;
+    esac
+    export AGENT_BROWSER_PROXY
+  fi
+fi
+
+# Proxy bypass from NO_PROXY when not explicitly set.
+if [[ -z "${AGENT_BROWSER_PROXY_BYPASS:-}" ]]; then
+  _no_proxy="${NO_PROXY:-${no_proxy:-}}"
+  if [[ -n "$_no_proxy" ]]; then
+    AGENT_BROWSER_PROXY_BYPASS="$_no_proxy"
+    export AGENT_BROWSER_PROXY_BYPASS
+  fi
+fi
+
+exec /usr/bin/agent-browser "$@"

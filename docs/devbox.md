@@ -230,6 +230,64 @@ codex login
 claude
 ```
 
+## Tailscale
+
+Ansible installs Tailscale from its official stable Ubuntu repository and keeps
+the `tailscaled` service enabled. It does not store a Tailscale account name,
+tailnet name, device address, login URL, auth key, or node state in Git.
+
+Install or repair only the Tailscale packages and service:
+
+```bash
+just devbox-converge-local-tailscale
+```
+
+Connect the devbox with an interactive browser login:
+
+```bash
+sudo tailscale up
+```
+
+Open the URL printed by the command, sign in to the intended tailnet, and
+approve the devbox if device approval is enabled. Do not paste the login URL,
+an auth key, or command output into this repository. Confirm the connection
+without recording device-specific output:
+
+```bash
+tailscale status
+```
+
+On another tailnet device, confirm the route and use the device name shown on
+the Tailscale Machines page to connect with the existing OpenSSH configuration:
+
+```bash
+tailscale ping devbox
+ssh YOUR_USER@devbox
+```
+
+The short device name requires MagicDNS. If MagicDNS is disabled, use the
+device's full Tailscale DNS name or Tailscale IP address instead. Treat device
+names and addresses as private operational data and do not add them to Git.
+
+This setup does not enable Tailscale SSH, subnet routing, or exit-node routing.
+Regular OpenSSH over the encrypted Tailscale network keeps the current SSH keys
+and server configuration. Enable extra Tailscale features only after you define
+the required access policy in the Tailscale admin console.
+
+For a persistent server, review key expiry for the devbox on the Machines page.
+Disabling expiry avoids a remote lockout but increases the impact of a stolen
+node key. Keep expiry enabled if periodic interactive reauthentication is
+acceptable.
+
+To disconnect without uninstalling Tailscale:
+
+```bash
+sudo tailscale down
+```
+
+To remove the devbox from the tailnet, disconnect it and delete the device from
+the Machines page in the Tailscale admin console.
+
 ## Monitoring
 
 The devbox runs `prometheus-node-exporter` on port 9100. Kubernetes exposes it

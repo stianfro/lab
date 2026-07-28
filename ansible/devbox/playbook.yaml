@@ -14,6 +14,8 @@
       tags: tmux
     - role: containers
       tags: containers
+    - role: tailscale
+      tags: tailscale
     - role: kubernetes-tools
       tags: kubernetes-tools
     - role: agents

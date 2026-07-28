@@ -79,6 +79,9 @@ devbox-converge-local: _devbox-local-inventory
 devbox-converge-local-base: _devbox-local-inventory
   ANSIBLE_LOCAL_TEMP=.cache/ansible/tmp ANSIBLE_HOME=.cache/ansible UV_CACHE_DIR=.cache/uv uvx --from ansible-core ansible-playbook -i .cache/ansible/local-inventory.ini ansible/devbox/playbook.yaml --tags base
 
+devbox-converge-local-tailscale: _devbox-local-inventory
+  ANSIBLE_LOCAL_TEMP=.cache/ansible/tmp ANSIBLE_HOME=.cache/ansible UV_CACHE_DIR=.cache/uv uvx --from ansible-core ansible-playbook -i .cache/ansible/local-inventory.ini ansible/devbox/playbook.yaml --tags tailscale
+
 devbox-validate:
   #!/usr/bin/env bash
   set -euo pipefail

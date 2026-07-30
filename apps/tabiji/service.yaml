@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: tabiji
+  namespace: tabiji
+  labels:
+    app.kubernetes.io/name: tabiji
+spec:
+  selector:
+    app.kubernetes.io/name: tabiji
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP

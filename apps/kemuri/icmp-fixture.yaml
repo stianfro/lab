@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: intermittent-icmp
+  namespace: kemuri
+  labels:
+    app.kubernetes.io/name: intermittent-icmp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: intermittent-icmp
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: intermittent-icmp
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: fixture
+          image: busybox:1.37.0@sha256:1487d0af5f52b4ba31c7e465126ee2123fe3f2305d638e7827681e7cf6c83d5e
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              while true; do
+                touch /tmp/ready
+                sleep 240
+                rm -f /tmp/ready
+                sleep 120
+              done
+          readinessProbe:
+            exec:
+              command:
+                - test
+                - -f
+                - /tmp/ready
+            periodSeconds: 2
+            timeoutSeconds: 1
+            failureThreshold: 1
+          resources:
+            requests:
+              cpu: 1m
+              memory: 2Mi
+            limits:
+              cpu: 20m
+              memory: 16Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 1Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: intermittent-icmp
+  namespace: kemuri
+  labels:
+    app.kubernetes.io/name: intermittent-icmp
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: intermittent-icmp

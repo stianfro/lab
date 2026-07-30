@@ -4,6 +4,7 @@ resources:
   - namespace.yaml
   - configmap.yaml
   - pvc.yaml
+  - icmp-fixture.yaml
   - deployment.yaml
   - service.yaml
   - httproute.yaml

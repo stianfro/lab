@@ -22,8 +22,16 @@ data:
       tick_interval: 100ms
       max_concurrent: 8
       max_concurrent_by_probe:
+        icmp: 2
         dns: 8
     profiles:
+      - kind: icmp
+        id: icmp-standard
+        interval: 1m
+        timeout: 3s
+        count: 20
+        address_family: ipv4
+        payload_size: 56
       - kind: dns
         id: dns-udp
         name: example.com
@@ -76,3 +84,10 @@ data:
           - id: tcp
             profile: dns-tcp
             server: 9.9.9.9:53
+      - id: intermittent-icmp
+        name: Controlled intermittent ICMP
+        address: intermittent-icmp.kemuri.svc.cluster.local
+        group_path: controlled/icmp
+        checks:
+          - id: icmp
+            profile: icmp-standard

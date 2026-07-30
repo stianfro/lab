@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kemuri-config
+  namespace: kemuri
+data:
+  kemuri.yaml: |
+    version: 1
+    server:
+      bind: 0.0.0.0
+      port: 8080
+      public_url: https://kemuri.talos.froystein.jp
+      shutdown_timeout: 15s
+    storage:
+      path: /var/lib/kemuri/kemuri.db
+      disk_pressure:
+        warning_free: 10%
+        critical_free: 5%
+    scheduler:
+      startup_mode: immediate_then_aligned
+      default_jitter: 10%
+      tick_interval: 100ms
+      max_concurrent: 8
+      max_concurrent_by_probe:
+        dns: 8
+    profiles:
+      - kind: dns
+        id: dns-udp
+        name: example.com
+        server: 1.1.1.1:53
+        record_type: A
+        protocol: udp
+        expected_rcode: noerror
+        require_answer: true
+        interval: 30s
+        timeout: 3s
+      - kind: dns
+        id: dns-tcp
+        name: example.com
+        server: 1.1.1.1:53
+        record_type: A
+        protocol: tcp
+        expected_rcode: noerror
+        require_answer: true
+        interval: 1m
+        timeout: 3s
+    targets:
+      - id: cloudflare-dns
+        name: Cloudflare DNS
+        address: 1.1.1.1
+        group_path: public/dns
+        checks:
+          - id: udp
+            profile: dns-udp
+          - id: tcp
+            profile: dns-tcp
+      - id: google-dns
+        name: Google Public DNS
+        address: 8.8.8.8
+        group_path: public/dns
+        checks:
+          - id: udp
+            profile: dns-udp
+            server: 8.8.8.8:53
+          - id: tcp
+            profile: dns-tcp
+            server: 8.8.8.8:53
+      - id: quad9-dns
+        name: Quad9 DNS
+        address: 9.9.9.9
+        group_path: public/dns
+        checks:
+          - id: udp
+            profile: dns-udp
+            server: 9.9.9.9:53
+          - id: tcp
+            profile: dns-tcp
+            server: 9.9.9.9:53

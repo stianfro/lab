@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kemuri
+  namespace: kemuri
+  labels:
+    app.kubernetes.io/name: kemuri
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kemuri
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: kemuri
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 20
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: kemuri
+          image: registry.talos.froystein.jp/kemuri@sha256:a1d5f8844df7cc78409e52b184923cdfedc8e0d4c802e987ccd8537c3c8cdf4f
+          imagePullPolicy: IfNotPresent
+          args:
+            - serve
+            - --config
+            - /etc/kemuri/kemuri.yaml
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 2
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: config
+              mountPath: /etc/kemuri
+              readOnly: true
+            - name: data
+              mountPath: /var/lib/kemuri
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: config
+          configMap:
+            name: kemuri-config
+        - name: data
+          persistentVolumeClaim:
+            claimName: kemuri-data
+        - name: tmp
+          emptyDir:
+            sizeLimit: 16Mi

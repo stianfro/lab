@@ -758,3 +758,21 @@ spec:
     name: lab
   timeout: 5m
   wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: kemuri
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: gateway-config
+    - name: longhorn
+  interval: 10m
+  path: ./apps/kemuri
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 10m
+  wait: true

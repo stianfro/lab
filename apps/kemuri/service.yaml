@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kemuri
+  namespace: kemuri
+  labels:
+    app.kubernetes.io/name: kemuri
+spec:
+  selector:
+    app.kubernetes.io/name: kemuri
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP

@@ -22,7 +22,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: web
-          image: ghcr.io/stianfro/tabiji:sha-37600e5@sha256:79c7b67978d7bab976ee875a0774d5813dba1cbf84f78af41415b9621f70a328
+          image: ghcr.io/stianfro/tabiji:sha-2d9326b@sha256:54fe97950653bba169a9b7fe66823467923799e0c84ec29ea8b470ffc52be457
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

@@ -569,11 +569,11 @@
         "cellGap": 0,
         "color": {
           "exponent": 0.7,
-          "fill": "dark-gray",
+        "fill": "dark-blue",
           "mode": "scheme",
           "reverse": false,
           "scale": "exponential",
-          "scheme": "Greys",
+        "scheme": "Blues",
           "steps": 48
         },
         "exemplars": {

@@ -143,9 +143,9 @@
         {
           "columns": [
             {
-              "selector": "state_code",
+              "selector": "state",
               "text": "State",
-              "type": "number"
+              "type": "string"
             }
           ],
           "datasource": {
@@ -157,14 +157,21 @@
           "global_query_id": "",
           "parser": "backend",
           "refId": "A",
-          "root_selector": "[{\"state_code\": $.state = \"healthy\" ? 1 : $.state = \"degraded\" ? 2 : $.state = \"down\" ? 3 : 0}]",
+          "root_selector": "$",
           "source": "url",
           "type": "json",
           "url": "/api/v1/targets/${target:percentencode}/checks/${check:percentencode}",
           "url_options": {
             "data": "",
             "method": "GET"
-          }
+          },
+          "computed_columns": [
+            {
+              "selector": "state == 'healthy' ? 1 : (state == 'degraded' ? 2 : (state == 'down' ? 3 : 0))",
+              "text": "State code",
+              "type": "number"
+            }
+          ]
         }
       ],
       "fieldConfig": {
@@ -220,7 +227,7 @@
           "calcs": [
             "lastNotNull"
           ],
-          "fields": "",
+          "fields": "State code",
           "values": false
         },
         "textMode": "auto",
@@ -271,7 +278,7 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "µs",
+          "unit": "\u00b5s",
           "color": {
             "mode": "thresholds"
           },
@@ -525,7 +532,7 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "µs",
+          "unit": "\u00b5s",
           "custom": {
             "hideFrom": {
               "legend": false,
@@ -590,7 +597,7 @@
         "yAxis": {
           "axisPlacement": "left",
           "reverse": false,
-          "unit": "µs"
+          "unit": "\u00b5s"
         },
         "yAxisLabels": "auto",
         "yAxisReverse": false
@@ -661,7 +668,7 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "µs",
+          "unit": "\u00b5s",
           "color": {
             "mode": "palette-classic"
           },

@@ -75,6 +75,8 @@ spec:
                 target_label: instance
                 replacement: '$1'
     grafana:
+      plugins:
+        - yesoreyeram-infinity-datasource 3.11.1
       persistence:
         enabled: true
         type: pvc
@@ -110,6 +112,23 @@ spec:
         dashboards:
           searchNamespace: ALL
       additionalDataSources:
+        - name: Kemuri API
+          uid: kemuri-api
+          type: yesoreyeram-infinity-datasource
+          access: proxy
+          url: http://kemuri.kemuri.svc.cluster.local
+          isDefault: false
+          editable: false
+          orgId: 1
+          version: 1
+          jsonData:
+            allowedHosts:
+              - http://kemuri.kemuri.svc.cluster.local
+            auth_method: none
+            customHealthCheckEnabled: true
+            customHealthCheckUrl: http://kemuri.kemuri.svc.cluster.local/healthz
+            customHealthCheckUrlOptions:
+              method: GET
         - name: Loki
           type: loki
           access: proxy

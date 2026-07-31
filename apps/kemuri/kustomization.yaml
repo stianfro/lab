@@ -7,4 +7,18 @@ resources:
   - icmp-fixture.yaml
   - deployment.yaml
   - service.yaml
+  - servicemonitor.yaml
   - httproute.yaml
+
+configMapGenerator:
+  - name: kemuri-grafana-dashboards
+    namespace: kemuri
+    files:
+      - dashboards/kemuri-service-health.json
+      - dashboards/kemuri-check-analysis.json
+    options:
+      labels:
+        grafana_dashboard: "1"
+
+generatorOptions:
+  disableNameSuffixHash: true

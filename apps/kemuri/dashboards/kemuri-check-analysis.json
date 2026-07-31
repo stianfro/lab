@@ -1,0 +1,1316 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "datasource": {
+          "type": "yesoreyeram-infinity-datasource",
+          "uid": "${infinity}"
+        },
+        "enable": true,
+        "hide": false,
+        "iconColor": "red",
+        "name": "Kemuri alerts",
+        "mappings": {
+          "text": {
+            "source": "field",
+            "value": "event_type"
+          },
+          "time": {
+            "source": "field",
+            "value": "timestamp_ms"
+          },
+          "title": {
+            "source": "field",
+            "value": "rule_id"
+          }
+        },
+        "target": {
+          "columns": [
+            {
+              "selector": "timestamp_ms",
+              "text": "timestamp_ms",
+              "type": "timestamp_epoch"
+            },
+            {
+              "selector": "event_type",
+              "text": "event_type",
+              "type": "string"
+            },
+            {
+              "selector": "rule_id",
+              "text": "rule_id",
+              "type": "string"
+            }
+          ],
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${infinity}"
+          },
+          "filters": [],
+          "format": "dataframe",
+          "global_query_id": "",
+          "parser": "backend",
+          "refId": "Alert",
+          "root_selector": "$.alert_events",
+          "source": "url",
+          "type": "json",
+          "url": "/api/v1/targets/${target:percentencode}/checks/${check:percentencode}/series?from_ms=${__timeFrom}&to_ms=${__timeTo}&max_points=1000",
+          "url_options": {
+            "data": "",
+            "method": "GET"
+          }
+        }
+      },
+      {
+        "datasource": {
+          "type": "yesoreyeram-infinity-datasource",
+          "uid": "${infinity}"
+        },
+        "enable": true,
+        "hide": false,
+        "iconColor": "blue",
+        "name": "Kemuri revisions",
+        "mappings": {
+          "text": {
+            "source": "field",
+            "value": "revision_id"
+          },
+          "time": {
+            "source": "field",
+            "value": "timestamp_ms"
+          },
+          "title": {
+            "source": "field",
+            "value": "revision_id"
+          }
+        },
+        "target": {
+          "columns": [
+            {
+              "selector": "timestamp_ms",
+              "text": "timestamp_ms",
+              "type": "timestamp_epoch"
+            },
+            {
+              "selector": "revision_id",
+              "text": "revision_id",
+              "type": "string"
+            }
+          ],
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${infinity}"
+          },
+          "filters": [],
+          "format": "dataframe",
+          "global_query_id": "",
+          "parser": "backend",
+          "refId": "Revision",
+          "root_selector": "$.revision_markers",
+          "source": "url",
+          "type": "json",
+          "url": "/api/v1/targets/${target:percentencode}/checks/${check:percentencode}/series?from_ms=${__timeFrom}&to_ms=${__timeTo}&max_points=1000",
+          "url_options": {
+            "data": "",
+            "method": "GET"
+          }
+        }
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Current state",
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${infinity}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 6,
+        "h": 5
+      },
+      "targets": [
+        {
+          "columns": [
+            {
+              "selector": "state_code",
+              "text": "State",
+              "type": "number"
+            }
+          ],
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${infinity}"
+          },
+          "filters": [],
+          "format": "table",
+          "global_query_id": "",
+          "parser": "backend",
+          "refId": "A",
+          "root_selector": "[{\"state_code\": $.state = \"healthy\" ? 1 : $.state = \"degraded\" ? 2 : $.state = \"down\" ? 3 : 0}]",
+          "source": "url",
+          "type": "json",
+          "url": "/api/v1/targets/${target:percentencode}/checks/${check:percentencode}",
+          "url_options": {
+            "data": "",
+            "method": "GET"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "color": "gray",
+                  "index": 0,
+                  "text": "No data"
+                },
+                "1": {
+                  "color": "green",
+                  "index": 1,
+                  "text": "Healthy"
+                },
+                "2": {
+                  "color": "yellow",
+                  "index": 2,
+                  "text": "Degraded"
+                },
+                "3": {
+                  "color": "red",
+                  "index": 3,
+                  "text": "Down"
+                }
+              }
+            }
+          ],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Latest latency",
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${infinity}"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 0,
+        "w": 6,
+        "h": 5
+      },
+      "targets": [
+        {
+          "columns": [
+            {
+              "selector": "last_latency_us",
+              "text": "Latency",
+              "type": "number"
+            }
+          ],
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${infinity}"
+          },
+          "filters": [],
+          "format": "table",
+          "global_query_id": "",
+          "parser": "backend",
+          "refId": "A",
+          "root_selector": "$",
+          "source": "url",
+          "type": "json",
+          "url": "/api/v1/targets/${target:percentencode}/checks/${check:percentencode}",
+          "url_options": {
+            "data": "",
+            "method": "GET"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "µs",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Latest measurement loss",
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${infinity}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 6,
+        "h": 5
+      },
+      "targets": [
+        {
+          "columns": [
+            {
+              "selector": "measurement_loss_ratio",
+              "text": "Loss",
+              "type": "number"
+            }
+          ],
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${infinity}"
+          },
+          "filters": [],
+          "format": "table",
+          "global_query_id": "",
+          "parser": "backend",
+          "refId": "A",
+          "root_selector": "$",
+          "source": "url",
+          "type": "json",
+          "url": "/api/v1/targets/${target:percentencode}/checks/${check:percentencode}",
+          "url_options": {
+            "data": "",
+            "method": "GET"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.01
+              },
+              {
+                "color": "red",
+                "value": 0.05
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Latest health failure",
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${infinity}"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 0,
+        "w": 6,
+        "h": 5
+      },
+      "targets": [
+        {
+          "columns": [
+            {
+              "selector": "health_failure_ratio",
+              "text": "Failure",
+              "type": "number"
+            }
+          ],
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${infinity}"
+          },
+          "filters": [],
+          "format": "table",
+          "global_query_id": "",
+          "parser": "backend",
+          "refId": "A",
+          "root_selector": "$",
+          "source": "url",
+          "type": "json",
+          "url": "/api/v1/targets/${target:percentencode}/checks/${check:percentencode}",
+          "url_options": {
+            "data": "",
+            "method": "GET"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.01
+              },
+              {
+                "color": "red",
+                "value": 0.05
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      }
+    },
+    {
+      "id": 10,
+      "type": "heatmap",
+      "title": "Latency distribution",
+      "description": "Smoke-style latency density. Darker cells contain more latency samples. Missing samples do not enter the distribution.",
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${infinity}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 5,
+        "w": 24,
+        "h": 12
+      },
+      "targets": [
+        {
+          "columns": [
+            {
+              "selector": "timestamp_ms",
+              "text": "Time",
+              "type": "timestamp_epoch"
+            },
+            {
+              "selector": "latency_us",
+              "text": "Latency",
+              "type": "number"
+            }
+          ],
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${infinity}"
+          },
+          "filters": [],
+          "format": "timeseries",
+          "global_query_id": "",
+          "parser": "backend",
+          "refId": "Smoke",
+          "root_selector": "(\n  $bins := $.histogram_bin_representatives_us;\n  $reduce(\n    $map($.points, function($point) {\n      $reduce(\n        $map($point.histogram_bins, function($samples, $index) {\n          $samples > 0\n            ? $map([1..$samples], function() {\n                {\n                  \"timestamp_ms\": $point.timestamp_ms,\n                  \"latency_us\": $bins[$index]\n                }\n              })\n            : []\n        }),\n        $append\n      )\n    }),\n    $append\n  )\n)",
+          "source": "url",
+          "type": "json",
+          "url": "/api/v1/targets/${target:percentencode}/checks/${check:percentencode}/series?from_ms=${__timeFrom}&to_ms=${__timeTo}&max_points=300",
+          "url_options": {
+            "data": "",
+            "method": "GET"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "µs",
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "scaleDistribution": {
+              "type": "log",
+              "log": 2
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "bucket": {
+          "layout": "auto"
+        },
+        "calculate": true,
+        "calculation": {
+          "xBuckets": {
+            "mode": "count",
+            "value": "180"
+          },
+          "yBuckets": {
+            "mode": "count",
+            "scale": {
+              "log": 2,
+              "type": "log"
+            },
+            "value": "64"
+          }
+        },
+        "cellGap": 1,
+        "color": {
+          "exponent": 0.5,
+          "fill": "dark-green",
+          "mode": "scheme",
+          "reverse": false,
+          "scale": "exponential",
+          "scheme": "Greens",
+          "steps": 64
+        },
+        "exemplars": {
+          "color": "rgba(255,0,255,0.7)"
+        },
+        "filterValues": {
+          "le": 0
+        },
+        "legend": {
+          "show": true,
+          "showLegend": true
+        },
+        "mode": "calculate",
+        "rowsFrame": {
+          "layout": "auto"
+        },
+        "tooltip": {
+          "show": true,
+          "yHistogram": true
+        },
+        "yAxis": {
+          "axisPlacement": "left",
+          "reverse": false,
+          "unit": "µs"
+        },
+        "yAxisLabels": "auto",
+        "yAxisReverse": false
+      }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Latency",
+      "description": "Latency values are response latency. Timeouts and network errors do not enter the latency series.",
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${infinity}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 17,
+        "w": 24,
+        "h": 10
+      },
+      "targets": [
+        {
+          "columns": [
+            {
+              "selector": "timestamp_ms",
+              "text": "Time",
+              "type": "timestamp_epoch"
+            },
+            {
+              "selector": "min_latency_us",
+              "text": "Minimum",
+              "type": "number"
+            },
+            {
+              "selector": "p50_latency_us",
+              "text": "p50",
+              "type": "number"
+            },
+            {
+              "selector": "p95_latency_us",
+              "text": "p95",
+              "type": "number"
+            },
+            {
+              "selector": "max_latency_us",
+              "text": "Maximum",
+              "type": "number"
+            }
+          ],
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${infinity}"
+          },
+          "filters": [],
+          "format": "timeseries",
+          "global_query_id": "",
+          "parser": "backend",
+          "refId": "A",
+          "root_selector": "$.points",
+          "source": "url",
+          "type": "json",
+          "url": "/api/v1/targets/${target:percentencode}/checks/${check:percentencode}/series?from_ms=${__timeFrom}&to_ms=${__timeTo}&max_points=1000",
+          "url_options": {
+            "data": "",
+            "method": "GET"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "µs",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "drawStyle": "line",
+            "fillOpacity": 12,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 4,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "mean",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Loss and health failures",
+      "description": "Measurement loss is missing measurement data. Health failure is a protocol-level failure.",
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${infinity}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 27,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "columns": [
+            {
+              "selector": "timestamp_ms",
+              "text": "Time",
+              "type": "timestamp_epoch"
+            },
+            {
+              "selector": "measurement_loss_ratio",
+              "text": "Measurement loss",
+              "type": "number"
+            },
+            {
+              "selector": "health_failure_ratio",
+              "text": "Health failure",
+              "type": "number"
+            }
+          ],
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${infinity}"
+          },
+          "filters": [],
+          "format": "timeseries",
+          "global_query_id": "",
+          "parser": "backend",
+          "refId": "A",
+          "root_selector": "$.points",
+          "source": "url",
+          "type": "json",
+          "url": "/api/v1/targets/${target:percentencode}/checks/${check:percentencode}/series?from_ms=${__timeFrom}&to_ms=${__timeTo}&max_points=1000",
+          "url_options": {
+            "data": "",
+            "method": "GET"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "drawStyle": "line",
+            "fillOpacity": 12,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 4,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "mean",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Sample counts",
+      "description": "Counts in each fixed time bucket.",
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${infinity}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 27,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "columns": [
+            {
+              "selector": "timestamp_ms",
+              "text": "Time",
+              "type": "timestamp_epoch"
+            },
+            {
+              "selector": "attempted",
+              "text": "Attempted",
+              "type": "number"
+            },
+            {
+              "selector": "healthy",
+              "text": "Healthy",
+              "type": "number"
+            },
+            {
+              "selector": "unhealthy",
+              "text": "Unhealthy",
+              "type": "number"
+            },
+            {
+              "selector": "measurement_lost",
+              "text": "Measurement lost",
+              "type": "number"
+            }
+          ],
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${infinity}"
+          },
+          "filters": [],
+          "format": "timeseries",
+          "global_query_id": "",
+          "parser": "backend",
+          "refId": "A",
+          "root_selector": "$.points",
+          "source": "url",
+          "type": "json",
+          "url": "/api/v1/targets/${target:percentencode}/checks/${check:percentencode}/series?from_ms=${__timeFrom}&to_ms=${__timeTo}&max_points=1000",
+          "url_options": {
+            "data": "",
+            "method": "GET"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "drawStyle": "line",
+            "fillOpacity": 12,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 4,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "mean",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "type": "state-timeline",
+      "title": "Bucket status",
+      "description": "Observed, skipped, and missing periods at their actual timestamps.",
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${infinity}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 35,
+        "w": 24,
+        "h": 7
+      },
+      "targets": [
+        {
+          "columns": [
+            {
+              "selector": "timestamp_ms",
+              "text": "Time",
+              "type": "timestamp_epoch"
+            },
+            {
+              "selector": "bucket_status",
+              "text": "Bucket status",
+              "type": "string"
+            }
+          ],
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${infinity}"
+          },
+          "filters": [],
+          "format": "table",
+          "global_query_id": "",
+          "parser": "backend",
+          "refId": "A",
+          "root_selector": "$.points",
+          "source": "url",
+          "type": "json",
+          "url": "/api/v1/targets/${target:percentencode}/checks/${check:percentencode}/series?from_ms=${__timeFrom}&to_ms=${__timeTo}&max_points=1000",
+          "url_options": {
+            "data": "",
+            "method": "GET"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "fillOpacity": 70,
+            "lineWidth": 0,
+            "spanNulls": false
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "observed": {
+                  "color": "green",
+                  "index": 0,
+                  "text": "Observed"
+                },
+                "skipped": {
+                  "color": "yellow",
+                  "index": 1,
+                  "text": "Skipped"
+                },
+                "missing": {
+                  "color": "gray",
+                  "index": 2,
+                  "text": "Missing"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "alignValue": "left",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "mergeValues": true,
+        "rowHeight": 0.9,
+        "showValue": "auto",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "type": "table",
+      "title": "Current targets",
+      "description": "Current state and check count for all configured targets.",
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${infinity}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 42,
+        "w": 24,
+        "h": 9
+      },
+      "targets": [
+        {
+          "columns": [
+            {
+              "selector": "name",
+              "text": "Target",
+              "type": "string"
+            },
+            {
+              "selector": "target_id",
+              "text": "ID",
+              "type": "string"
+            },
+            {
+              "selector": "group_path",
+              "text": "Group",
+              "type": "string"
+            },
+            {
+              "selector": "state",
+              "text": "State",
+              "type": "string"
+            },
+            {
+              "selector": "checks_count",
+              "text": "Checks",
+              "type": "number"
+            }
+          ],
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${infinity}"
+          },
+          "filters": [],
+          "format": "table",
+          "global_query_id": "",
+          "parser": "backend",
+          "refId": "A",
+          "root_selector": "$.targets",
+          "source": "url",
+          "type": "json",
+          "url": "/api/v1/targets?limit=200",
+          "url_options": {
+            "data": "",
+            "method": "GET"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      }
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 41,
+  "tags": [
+    "kemuri",
+    "checks",
+    "infinity"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "label": "Kemuri API",
+        "name": "infinity",
+        "options": [],
+        "query": "yesoreyeram-infinity-datasource",
+        "refresh": 1,
+        "type": "datasource"
+      },
+      {
+        "current": {},
+        "datasource": {
+          "type": "yesoreyeram-infinity-datasource",
+          "uid": "${infinity}"
+        },
+        "definition": "",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Target",
+        "multi": false,
+        "name": "target",
+        "options": [],
+        "query": {
+          "infinityQuery": {
+            "filters": [],
+            "format": "table",
+            "parser": "backend",
+            "refId": "variable",
+            "source": "url",
+            "type": "json",
+            "url_options": {
+              "data": "",
+              "method": "GET"
+            },
+            "columns": [
+              {
+                "selector": "target_id",
+                "text": "__value",
+                "type": "string"
+              },
+              {
+                "selector": "name",
+                "text": "__text",
+                "type": "string"
+              }
+            ],
+            "root_selector": "$.targets",
+            "url": "/api/v1/targets?limit=200"
+          },
+          "queryType": "infinity",
+          "refId": "variable"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {},
+        "datasource": {
+          "type": "yesoreyeram-infinity-datasource",
+          "uid": "${infinity}"
+        },
+        "definition": "",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Check",
+        "multi": false,
+        "name": "check",
+        "options": [],
+        "query": {
+          "infinityQuery": {
+            "filters": [],
+            "format": "table",
+            "parser": "backend",
+            "refId": "variable",
+            "source": "url",
+            "type": "json",
+            "url_options": {
+              "data": "",
+              "method": "GET"
+            },
+            "columns": [
+              {
+                "selector": "check_id",
+                "text": "__value",
+                "type": "string"
+              },
+              {
+                "selector": "check_id",
+                "text": "__text",
+                "type": "string"
+              }
+            ],
+            "root_selector": "$.checks",
+            "url": "/api/v1/targets/${target:percentencode}/checks?limit=200"
+          },
+          "queryType": "infinity",
+          "refId": "variable"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Kemuri check analysis",
+  "uid": "kemuri-check-analysis",
+  "version": 1,
+  "weekStart": ""
+}

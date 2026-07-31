@@ -137,7 +137,7 @@
         "x": 0,
         "y": 0,
         "w": 6,
-        "h": 5
+        "h": 4
       },
       "targets": [
         {
@@ -246,7 +246,7 @@
         "x": 6,
         "y": 0,
         "w": 6,
-        "h": 5
+        "h": 4
       },
       "targets": [
         {
@@ -322,7 +322,7 @@
         "x": 12,
         "y": 0,
         "w": 6,
-        "h": 5
+        "h": 4
       },
       "targets": [
         {
@@ -408,7 +408,7 @@
         "x": 18,
         "y": 0,
         "w": 6,
-        "h": 5
+        "h": 4
       },
       "targets": [
         {
@@ -493,9 +493,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 5,
+        "y": 4,
         "w": 24,
-        "h": 12
+        "h": 13
       },
       "targets": [
         {
@@ -555,7 +555,7 @@
         "calculation": {
           "xBuckets": {
             "mode": "count",
-            "value": "180"
+            "value": "24"
           },
           "yBuckets": {
             "mode": "count",
@@ -563,18 +563,18 @@
               "log": 2,
               "type": "log"
             },
-            "value": "64"
+            "value": "48"
           }
         },
-        "cellGap": 1,
+        "cellGap": 0,
         "color": {
-          "exponent": 0.5,
-          "fill": "dark-green",
+          "exponent": 0.7,
+          "fill": "dark-gray",
           "mode": "scheme",
           "reverse": false,
           "scale": "exponential",
-          "scheme": "Greens",
-          "steps": 64
+          "scheme": "Greys",
+          "steps": 48
         },
         "exemplars": {
           "color": "rgba(255,0,255,0.7)"
@@ -614,9 +614,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 17,
+        "y": 22,
         "w": 24,
-        "h": 10
+        "h": 9
       },
       "targets": [
         {
@@ -743,9 +743,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 27,
+        "y": 17,
         "w": 12,
-        "h": 8
+        "h": 5
       },
       "targets": [
         {
@@ -797,8 +797,8 @@
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
-            "drawStyle": "line",
-            "fillOpacity": 12,
+            "drawStyle": "bars",
+            "fillOpacity": 65,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
@@ -806,7 +806,7 @@
               "viz": false
             },
             "lineInterpolation": "linear",
-            "lineWidth": 2,
+            "lineWidth": 0,
             "pointSize": 4,
             "scaleDistribution": {
               "type": "linear"
@@ -819,7 +819,8 @@
             },
             "thresholdsStyle": {
               "mode": "off"
-            }
+            },
+            "barAlignment": 0
           },
           "thresholds": {
             "mode": "absolute",
@@ -831,16 +832,43 @@
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Measurement loss"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Health failure"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                }
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "legend": {
-          "calcs": [
-            "lastNotNull",
-            "mean",
-            "max"
-          ],
-          "displayMode": "table",
+          "calcs": [],
+          "displayMode": "list",
           "placement": "bottom",
           "showLegend": true
         },
@@ -861,10 +889,10 @@
         "uid": "${infinity}"
       },
       "gridPos": {
-        "x": 12,
-        "y": 27,
-        "w": 12,
-        "h": 8
+        "x": 0,
+        "y": 31,
+        "w": 24,
+        "h": 7
       },
       "targets": [
         {
@@ -990,10 +1018,10 @@
         "uid": "${infinity}"
       },
       "gridPos": {
-        "x": 0,
-        "y": 35,
-        "w": 24,
-        "h": 7
+        "x": 12,
+        "y": 17,
+        "w": 12,
+        "h": 5
       },
       "targets": [
         {
@@ -1099,7 +1127,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 42,
+        "y": 38,
         "w": 24,
         "h": 9
       },

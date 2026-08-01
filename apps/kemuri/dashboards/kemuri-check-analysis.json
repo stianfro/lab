@@ -278,7 +278,7 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "\u00b5s",
+          "unit": "µs",
           "color": {
             "mode": "thresholds"
           },
@@ -499,28 +499,17 @@
       },
       "targets": [
         {
-          "columns": [
-            {
-              "selector": "timestamp_ms",
-              "text": "Time",
-              "type": "timestamp_epoch"
-            },
-            {
-              "selector": "latency_us",
-              "text": "Latency",
-              "type": "number"
-            }
-          ],
+          "columns": [],
           "datasource": {
             "type": "yesoreyeram-infinity-datasource",
             "uid": "${infinity}"
           },
           "filters": [],
-          "format": "timeseries",
+          "format": "table",
           "global_query_id": "",
           "parser": "backend",
           "refId": "Smoke",
-          "root_selector": "(\n  $bins := $.histogram_bin_representatives_us;\n  $reduce(\n    $map($.points, function($point) {\n      $reduce(\n        $map($point.histogram_bins, function($samples, $index) {\n          $samples > 0\n            ? $map([1..$samples], function() {\n                {\n                  \"timestamp_ms\": $point.timestamp_ms,\n                  \"latency_us\": $bins[$index]\n                }\n              })\n            : []\n        }),\n        $append\n      )\n    }),\n    $append\n  )\n)",
+          "root_selector": "(\n  $active := $filter([0..96], function($i) {\n    $sum($map($.points, function($point) { $point.histogram_bins[$i] })) > 0\n  });\n  $map($.points, function($point) {\n    $merge([\n      {\"timestamp_ms\": $point.timestamp_ms},\n      $map($active, function($i) {\n        {($string($i = 0 ? 1 : $power(10, $i / 12))): $point.histogram_bins[$i]}\n      })\n    ])\n  })\n)",
           "source": "url",
           "type": "json",
           "url": "/api/v1/targets/${target:percentencode}/checks/${check:percentencode}/series?from_ms=${__timeFrom}&to_ms=${__timeTo}&max_points=300",
@@ -532,7 +521,7 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "\u00b5s",
+          "unit": "µs",
           "custom": {
             "hideFrom": {
               "legend": false,
@@ -549,31 +538,17 @@
       },
       "options": {
         "bucket": {
-          "layout": "auto"
+          "layout": "le"
         },
-        "calculate": true,
-        "calculation": {
-          "xBuckets": {
-            "mode": "count",
-            "value": "24"
-          },
-          "yBuckets": {
-            "mode": "count",
-            "scale": {
-              "log": 2,
-              "type": "log"
-            },
-            "value": "48"
-          }
-        },
+        "calculate": false,
         "cellGap": 0,
         "color": {
           "exponent": 0.7,
-        "fill": "dark-blue",
+          "fill": "dark-blue",
           "mode": "scheme",
           "reverse": false,
           "scale": "exponential",
-        "scheme": "Blues",
+          "scheme": "Blues",
           "steps": 48
         },
         "exemplars": {
@@ -586,9 +561,9 @@
           "show": true,
           "showLegend": true
         },
-        "mode": "calculate",
+        "mode": "rows",
         "rowsFrame": {
-          "layout": "auto"
+          "layout": "le"
         },
         "tooltip": {
           "show": true,
@@ -597,11 +572,25 @@
         "yAxis": {
           "axisPlacement": "left",
           "reverse": false,
-          "unit": "\u00b5s"
+          "unit": "µs"
         },
         "yAxisLabels": "auto",
         "yAxisReverse": false
-      }
+      },
+      "transformations": [
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "destinationType": "time",
+                "targetField": "timestamp_ms"
+              }
+            ],
+            "fields": {}
+          }
+        }
+      ]
     },
     {
       "id": 5,
@@ -668,7 +657,7 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "\u00b5s",
+          "unit": "µs",
           "color": {
             "mode": "palette-classic"
           },

@@ -50,12 +50,14 @@ homebrew_packages:
   - anomalyco/tap/opencode
   - azure-cli
   - derailed/k9s/k9s
+  - gh
   - herdr
   - neovim
 homebrew_casks:
   - intility/tap/indev
 homebrew_binary_links:
   - az
+  - gh
   - herdr
   - indev
   - k9s

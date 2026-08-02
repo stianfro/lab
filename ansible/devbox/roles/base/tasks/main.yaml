@@ -13,7 +13,6 @@
       - fish
       - fzf
       - git
-      - gh
       - gnupg
       - hyperfine
       - jq
@@ -41,6 +40,11 @@
       - zoxide
     state: present
     update_cache: true
+
+- name: Remove apt GitHub CLI package
+  ansible.builtin.apt:
+    name: gh
+    state: absent
 
 - name: Configure apt periodic updates
   ansible.builtin.copy:

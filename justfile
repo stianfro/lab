@@ -89,7 +89,7 @@ devbox-validate:
   trap 'rm -rf "$tmpdir"' EXIT
 
   # yq validation for group_vars YAML.
-  yq eval -e '(.homebrew_taps | contains(["anomalyco/tap"])) and (.homebrew_packages | contains(["anomalyco/tap/opencode"])) and (.homebrew_binary_links | contains(["opencode"]))' ansible/devbox/group_vars/devboxes.yaml
+  yq eval -e '(.homebrew_taps | contains(["anomalyco/tap"])) and (.homebrew_packages | contains(["anomalyco/tap/opencode", "gh"])) and (.homebrew_binary_links | contains(["opencode", "gh"]))' ansible/devbox/group_vars/devboxes.yaml
 
   # yq validation for every YAML file under ansible/.
   while IFS= read -r -d '' yfile; do

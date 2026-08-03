@@ -185,3 +185,15 @@
     state: link
     force: true
   loop: "{{ homebrew_binary_links }}"
+
+- name: Inspect global Git config
+  ansible.builtin.stat:
+    path: "{{ devbox_home }}/.gitconfig"
+  register: homebrew_global_git_config
+
+- name: Migrate GitHub CLI credential helper to Homebrew
+  ansible.builtin.replace:
+    path: "{{ devbox_home }}/.gitconfig"
+    regexp: /usr/bin/gh auth git-credential
+    replace: "{{ homebrew_prefix }}/bin/gh auth git-credential"
+  when: homebrew_global_git_config.stat.exists

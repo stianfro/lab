@@ -28,7 +28,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: kemuri
-          image: registry.talos.froystein.jp/kemuri@sha256:d02ed1e83e7a98a970a3d50bf586fb611513efcc051c1d1c488aa4414c092b5a
+          image: ghcr.io/stianfro/kemuri:1.0.1@sha256:776a1bb1d25d61d26344fe3bd1b500a154e01c3a2fea1b28d2a849f2f11935ac
           imagePullPolicy: IfNotPresent
           args:
             - serve

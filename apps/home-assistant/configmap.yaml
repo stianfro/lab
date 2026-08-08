@@ -49,6 +49,9 @@ data:
         name: office_call
         services:
           - service: persistent_notification
+          - service: mobile_app_stians_iphone
+          # Add more phones here (e.g. the wife's) after their
+          # companion apps register.
 
     script:
       call_stian:

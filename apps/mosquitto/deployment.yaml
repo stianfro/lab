@@ -37,7 +37,6 @@ spec:
               mosquitto_passwd -c -b /mosquitto/auth/passwd homeassistant "$HOMEASSISTANT_PASSWORD"
               mosquitto_passwd -b /mosquitto/auth/passwd pizero "$PIZERO_PASSWORD"
               cp /mosquitto/acl-src/acl /mosquitto/auth/acl
-              chmod 0700 /mosquitto/auth
               chmod 0600 /mosquitto/auth/passwd /mosquitto/auth/acl
           env:
             - name: HOMEASSISTANT_PASSWORD

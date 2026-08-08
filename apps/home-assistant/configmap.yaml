@@ -1108,3 +1108,31 @@ data:
                 AC is unavailable.
                 Adapter is silent. Known fix: power the unit off at the
                 breaker for 1 minute, then on.
+
+  homekit.yaml: |
+    # HomeKit Bridge: exposes selected entities to Apple Home and Siri.
+    #
+    # Only the two air conditioners are exposed. The Hue lights and scenes
+    # are NOT exposed here on purpose: the Hue bridge is paired to Apple
+    # Home directly, and a second copy through this bridge would create
+    # duplicate accessories with unreliable Siri name resolution.
+    #
+    # Requirements that already hold:
+    # - The pod runs with hostNetwork, so mDNS advertisement reaches the
+    #   LAN. Without it Apple devices can not discover the bridge.
+    # - Pairing state lives in /config/.storage on the PVC and survives
+    #   restarts. Pair once, keep forever.
+    # - The pod IP changes when the pod moves to another node. Apple Home
+    #   re-discovers the bridge through mDNS by name, not by IP.
+    homekit:
+      - name: HA Bridge
+        port: 21063
+        filter:
+          include_entities:
+            - climate.living_room_ac
+            - climate.office_ac
+        entity_config:
+          climate.living_room_ac:
+            name: Living Room AC
+          climate.office_ac:
+            name: Office AC

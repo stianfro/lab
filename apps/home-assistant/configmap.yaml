@@ -259,6 +259,12 @@ data:
           - input_boolean.office_call_pending
           - counter.office_call_count
           - binary_sensor.office_pi_online
+        # Daikin AC entities from the echonetlite integration. Globs keep
+        # future units exported without further config changes.
+        include_entity_globs:
+          - climate.*_ac
+          - sensor.*_ac_measured_*
+          - binary_sensor.*_ac_fault_status
 
     # The Pi publishes a retained LWT on this topic. The MQTT broker
     # connection itself is UI-configured; YAML entities work next to it.

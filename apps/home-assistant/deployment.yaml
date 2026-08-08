@@ -17,6 +17,12 @@ spec:
       labels:
         app.kubernetes.io/name: home-assistant
     spec:
+      # Host networking gives Home Assistant a direct LAN presence. ECHONET
+      # Lite devices send their replies back to UDP 3610 on the caller, and
+      # mDNS/SSDP discovery needs multicast on the LAN segment. Pod-network
+      # NAT breaks both, so the pod runs on the node network stack instead.
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 60
       securityContext:

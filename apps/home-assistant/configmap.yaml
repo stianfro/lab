@@ -149,26 +149,35 @@ data:
             data:
               message: Stian acknowledged the call.
 
-      # Template for the Hue remote trigger. Kept commented out on purpose.
-      # Fill in the real trigger after you observe the actual button events
-      # in Developer Tools > Events (hue_event or a device trigger). Do not
-      # guess device ids or event data.
-      #
-      # - id: office_call_hue_remote
-      #   alias: Office call from Hue remote
-      #   mode: single
-      #   trigger:
-      #     # Option A: hue_event (Hue integration event). Replace the
-      #     # event_data with values observed from the real remote.
-      #     - platform: event
-      #       event_type: hue_event
-      #       event_data:
-      #         device_id: REPLACE_WITH_OBSERVED_DEVICE_ID
-      #         type: short_release
-      #         subtype: 1
-      #     # Option B: device trigger. Create it in the UI once, then copy
-      #     # the generated trigger here.
-      #   action:
-      #     - service: script.call_stian
-      #       data:
-      #         source: hue_remote
+      # Kitchen remote (Hue dimmer switch, device_id
+      # b6ba1f557b05d31f026f01ed3742a8f9). Physical layout:
+      # - button 1 (top, on/off) = start the office call
+      # - button 4 (bottom, hue) = cancel the office call
+      # - buttons 2 and 3 (middle, dim up and dim down) are reserved.
+      - id: office_call_hue_remote
+        alias: Office call from Hue remote
+        mode: single
+        trigger:
+          - platform: event
+            event_type: hue_event
+            event_data:
+              device_id: b6ba1f557b05d31f026f01ed3742a8f9
+              type: initial_press
+              subtype: 1
+        action:
+          - service: script.call_stian
+            data:
+              source: hue_remote
+
+      - id: office_call_hue_cancel
+        alias: Office call cancel from Hue remote
+        mode: single
+        trigger:
+          - platform: event
+            event_type: hue_event
+            event_data:
+              device_id: b6ba1f557b05d31f026f01ed3742a8f9
+              type: initial_press
+              subtype: 4
+        action:
+          - service: script.office_call_clear

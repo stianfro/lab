@@ -32,6 +32,9 @@ spec:
             - |
               cfg=/config/configuration.yaml
               if [ ! -f "$cfg" ]; then
+                # New install only: the http block is needed once so the reverse
+                # proxy works during onboarding. HA imports it into UI-managed
+                # storage (.storage) on first start.
                 cat > "$cfg" <<'EOF'
               default_config:
 
@@ -51,9 +54,9 @@ spec:
                 if ! grep -q 'packages: !include_dir_named packages' "$cfg"; then
                   printf '\nhomeassistant:\n  packages: !include_dir_named packages\n' >> "$cfg"
                 fi
-                if ! grep -q '^http:' "$cfg"; then
-                  printf '\nhttp:\n  use_x_forwarded_for: true\n  trusted_proxies:\n    - 10.244.0.0/16\n' >> "$cfg"
-                fi
+                # Do not add an http block here. After the first import HA
+                # manages http settings in .storage, and the block in
+                # configuration.yaml is deprecated (removed in 2027.2).
                 echo "checked $cfg"
               fi
           resources:

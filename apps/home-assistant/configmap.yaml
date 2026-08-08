@@ -104,6 +104,21 @@ data:
                     critical: 1
                     volume: 1.0
                   interruption-level: critical
+          # Visual feedback in the kitchen: one short flash on both lamps
+          # means the call is registered. Both lamps are physically in the
+          # LIVING ROOM; the entity ids are legacy registry names.
+          # flash: short runs one breathe cycle and returns each light to
+          # its previous state, so no restore logic is needed.
+          # One lamp is sometimes powered off at the wall (unavailable),
+          # so this step must never abort the script.
+          - service: light.turn_on
+            continue_on_error: true
+            target:
+              entity_id:
+                - light.bedroom_hue_ambiance_lamp_1
+                - light.living_room_hue_ambiance_lamp_2
+            data:
+              flash: short
 
       office_call_clear:
         alias: Office call clear
@@ -161,6 +176,30 @@ data:
           - service: notify.office_call
             data:
               message: Stian acknowledged the call.
+          # Visual feedback in the kitchen: two short flashes on both lamps
+          # mean Stian acknowledged the call (one flash means the call is
+          # registered). Both lamps are physically in the LIVING ROOM; the
+          # entity ids are legacy registry names.
+          # One lamp is sometimes powered off at the wall (unavailable),
+          # so neither light step must abort the automation.
+          - service: light.turn_on
+            continue_on_error: true
+            target:
+              entity_id:
+                - light.bedroom_hue_ambiance_lamp_1
+                - light.living_room_hue_ambiance_lamp_2
+            data:
+              flash: short
+          - delay:
+              seconds: 2
+          - service: light.turn_on
+            continue_on_error: true
+            target:
+              entity_id:
+                - light.bedroom_hue_ambiance_lamp_1
+                - light.living_room_hue_ambiance_lamp_2
+            data:
+              flash: short
 
       # Kitchen remote (Hue dimmer switch, device_id
       # b6ba1f557b05d31f026f01ed3742a8f9). Physical layout:

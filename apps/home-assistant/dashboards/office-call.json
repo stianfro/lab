@@ -326,9 +326,9 @@
     },
     {
       "id": 5,
-      "type": "state-timeline",
-      "title": "Call state history",
-      "description": "Idle and pending periods of the office call flag over the selected time range.",
+      "type": "timeseries",
+      "title": "Calls",
+      "description": "Each bar is a call at the time it happened. The query counts increments of the office call counter in each step, so a bar of height one is a single call, and a taller bar means several calls in the same step.",
       "datasource": {
         "type": "prometheus",
         "uid": "${prometheus}"
@@ -339,22 +339,59 @@
         "w": 24,
         "h": 6
       },
+      "interval": "2m",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "${prometheus}"
           },
-          "expr": "max(homeassistant_input_boolean_state{entity=\"input_boolean.office_call_pending\"})",
+          "expr": "max(round(increase(homeassistant_counter_value{entity=\"counter.office_call_count\"}[$__interval])))",
           "refId": "A",
-          "legendFormat": "Call state"
+          "legendFormat": "Calls",
+          "interval": "2m"
         }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "short",
+          "decimals": 0,
+          "min": 0,
           "color": {
-            "mode": "thresholds"
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
+          "mappings": [],
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "calls",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.3,
+            "drawStyle": "bars",
+            "fillOpacity": 90,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 0,
+            "pointSize": 4,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
           },
           "thresholds": {
             "mode": "absolute",
@@ -362,56 +399,21 @@
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 1
               }
             ]
-          },
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "0": {
-                  "color": "green",
-                  "index": 0,
-                  "text": "Idle"
-                },
-                "1": {
-                  "color": "red",
-                  "index": 1,
-                  "text": "PENDING"
-                }
-              }
-            }
-          ],
-          "custom": {
-            "fillOpacity": 80,
-            "lineWidth": 0,
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "spanNulls": false
           }
         },
         "overrides": []
       },
       "options": {
-        "alignValue": "center",
         "legend": {
+          "calcs": [],
           "displayMode": "list",
           "placement": "bottom",
           "showLegend": false
         },
-        "mergeValues": true,
-        "rowHeight": 0.9,
-        "showValue": "auto",
         "tooltip": {
-          "hideZeros": false,
+          "hideZeros": true,
           "mode": "single",
           "sort": "none"
         }

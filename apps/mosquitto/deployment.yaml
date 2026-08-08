@@ -36,6 +36,7 @@ spec:
             - |
               mosquitto_passwd -c -b /mosquitto/auth/passwd homeassistant "$HOMEASSISTANT_PASSWORD"
               mosquitto_passwd -b /mosquitto/auth/passwd pizero "$PIZERO_PASSWORD"
+              mosquitto_passwd -b /mosquitto/auth/passwd exporter "$EXPORTER_PASSWORD"
               cp /mosquitto/acl-src/acl /mosquitto/auth/acl
               chmod 0600 /mosquitto/auth/passwd /mosquitto/auth/acl
           env:
@@ -49,6 +50,11 @@ spec:
                 secretKeyRef:
                   name: mosquitto-credentials
                   key: pizero_password
+            - name: EXPORTER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mosquitto-credentials
+                  key: exporter_password
           resources:
             requests:
               cpu: 10m

@@ -1,0 +1,42 @@
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultStaticSecret
+metadata:
+  name: ha-prometheus-token
+  namespace: home-assistant
+spec:
+  vaultAuthRef: vault/default
+  mount: secret
+  type: kv-v2
+  path: office-call/ha-prometheus
+  refreshAfter: 1h
+  destination:
+    name: ha-prometheus-token
+    create: true
+    transformation:
+      excludeRaw: true
+      templates:
+        token:
+          text: '{{ .Secrets.token }}'
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: home-assistant
+  namespace: home-assistant
+  labels:
+    app.kubernetes.io/name: home-assistant
+    release: kube-prom-stack
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: home-assistant
+  endpoints:
+    - port: http
+      path: /api/prometheus
+      interval: 60s
+      scrapeTimeout: 30s
+      authorization:
+        type: Bearer
+        credentials:
+          name: ha-prometheus-token
+          key: token

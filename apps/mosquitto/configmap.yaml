@@ -36,3 +36,6 @@ data:
     topic read home/office-call/state
     topic write home/office-call/ack
     topic write home/office-call/office/status
+
+    user exporter
+    topic read $SYS/#

@@ -1,0 +1,105 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mosquitto-exporter
+  namespace: mosquitto
+  labels:
+    app.kubernetes.io/name: mosquitto-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mosquitto-exporter
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mosquitto-exporter
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 20
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: mosquitto-exporter
+          image: sapcc/mosquitto-exporter:0.8.0@sha256:241570341cd144c27ca0952255a2726a4964b7397bfed93a98707b32eb06858c
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: metrics
+              containerPort: 9234
+              protocol: TCP
+          env:
+            - name: BROKER_ENDPOINT
+              value: tcp://mosquitto.mosquitto.svc.cluster.local:1883
+            - name: BIND_ADDRESS
+              value: 0.0.0.0:9234
+            - name: MQTT_USER
+              value: exporter
+            - name: MQTT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: mosquitto-credentials
+                  key: exporter_password
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 5
+            periodSeconds: 15
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mosquitto-exporter
+  namespace: mosquitto
+  labels:
+    app.kubernetes.io/name: mosquitto-exporter
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: mosquitto-exporter
+  ports:
+    - name: metrics
+      port: 9234
+      targetPort: metrics
+      protocol: TCP
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: mosquitto-exporter
+  namespace: mosquitto
+  labels:
+    app.kubernetes.io/name: mosquitto-exporter
+    release: kube-prom-stack
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mosquitto-exporter
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s

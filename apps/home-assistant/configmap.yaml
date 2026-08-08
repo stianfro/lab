@@ -184,3 +184,24 @@ data:
               subtype: 4
         action:
           - service: script.office_call_clear
+
+    # Metrics. Only the office-call entities are exported, so the scrape
+    # stays small. The endpoint is /api/prometheus and needs a bearer
+    # token (long-lived access token), supplied by the ServiceMonitor.
+    prometheus:
+      filter:
+        include_entities:
+          - input_boolean.office_call_pending
+          - counter.office_call_count
+          - binary_sensor.office_pi_online
+
+    # The Pi publishes a retained LWT on this topic. The MQTT broker
+    # connection itself is UI-configured; YAML entities work next to it.
+    mqtt:
+      binary_sensor:
+        - name: Office Pi online
+          unique_id: office_pi_online
+          state_topic: home/office-call/office/status
+          payload_on: online
+          payload_off: offline
+          device_class: connectivity

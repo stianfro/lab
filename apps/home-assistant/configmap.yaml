@@ -88,12 +88,22 @@ data:
               payload: PENDING
               retain: true
               qos: 1
+          # iOS critical alert: it sounds through silent mode, Do Not
+          # Disturb and Focus at the set volume. The notify group forwards
+          # data to all members; persistent_notification ignores it.
           - service: notify.office_call
             data:
               title: Office call
               message: >-
                 Kitchen is calling you. Source: {{ call_source }}
                 Time: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
+              data:
+                push:
+                  sound:
+                    name: default
+                    critical: 1
+                    volume: 1.0
+                  interruption-level: critical
 
       office_call_clear:
         alias: Office call clear

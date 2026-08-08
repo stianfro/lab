@@ -43,7 +43,7 @@
             "type": "prometheus",
             "uid": "${prometheus}"
           },
-          "expr": "homeassistant_climate_current_temperature_celsius{entity=~\"climate\\\\..*_ac\"}",
+          "expr": "max by (entity, friendly_name) (homeassistant_climate_current_temperature_celsius{entity=~\"climate\\\\..*_ac\"})",
           "refId": "A",
           "legendFormat": "{{friendly_name}}",
           "instant": true,
@@ -115,7 +115,7 @@
             "type": "prometheus",
             "uid": "${prometheus}"
           },
-          "expr": "homeassistant_climate_target_temperature_celsius{entity=~\"climate\\\\..*_ac\"}",
+          "expr": "max by (entity, friendly_name) (homeassistant_climate_target_temperature_celsius{entity=~\"climate\\\\..*_ac\"})",
           "refId": "A",
           "legendFormat": "{{friendly_name}}",
           "instant": true,
@@ -179,7 +179,7 @@
             "type": "prometheus",
             "uid": "${prometheus}"
           },
-          "expr": "homeassistant_sensor_temperature_celsius{entity=~\"sensor\\\\..*_ac_measured_outdoor_air_temperature\"}",
+          "expr": "max by (entity, friendly_name) (homeassistant_sensor_temperature_celsius{entity=~\"sensor\\\\..*_ac_measured_outdoor_air_temperature\"})",
           "refId": "A",
           "legendFormat": "{{friendly_name}}",
           "instant": true,
@@ -251,7 +251,7 @@
             "type": "prometheus",
             "uid": "${prometheus}"
           },
-          "expr": "homeassistant_sensor_humidity_percent{entity=~\"sensor\\\\..*_ac_measured_value_of_room_relative_humidity\"}",
+          "expr": "max by (entity, friendly_name) (homeassistant_sensor_humidity_percent{entity=~\"sensor\\\\..*_ac_measured_value_of_room_relative_humidity\"})",
           "refId": "A",
           "legendFormat": "{{friendly_name}}",
           "instant": true,
@@ -317,7 +317,7 @@
             "type": "prometheus",
             "uid": "${prometheus}"
           },
-          "expr": "homeassistant_sensor_power_w{entity=~\"sensor\\\\..*_ac_measured_instantaneous_power_consumption\"}",
+          "expr": "max by (entity, friendly_name) (homeassistant_sensor_power_w{entity=~\"sensor\\\\..*_ac_measured_instantaneous_power_consumption\"})",
           "refId": "A",
           "legendFormat": "{{friendly_name}}",
           "instant": true,
@@ -394,7 +394,7 @@
             "type": "prometheus",
             "uid": "${prometheus}"
           },
-          "expr": "homeassistant_climate_mode{entity=~\"climate\\\\..*_ac\"} == 1",
+          "expr": "max by (entity, friendly_name, mode) (homeassistant_climate_mode{entity=~\"climate\\\\..*_ac\"}) == 1",
           "refId": "A",
           "legendFormat": "{{mode}}",
           "instant": true,
@@ -549,7 +549,7 @@
             "type": "prometheus",
             "uid": "${prometheus}"
           },
-          "expr": "homeassistant_binary_sensor_state{entity=~\"binary_sensor\\\\..*_ac_fault_status\"}",
+          "expr": "max by (entity, friendly_name) (homeassistant_binary_sensor_state{entity=~\"binary_sensor\\\\..*_ac_fault_status\"})",
           "refId": "A",
           "legendFormat": "{{friendly_name}}",
           "instant": true,
@@ -632,7 +632,7 @@
             "type": "prometheus",
             "uid": "${prometheus}"
           },
-          "expr": "homeassistant_climate_current_temperature_celsius{entity=~\"climate\\\\..*_ac\"}",
+          "expr": "max by (entity, friendly_name) (homeassistant_climate_current_temperature_celsius{entity=~\"climate\\\\..*_ac\"})",
           "refId": "A",
           "legendFormat": "{{friendly_name}} (room)"
         },
@@ -641,7 +641,7 @@
             "type": "prometheus",
             "uid": "${prometheus}"
           },
-          "expr": "homeassistant_climate_target_temperature_celsius{entity=~\"climate\\\\..*_ac\"}",
+          "expr": "max by (entity, friendly_name) (homeassistant_climate_target_temperature_celsius{entity=~\"climate\\\\..*_ac\"})",
           "refId": "B",
           "legendFormat": "{{friendly_name}} (target)"
         },
@@ -650,7 +650,7 @@
             "type": "prometheus",
             "uid": "${prometheus}"
           },
-          "expr": "homeassistant_sensor_temperature_celsius{entity=~\"sensor\\\\..*_ac_measured_outdoor_air_temperature\"}",
+          "expr": "max by (entity, friendly_name) (homeassistant_sensor_temperature_celsius{entity=~\"sensor\\\\..*_ac_measured_outdoor_air_temperature\"})",
           "refId": "C",
           "legendFormat": "{{friendly_name}} (outdoor)"
         }
@@ -801,7 +801,7 @@
             "type": "prometheus",
             "uid": "${prometheus}"
           },
-          "expr": "homeassistant_sensor_humidity_percent{entity=~\"sensor\\\\..*_ac_measured_value_of_room_relative_humidity\"}",
+          "expr": "max by (entity, friendly_name) (homeassistant_sensor_humidity_percent{entity=~\"sensor\\\\..*_ac_measured_value_of_room_relative_humidity\"})",
           "refId": "A",
           "legendFormat": "{{friendly_name}}"
         }
@@ -899,7 +899,7 @@
             "type": "prometheus",
             "uid": "${prometheus}"
           },
-          "expr": "homeassistant_sensor_power_w{entity=~\"sensor\\\\..*_ac_measured_instantaneous_power_consumption\"}",
+          "expr": "max by (entity, friendly_name) (homeassistant_sensor_power_w{entity=~\"sensor\\\\..*_ac_measured_instantaneous_power_consumption\"})",
           "refId": "A",
           "legendFormat": "{{friendly_name}}"
         }
@@ -996,7 +996,7 @@
             "type": "prometheus",
             "uid": "${prometheus}"
           },
-          "expr": "sum by (friendly_name) (increase(homeassistant_sensor_energy_kwh{entity=~\"sensor\\\\..*_ac_measured_cumulative_power_consumption\"}[1d]))",
+          "expr": "max by (friendly_name) (increase(homeassistant_sensor_energy_kwh{entity=~\"sensor\\\\..*_ac_measured_cumulative_power_consumption\"}[1d]))",
           "refId": "A",
           "legendFormat": "{{friendly_name}}",
           "interval": "1d"
@@ -1095,7 +1095,7 @@
             "type": "prometheus",
             "uid": "${prometheus}"
           },
-          "expr": "homeassistant_climate_mode{entity=~\"climate\\\\..*_ac\"} == 1",
+          "expr": "max by (entity, friendly_name, mode) (homeassistant_climate_mode{entity=~\"climate\\\\..*_ac\"}) == 1",
           "refId": "A",
           "legendFormat": "{{friendly_name}} {{mode}}"
         }
@@ -1270,7 +1270,7 @@
             "type": "prometheus",
             "uid": "${prometheus}"
           },
-          "expr": "homeassistant_climate_action{entity=~\"climate\\\\..*_ac\"} == 1",
+          "expr": "max by (entity, friendly_name, action) (homeassistant_climate_action{entity=~\"climate\\\\..*_ac\"}) == 1",
           "refId": "A",
           "legendFormat": "{{friendly_name}} {{action}}"
         }

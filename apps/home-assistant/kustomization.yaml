@@ -8,3 +8,15 @@ resources:
   - service.yaml
   - httproute.yaml
   - monitoring.yaml
+
+configMapGenerator:
+  - name: home-assistant-grafana-dashboards
+    namespace: home-assistant
+    files:
+      - dashboards/office-call.json
+    options:
+      labels:
+        grafana_dashboard: "1"
+
+generatorOptions:
+  disableNameSuffixHash: true

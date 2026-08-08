@@ -8,3 +8,15 @@ resources:
   - deployment.yaml
   - service.yaml
   - exporter.yaml
+
+configMapGenerator:
+  - name: mosquitto-grafana-dashboards
+    namespace: mosquitto
+    files:
+      - dashboards/mosquitto-broker.json
+    options:
+      labels:
+        grafana_dashboard: "1"
+
+generatorOptions:
+  disableNameSuffixHash: true

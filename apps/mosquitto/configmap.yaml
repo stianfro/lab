@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mosquitto-config
+  namespace: mosquitto
+  labels:
+    app.kubernetes.io/name: mosquitto
+data:
+  mosquitto.conf: |
+    listener 1883 0.0.0.0
+    allow_anonymous false
+    password_file /mosquitto/auth/passwd
+    acl_file /mosquitto/auth/acl
+    persistence true
+    persistence_location /mosquitto/data/
+    autosave_interval 60
+    log_dest stdout
+    log_type error
+    log_type warning
+    log_type notice
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mosquitto-acl
+  namespace: mosquitto
+  labels:
+    app.kubernetes.io/name: mosquitto
+data:
+  acl: |
+    user homeassistant
+    topic readwrite home/office-call/#
+    topic readwrite homeassistant/status
+
+    user pizero
+    topic read home/office-call/state
+    topic write home/office-call/ack
+    topic write home/office-call/office/status

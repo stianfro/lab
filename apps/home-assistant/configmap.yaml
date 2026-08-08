@@ -1,0 +1,174 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ha-packages
+  namespace: home-assistant
+  labels:
+    app.kubernetes.io/name: home-assistant
+data:
+  office_call.yaml: |
+    # Office call package.
+    # Contract:
+    # - input_boolean.office_call_pending is the authoritative call state.
+    #   input_booleans restore their state across Home Assistant restarts
+    #   by default. Do not disable that.
+    # - MQTT state topic: home/office-call/state (retained, qos 1),
+    #   payload PENDING or IDLE.
+    # - MQTT ack topic: home/office-call/ack, payload ACK.
+    # The MQTT integration must be configured (broker:
+    # mosquitto.mosquitto.svc.cluster.local, port 1883, user homeassistant).
+
+    input_boolean:
+      office_call_pending:
+        name: Office call pending
+        icon: mdi:phone-ring
+
+    input_text:
+      office_call_last_source:
+        name: Office call last source
+
+    input_datetime:
+      office_call_last_trigger:
+        name: Office call last trigger
+        has_date: true
+        has_time: true
+      office_call_last_ack:
+        name: Office call last ack
+        has_date: true
+        has_time: true
+
+    counter:
+      office_call_count:
+        name: Office call count
+        icon: mdi:counter
+
+    # Notify group so mobile targets can be added later without changing
+    # the scripts or automations that call notify.office_call.
+    notify:
+      - platform: group
+        name: office_call
+        services:
+          - service: persistent_notification
+
+    script:
+      call_stian:
+        alias: Call Stian
+        mode: queued
+        fields:
+          source:
+            description: Where the call came from
+            default: home_assistant
+        sequence:
+          - variables:
+              call_source: "{{ source | default('home_assistant') }}"
+          - service: input_text.set_value
+            target:
+              entity_id: input_text.office_call_last_source
+            data:
+              value: "{{ call_source }}"
+          - service: input_datetime.set_datetime
+            target:
+              entity_id: input_datetime.office_call_last_trigger
+            data:
+              datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+          - service: counter.increment
+            target:
+              entity_id: counter.office_call_count
+          - service: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.office_call_pending
+          # Publish explicitly so a repeated call re-publishes the retained
+          # state even while the boolean is already on.
+          - service: mqtt.publish
+            data:
+              topic: home/office-call/state
+              payload: PENDING
+              retain: true
+              qos: 1
+          - service: notify.office_call
+            data:
+              title: Office call
+              message: >-
+                Kitchen is calling you. Source: {{ call_source }}
+                Time: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
+
+      office_call_clear:
+        alias: Office call clear
+        mode: single
+        sequence:
+          - service: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.office_call_pending
+
+    automation:
+      - id: office_call_publish_state
+        alias: Office call publish state
+        mode: restart
+        trigger:
+          - platform: state
+            entity_id: input_boolean.office_call_pending
+            to: "on"
+          - platform: state
+            entity_id: input_boolean.office_call_pending
+            to: "off"
+          - platform: homeassistant
+            event: start
+        action:
+          - service: mqtt.publish
+            data:
+              topic: home/office-call/state
+              payload: >-
+                {{ 'PENDING' if is_state('input_boolean.office_call_pending', 'on') else 'IDLE' }}
+              retain: true
+              qos: 1
+
+      # An ack never turns the boolean on. A repeated call while pending
+      # never turns it off (the ack automation only turns it off, and only
+      # when an ACK arrives while pending).
+      - id: office_call_acknowledged
+        alias: Office call acknowledged
+        mode: single
+        trigger:
+          - platform: mqtt
+            topic: home/office-call/ack
+            payload: ACK
+        condition:
+          - condition: state
+            entity_id: input_boolean.office_call_pending
+            state: "on"
+        action:
+          - service: input_datetime.set_datetime
+            target:
+              entity_id: input_datetime.office_call_last_ack
+            data:
+              datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+          - service: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.office_call_pending
+          - service: notify.office_call
+            data:
+              message: Stian acknowledged the call.
+
+      # Template for the Hue remote trigger. Kept commented out on purpose.
+      # Fill in the real trigger after you observe the actual button events
+      # in Developer Tools > Events (hue_event or a device trigger). Do not
+      # guess device ids or event data.
+      #
+      # - id: office_call_hue_remote
+      #   alias: Office call from Hue remote
+      #   mode: single
+      #   trigger:
+      #     # Option A: hue_event (Hue integration event). Replace the
+      #     # event_data with values observed from the real remote.
+      #     - platform: event
+      #       event_type: hue_event
+      #       event_data:
+      #         device_id: REPLACE_WITH_OBSERVED_DEVICE_ID
+      #         type: short_release
+      #         subtype: 1
+      #     # Option B: device trigger. Create it in the UI once, then copy
+      #     # the generated trigger here.
+      #   action:
+      #     - service: script.call_stian
+      #       data:
+      #         source: hue_remote

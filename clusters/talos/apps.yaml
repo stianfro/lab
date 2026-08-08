@@ -793,3 +793,41 @@ spec:
     name: lab
   timeout: 5m
   wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: mosquitto
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: longhorn
+    - name: metallb-config
+    - name: vault-config
+  interval: 10m
+  path: ./apps/mosquitto
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 10m
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: home-assistant
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: longhorn
+    - name: gateway-config
+    - name: mosquitto
+  interval: 10m
+  path: ./apps/home-assistant
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: lab
+  timeout: 15m
+  wait: true

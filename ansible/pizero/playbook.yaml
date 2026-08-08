@@ -1,0 +1,8 @@
+---
+- name: Configure Raspberry Pi Zero office call endpoint
+  hosts: pizeros
+  become: true
+  gather_facts: true
+  roles:
+    - role: yobidashi
+      tags: yobidashi

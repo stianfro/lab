@@ -1,0 +1,13 @@
+---
+# Path to the local yobidashi repo checkout on the controller.
+yobidashi_repo_path: /home/stian/src/github.com/stianfro/yobidashi
+
+# MQTT broker address. This MUST match the mosquitto LAN LoadBalancer IP
+# from apps/mosquitto. Default 192.168.1.21 is NOT verified. Check with:
+#   kubectl get svc -n mosquitto
+yobidashi_mqtt_host: 192.168.1.21
+yobidashi_mqtt_port: 1883
+yobidashi_mqtt_username: pizero
+yobidashi_topic_prefix: home/office-call
+yobidashi_brightness: low
+yobidashi_flash_interval: "0.5"

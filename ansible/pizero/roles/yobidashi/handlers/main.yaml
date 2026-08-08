@@ -1,0 +1,9 @@
+---
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Restart yobidashi
+  ansible.builtin.systemd:
+    name: yobidashi.service
+    state: restarted

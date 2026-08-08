@@ -1,0 +1,92 @@
+---
+- name: Assert MQTT password is set in the controller environment
+  ansible.builtin.assert:
+    that:
+      - lookup('env', 'YOBIDASHI_MQTT_PASSWORD') | length > 0
+    fail_msg: >-
+      YOBIDASHI_MQTT_PASSWORD is not set. Export it on the controller before
+      you run the playbook, for example:
+      YOBIDASHI_MQTT_PASSWORD=... ansible-playbook -i ansible/pizero/inventory.ini ansible/pizero/playbook.yaml
+
+- name: Install required apt packages
+  ansible.builtin.apt:
+    name:
+      - python3-paho-mqtt
+      - python3-sense-hat
+      - i2c-tools
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Check for /boot/firmware/config.txt
+  ansible.builtin.stat:
+    path: /boot/firmware/config.txt
+  register: yobidashi_boot_firmware_config
+
+- name: Set boot config path
+  ansible.builtin.set_fact:
+    yobidashi_boot_config_path: >-
+      {{ '/boot/firmware/config.txt' if yobidashi_boot_firmware_config.stat.exists
+         else '/boot/config.txt' }}
+
+- name: Enable I2C in boot config
+  ansible.builtin.lineinfile:
+    path: "{{ yobidashi_boot_config_path }}"
+    regexp: '^#?dtparam=i2c_arm='
+    line: dtparam=i2c_arm=on
+  register: yobidashi_i2c_config
+
+- name: Warn that a reboot is required for I2C
+  ansible.builtin.debug:
+    msg: >-
+      I2C was enabled in {{ yobidashi_boot_config_path }}.
+      A reboot is required before the Sense HAT works.
+      Reboot the Pi manually when convenient.
+  when: yobidashi_i2c_config.changed
+
+- name: Create yobidashi directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop:
+    - /opt/yobidashi
+    - /etc/yobidashi
+
+- name: Deploy yobidashi service script
+  ansible.builtin.copy:
+    src: "{{ yobidashi_repo_path }}/pi/yobidashi.py"
+    dest: /opt/yobidashi/yobidashi.py
+    owner: root
+    group: root
+    mode: "0755"
+  notify: Restart yobidashi
+
+- name: Deploy yobidashi environment file
+  ansible.builtin.template:
+    src: yobidashi.env.j2
+    dest: /etc/yobidashi/yobidashi.env
+    owner: root
+    group: root
+    mode: "0600"
+  notify: Restart yobidashi
+
+- name: Deploy yobidashi systemd unit
+  ansible.builtin.copy:
+    src: "{{ yobidashi_repo_path }}/pi/yobidashi.service"
+    dest: /etc/systemd/system/yobidashi.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Reload systemd
+    - Restart yobidashi
+
+- name: Enable and start yobidashi service
+  ansible.builtin.systemd:
+    name: yobidashi.service
+    enabled: true
+    state: started
+    daemon_reload: true

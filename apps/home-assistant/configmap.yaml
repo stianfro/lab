@@ -105,8 +105,7 @@ data:
                     volume: 1.0
                   interruption-level: critical
           # Visual feedback in the kitchen: one short flash on both lamps
-          # means the call is registered. Both lamps are physically in the
-          # LIVING ROOM; the entity ids are legacy registry names.
+          # means the call is registered.
           # flash: short runs one breathe cycle and returns each light to
           # its previous state, so no restore logic is needed.
           # One lamp is sometimes powered off at the wall (unavailable),
@@ -115,11 +114,14 @@ data:
             continue_on_error: true
             target:
               entity_id:
-                - light.bedroom_hue_ambiance_lamp_1
-                - light.living_room_hue_ambiance_lamp_2
+                - light.living_room_lamp_1
+                - light.living_room_lamp_2
             data:
               flash: short
 
+      # Silent cancel, used by the kitchen remote's cancel button. It does
+      # not touch office_call_last_ack, send a notification, or flash the
+      # lamps.
       office_call_clear:
         alias: Office call clear
         mode: single
@@ -127,6 +129,51 @@ data:
           - service: input_boolean.turn_off
             target:
               entity_id: input_boolean.office_call_pending
+
+      # Feedback-producing acknowledge, used by the office_call_acknowledged
+      # automation (office Sense HAT joystick) and by Stian's phone
+      # shortcut. It is a no-op when the call is not pending.
+      office_call_acknowledge:
+        alias: Office call acknowledge
+        mode: single
+        sequence:
+          - condition: state
+            entity_id: input_boolean.office_call_pending
+            state: "on"
+          - service: input_datetime.set_datetime
+            target:
+              entity_id: input_datetime.office_call_last_ack
+            data:
+              datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+          - service: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.office_call_pending
+          - service: notify.office_call
+            data:
+              message: Stian acknowledged the call.
+          # Visual feedback in the kitchen: two short flashes on both lamps
+          # mean Stian acknowledged the call (one flash means the call is
+          # registered).
+          # One lamp is sometimes powered off at the wall (unavailable),
+          # so neither light step must abort the script.
+          - service: light.turn_on
+            continue_on_error: true
+            target:
+              entity_id:
+                - light.living_room_lamp_1
+                - light.living_room_lamp_2
+            data:
+              flash: short
+          - delay:
+              seconds: 1
+          - service: light.turn_on
+            continue_on_error: true
+            target:
+              entity_id:
+                - light.living_room_lamp_1
+                - light.living_room_lamp_2
+            data:
+              flash: short
 
     automation:
       - id: office_call_publish_state
@@ -152,7 +199,10 @@ data:
 
       # An ack never turns the boolean on. A repeated call while pending
       # never turns it off (the ack automation only turns it off, and only
-      # when an ACK arrives while pending).
+      # when an ACK arrives while pending). The condition here is redundant
+      # with the one inside script.office_call_acknowledge, which is
+      # harmless: it just keeps this automation from calling the script at
+      # all when idle.
       - id: office_call_acknowledged
         alias: Office call acknowledged
         mode: single
@@ -165,41 +215,7 @@ data:
             entity_id: input_boolean.office_call_pending
             state: "on"
         action:
-          - service: input_datetime.set_datetime
-            target:
-              entity_id: input_datetime.office_call_last_ack
-            data:
-              datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
-          - service: input_boolean.turn_off
-            target:
-              entity_id: input_boolean.office_call_pending
-          - service: notify.office_call
-            data:
-              message: Stian acknowledged the call.
-          # Visual feedback in the kitchen: two short flashes on both lamps
-          # mean Stian acknowledged the call (one flash means the call is
-          # registered). Both lamps are physically in the LIVING ROOM; the
-          # entity ids are legacy registry names.
-          # One lamp is sometimes powered off at the wall (unavailable),
-          # so neither light step must abort the automation.
-          - service: light.turn_on
-            continue_on_error: true
-            target:
-              entity_id:
-                - light.bedroom_hue_ambiance_lamp_1
-                - light.living_room_hue_ambiance_lamp_2
-            data:
-              flash: short
-          - delay:
-              seconds: 2
-          - service: light.turn_on
-            continue_on_error: true
-            target:
-              entity_id:
-                - light.bedroom_hue_ambiance_lamp_1
-                - light.living_room_hue_ambiance_lamp_2
-            data:
-              flash: short
+          - service: script.office_call_acknowledge
 
       # Kitchen remote (Hue dimmer switch, device_id
       # b6ba1f557b05d31f026f01ed3742a8f9). Physical layout:

@@ -259,6 +259,11 @@ data:
           - input_boolean.office_call_pending
           - counter.office_call_count
           - binary_sensor.office_pi_online
+          # Climate guard switches. They show when the guard is armed and
+          # when the guard (not a human) started a unit.
+          - input_boolean.climate_guard_enabled
+          - input_boolean.climate_guard_lr_auto
+          - input_boolean.climate_guard_office_auto
         # Daikin AC entities from the echonetlite integration. Globs keep
         # future units exported without further config changes.
         include_entity_globs:
@@ -276,3 +281,830 @@ data:
           payload_on: online
           payload_off: offline
           device_class: connectivity
+
+  climate_guard.yaml: |
+    # Climate guard package. Summer climate protection.
+    # Goal:
+    # - Keep the living room safe for the two dogs.
+    # - Keep the office safe for the computer equipment.
+    # The package is a safety net. It does not fight manual control:
+    # any human change to a unit starts a two hour override window, and
+    # the control automations stay out during that window.
+    # Cooling only. The package never heats and never sets fan or dry
+    # modes.
+    #
+    # Two separate layers:
+    # - Control automations. They start and stop the units. The master
+    #   switch input_boolean.climate_guard_enabled gates them.
+    # - Alert automations. They only send messages. They are never gated,
+    #   because a warning must arrive even when control is off.
+    # The only exception is the two critical automations. They also force
+    # cooling, because life safety and hardware safety come first.
+    #
+    # Hardware notes:
+    # - The Daikin units come from the echonetlite integration.
+    # - The office has no humidity sensor, so office rules use
+    #   temperature only.
+
+    # Notify group so more phones can be added later without a change to
+    # any automation that calls notify.climate_alerts.
+    notify:
+      - platform: group
+        name: climate_alerts
+        services:
+          - service: persistent_notification
+          - service: mobile_app_stians_iphone
+          # Add more phones here (e.g. the wife's) after their
+          # companion apps register.
+
+    # All thresholds are helpers so they can be tuned in the UI during a
+    # heat wave. This file holds the values the system starts with.
+    # A UI change stays until the next Home Assistant restart. To make a
+    # value permanent, change it here.
+    input_number:
+      climate_guard_lr_on_away:
+        name: Climate guard LR cool on (away)
+        icon: mdi:thermometer-high
+        min: 20
+        max: 35
+        step: 0.5
+        initial: 27
+        unit_of_measurement: "°C"
+        mode: box
+      # Higher than the away value. People at home open windows, move
+      # air and feel the heat, so the guard waits longer before it acts.
+      climate_guard_lr_on_home:
+        name: Climate guard LR cool on (home)
+        icon: mdi:thermometer-high
+        min: 20
+        max: 35
+        step: 0.5
+        initial: 28
+        unit_of_measurement: "°C"
+        mode: box
+      # Well below every cool-on value. The gap is the hysteresis. It
+      # stops the unit from cycling on and off around one temperature.
+      climate_guard_lr_off:
+        name: Climate guard LR cool off
+        icon: mdi:thermometer-low
+        min: 18
+        max: 32
+        step: 0.5
+        initial: 25
+        unit_of_measurement: "°C"
+        mode: box
+      climate_guard_lr_setpoint:
+        name: Climate guard LR setpoint
+        icon: mdi:snowflake-thermometer
+        min: 16
+        max: 30
+        step: 0.5
+        initial: 25
+        unit_of_measurement: "°C"
+        mode: box
+      climate_guard_office_on:
+        name: Climate guard office cool on
+        icon: mdi:thermometer-high
+        min: 20
+        max: 38
+        step: 0.5
+        initial: 28
+        unit_of_measurement: "°C"
+        mode: box
+      climate_guard_office_off:
+        name: Climate guard office cool off
+        icon: mdi:thermometer-low
+        min: 18
+        max: 34
+        step: 0.5
+        initial: 26
+        unit_of_measurement: "°C"
+        mode: box
+      climate_guard_office_setpoint:
+        name: Climate guard office setpoint
+        icon: mdi:snowflake-thermometer
+        min: 16
+        max: 30
+        step: 0.5
+        initial: 26
+        unit_of_measurement: "°C"
+        mode: box
+      # Dog thresholds. Dogs cool themselves by panting, so high
+      # humidity makes a given temperature more dangerous for them.
+      climate_guard_dog_warning:
+        name: Climate guard dog warning
+        icon: mdi:dog
+        min: 22
+        max: 35
+        step: 0.5
+        initial: 28
+        unit_of_measurement: "°C"
+        mode: box
+      climate_guard_dog_critical:
+        name: Climate guard dog critical
+        icon: mdi:dog-side
+        min: 24
+        max: 40
+        step: 0.5
+        initial: 29
+        unit_of_measurement: "°C"
+        mode: box
+      climate_guard_humidity_warning:
+        name: Climate guard humidity warning
+        icon: mdi:water-percent
+        min: 40
+        max: 90
+        step: 0.5
+        initial: 65
+        unit_of_measurement: "%"
+        mode: box
+      climate_guard_office_warning:
+        name: Climate guard office warning
+        icon: mdi:desktop-tower-monitor
+        min: 24
+        max: 40
+        step: 0.5
+        initial: 30
+        unit_of_measurement: "°C"
+        mode: box
+      climate_guard_office_critical:
+        name: Climate guard office critical
+        icon: mdi:alert-octagon
+        min: 26
+        max: 45
+        step: 0.5
+        initial: 32
+        unit_of_measurement: "°C"
+        mode: box
+      # A hot day outside. Above this value the guard may pre-cool the
+      # living room before the heat arrives inside.
+      climate_guard_outdoor_hot:
+        name: Climate guard outdoor hot
+        icon: mdi:weather-sunny-alert
+        min: 20
+        max: 45
+        step: 0.5
+        initial: 33
+        unit_of_measurement: "°C"
+        mode: box
+
+    input_boolean:
+      # Master switch for the CONTROL automations only. The alert
+      # automations always run, even when this switch is off.
+      climate_guard_enabled:
+        name: Climate guard enabled
+        icon: mdi:shield-home
+      # On means the guard started the unit, not a human. Only then may
+      # the guard stop the unit again.
+      climate_guard_lr_auto:
+        name: Climate guard LR started by guard
+        icon: mdi:robot
+      climate_guard_office_auto:
+        name: Climate guard office started by guard
+        icon: mdi:robot
+
+    # Timestamp of the guard's own last climate call. The override watch
+    # compares a climate change against this time. A change close after
+    # the guard's own call is the guard's own work, not a human.
+    input_datetime:
+      climate_guard_lr_last_action:
+        name: Climate guard LR last action
+        has_date: true
+        has_time: true
+      climate_guard_office_last_action:
+        name: Climate guard office last action
+        has_date: true
+        has_time: true
+
+    # Override windows. restore keeps a running window across a Home
+    # Assistant restart, so a restart does not cancel a human decision.
+    timer:
+      climate_guard_lr_override:
+        name: Climate guard LR override
+        duration: "02:00:00"
+        restore: true
+      climate_guard_office_override:
+        name: Climate guard office override
+        duration: "02:00:00"
+        restore: true
+
+    script:
+      # Called first in every action block that touches a climate entity.
+      # queued mode keeps two rooms from writing at the same moment.
+      climate_guard_mark_action:
+        alias: "Climate guard: mark action"
+        mode: queued
+        max: 10
+        fields:
+          room:
+            description: living_room or office
+            default: living_room
+        sequence:
+          - variables:
+              target_helper: >-
+                {{ 'input_datetime.climate_guard_office_last_action'
+                   if (room | default('living_room')) == 'office'
+                   else 'input_datetime.climate_guard_lr_last_action' }}
+          - service: input_datetime.set_datetime
+            target:
+              entity_id: "{{ target_helper }}"
+            data:
+              datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+
+    automation:
+      # 1. Living room auto-cool on.
+      # Three ways in. Each trigger has its own gate below, because the
+      # rule for an empty house is not the rule for a full one.
+      - id: climate_guard_lr_cool_on
+        alias: "Climate guard: living room auto-cool on"
+        mode: single
+        trigger:
+          # Nobody home. The dogs cannot open a window, so the guard acts
+          # early.
+          - platform: numeric_state
+            entity_id: sensor.living_room_ac_measured_value_of_room_temperature
+            above: input_number.climate_guard_lr_on_away
+            for: "00:10:00"
+            id: t_away
+          # Someone home. Higher threshold, because people manage their
+          # own comfort and may want the unit off.
+          - platform: numeric_state
+            entity_id: sensor.living_room_ac_measured_value_of_room_temperature
+            above: input_number.climate_guard_lr_on_home
+            for: "00:10:00"
+            id: t_home
+          # Pre-cool. 26 is one degree under the away trigger. On a hot
+          # day it is cheaper to hold the room cool than to pull it down
+          # later.
+          - platform: numeric_state
+            entity_id: sensor.living_room_ac_measured_value_of_room_temperature
+            above: 26
+            for: "00:10:00"
+            id: t_precool
+        condition:
+          - condition: state
+            entity_id: input_boolean.climate_guard_enabled
+            state: "on"
+          # Never send a start command to a unit that already runs.
+          - condition: state
+            entity_id: climate.living_room_ac
+            state: "off"
+          # A human touched the unit in the last two hours. Stay out.
+          - condition: state
+            entity_id: timer.climate_guard_lr_override
+            state: idle
+          - condition: or
+            conditions:
+              - condition: and
+                conditions:
+                  - condition: trigger
+                    id: t_away
+                  - condition: template
+                    value_template: "{{ not is_state('person.administrator', 'home') }}"
+              - condition: trigger
+                id: t_home
+              - condition: and
+                conditions:
+                  - condition: trigger
+                    id: t_precool
+                  - condition: template
+                    value_template: "{{ not is_state('person.administrator', 'home') }}"
+                  # Template compare, because numeric_state 'above' is
+                  # strict and the rule needs 'at or above'.
+                  - condition: template
+                    value_template: >-
+                      {{ (states('sensor.living_room_ac_measured_outdoor_air_temperature') | float(-99))
+                         >= (states('input_number.climate_guard_outdoor_hot') | float(33)) }}
+        action:
+          # Mark first. The override watch must see this call as the
+          # guard's own work.
+          - service: script.climate_guard_mark_action
+            data:
+              room: living_room
+          - service: climate.set_hvac_mode
+            target:
+              entity_id: climate.living_room_ac
+            data:
+              hvac_mode: cool
+          - service: climate.set_temperature
+            target:
+              entity_id: climate.living_room_ac
+            data:
+              temperature: "{{ states('input_number.climate_guard_lr_setpoint') | float(25) }}"
+          - service: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.climate_guard_lr_auto
+          - service: notify.climate_alerts
+            data:
+              title: Climate guard
+              message: >-
+                Living room cooling started at
+                {{ states('sensor.living_room_ac_measured_value_of_room_temperature') }} °C,
+                humidity
+                {{ states('sensor.living_room_ac_measured_value_of_room_relative_humidity') }} %.
+                Reason: {{ trigger.id | default('unknown') }}.
+                Setpoint {{ states('input_number.climate_guard_lr_setpoint') }} °C.
+
+      # 2. Living room auto-cool off.
+      # The 15 minute delay and the gap down to the off threshold give
+      # the hysteresis. Without them the unit would cycle.
+      - id: climate_guard_lr_cool_off
+        alias: "Climate guard: living room auto-cool off"
+        mode: single
+        trigger:
+          - platform: numeric_state
+            entity_id: sensor.living_room_ac_measured_value_of_room_temperature
+            below: input_number.climate_guard_lr_off
+            for: "00:15:00"
+        condition:
+          - condition: state
+            entity_id: input_boolean.climate_guard_enabled
+            state: "on"
+          # Only stop what the guard started. A unit a human started is
+          # not the guard's to stop.
+          - condition: state
+            entity_id: input_boolean.climate_guard_lr_auto
+            state: "on"
+          - condition: state
+            entity_id: climate.living_room_ac
+            state: cool
+        action:
+          - service: script.climate_guard_mark_action
+            data:
+              room: living_room
+          - service: climate.set_hvac_mode
+            target:
+              entity_id: climate.living_room_ac
+            data:
+              hvac_mode: "off"
+          - service: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.climate_guard_lr_auto
+          # No push here. This step is quiet on purpose: a room that
+          # cooled down is normal and does not need attention.
+
+      # 3. Office auto-cool on.
+      # No occupancy check. The computer equipment needs cooling whether
+      # a person sits there or not.
+      - id: climate_guard_office_cool_on
+        alias: "Climate guard: office auto-cool on"
+        mode: single
+        trigger:
+          - platform: numeric_state
+            entity_id: sensor.office_ac_measured_value_of_room_temperature
+            above: input_number.climate_guard_office_on
+            for: "00:10:00"
+        condition:
+          - condition: state
+            entity_id: input_boolean.climate_guard_enabled
+            state: "on"
+          - condition: state
+            entity_id: climate.office_ac
+            state: "off"
+          - condition: state
+            entity_id: timer.climate_guard_office_override
+            state: idle
+        action:
+          - service: script.climate_guard_mark_action
+            data:
+              room: office
+          - service: climate.set_hvac_mode
+            target:
+              entity_id: climate.office_ac
+            data:
+              hvac_mode: cool
+          - service: climate.set_temperature
+            target:
+              entity_id: climate.office_ac
+            data:
+              temperature: "{{ states('input_number.climate_guard_office_setpoint') | float(26) }}"
+          - service: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.climate_guard_office_auto
+          - service: notify.climate_alerts
+            data:
+              title: Climate guard
+              message: >-
+                Office cooling started at
+                {{ states('sensor.office_ac_measured_value_of_room_temperature') }} °C.
+                Setpoint {{ states('input_number.climate_guard_office_setpoint') }} °C.
+
+      # 4. Office auto-cool off. Same hysteresis rule as the living room.
+      - id: climate_guard_office_cool_off
+        alias: "Climate guard: office auto-cool off"
+        mode: single
+        trigger:
+          - platform: numeric_state
+            entity_id: sensor.office_ac_measured_value_of_room_temperature
+            below: input_number.climate_guard_office_off
+            for: "00:15:00"
+        condition:
+          - condition: state
+            entity_id: input_boolean.climate_guard_enabled
+            state: "on"
+          - condition: state
+            entity_id: input_boolean.climate_guard_office_auto
+            state: "on"
+          - condition: state
+            entity_id: climate.office_ac
+            state: cool
+        action:
+          - service: script.climate_guard_mark_action
+            data:
+              room: office
+          - service: climate.set_hvac_mode
+            target:
+              entity_id: climate.office_ac
+            data:
+              hvac_mode: "off"
+          - service: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.climate_guard_office_auto
+          # Quiet on purpose, same reason as the living room step.
+
+      # 5. Manual-override watch, living room.
+      # Any change a human makes on the unit, at the remote control or in
+      # the app, starts the override window. During that window the
+      # control automations stay out.
+      - id: climate_guard_lr_override_watch
+        alias: "Climate guard: living room manual override watch"
+        mode: restart
+        trigger:
+          # Plain state change: on, off or a mode change.
+          - platform: state
+            entity_id: climate.living_room_ac
+            not_to:
+              - unavailable
+              - unknown
+            not_from:
+              - unavailable
+              - unknown
+          # Setpoint change while the unit keeps running.
+          - platform: state
+            entity_id: climate.living_room_ac
+            attribute: temperature
+        condition:
+          - condition: state
+            entity_id: input_boolean.climate_guard_enabled
+            state: "on"
+          # An adapter that drops out or comes back is not a human. The
+          # attribute trigger has no not_to option, so this template
+          # covers both triggers.
+          - condition: template
+            value_template: >-
+              {{ states('climate.living_room_ac') not in ['unavailable', 'unknown'] }}
+          # Older than 60 seconds means no guard call caused this change,
+          # so a human did. default=0 makes an unknown helper read as the
+          # epoch, which is far in the past, so the first change after a
+          # fresh install starts an override. That is the safe side.
+          - condition: template
+            value_template: >-
+              {{ (as_timestamp(now())
+                  - as_timestamp(states('input_datetime.climate_guard_lr_last_action'), default=0))
+                 > 60 }}
+        action:
+          - service: timer.start
+            target:
+              entity_id: timer.climate_guard_lr_override
+          - if:
+              - condition: state
+                entity_id: climate.living_room_ac
+                state: "off"
+            then:
+              # A human turned the unit off. Drop the guard flag, so the
+              # guard does not claim the unit later.
+              - service: input_boolean.turn_off
+                target:
+                  entity_id: input_boolean.climate_guard_lr_auto
+
+      # 6. Manual-override watch, office. Mirror of 5.
+      - id: climate_guard_office_override_watch
+        alias: "Climate guard: office manual override watch"
+        mode: restart
+        trigger:
+          - platform: state
+            entity_id: climate.office_ac
+            not_to:
+              - unavailable
+              - unknown
+            not_from:
+              - unavailable
+              - unknown
+          - platform: state
+            entity_id: climate.office_ac
+            attribute: temperature
+        condition:
+          - condition: state
+            entity_id: input_boolean.climate_guard_enabled
+            state: "on"
+          - condition: template
+            value_template: >-
+              {{ states('climate.office_ac') not in ['unavailable', 'unknown'] }}
+          - condition: template
+            value_template: >-
+              {{ (as_timestamp(now())
+                  - as_timestamp(states('input_datetime.climate_guard_office_last_action'), default=0))
+                 > 60 }}
+        action:
+          - service: timer.start
+            target:
+              entity_id: timer.climate_guard_office_override
+          - if:
+              - condition: state
+                entity_id: climate.office_ac
+                state: "off"
+            then:
+              - service: input_boolean.turn_off
+                target:
+                  entity_id: input_boolean.climate_guard_office_auto
+
+      # 7. Dog heat warning.
+      # Not gated by climate_guard_enabled. An alert must arrive even
+      # when the control layer is off.
+      - id: climate_guard_dog_heat_warning
+        alias: "Climate guard: dog heat warning"
+        mode: single
+        trigger:
+          - platform: numeric_state
+            entity_id: sensor.living_room_ac_measured_value_of_room_temperature
+            above: input_number.climate_guard_dog_warning
+            for: "00:10:00"
+          # High humidity alone is a problem for dogs, because panting
+          # works poorly in damp air. 30 minutes filters short peaks from
+          # cooking or a shower.
+          - platform: numeric_state
+            entity_id: sensor.living_room_ac_measured_value_of_room_relative_humidity
+            above: input_number.climate_guard_humidity_warning
+            for: "00:30:00"
+        condition:
+          # Throttle: at most one warning per hour. 3600 seconds is that
+          # hour. 'this.entity_id' keeps the template correct even if the
+          # alias changes. default=0 lets the first run through, because
+          # last_triggered is None until then.
+          - condition: template
+            value_template: >-
+              {{ (as_timestamp(now())
+                  - as_timestamp(state_attr(this.entity_id, 'last_triggered'), default=0))
+                 > 3600 }}
+        action:
+          - service: notify.climate_alerts
+            data:
+              title: Dog heat warning
+              message: >-
+                Living room is
+                {{ states('sensor.living_room_ac_measured_value_of_room_temperature') }} °C
+                at
+                {{ states('sensor.living_room_ac_measured_value_of_room_relative_humidity') }} %
+                humidity. Check water and shade for the dogs.
+
+      # 8. Dog heat CRITICAL.
+      # This one also forces cooling, and it ignores both the master
+      # switch and the override window. Dog safety comes before a human
+      # preference.
+      - id: climate_guard_dog_heat_critical
+        alias: "Climate guard: dog heat critical"
+        mode: single
+        trigger:
+          - platform: numeric_state
+            entity_id: sensor.living_room_ac_measured_value_of_room_temperature
+            above: input_number.climate_guard_dog_critical
+            for: "00:05:00"
+            id: t_temp
+          # Warm and damp together is as dangerous as a higher dry
+          # temperature.
+          - platform: template
+            value_template: >-
+              {{ (states('sensor.living_room_ac_measured_value_of_room_temperature') | float(0)) >= 28
+                 and (states('sensor.living_room_ac_measured_value_of_room_relative_humidity') | float(0)) >= 65 }}
+            for: "00:05:00"
+            id: t_combo
+          # Re-alert clock. The condition below decides whether the
+          # danger is still there.
+          - platform: time_pattern
+            minutes: "/15"
+            id: t_repeat
+        condition:
+          - condition: template
+            value_template: >-
+              {{ (states('sensor.living_room_ac_measured_value_of_room_temperature') | float(0))
+                   >= (states('input_number.climate_guard_dog_critical') | float(29))
+                 or ((states('sensor.living_room_ac_measured_value_of_room_temperature') | float(0)) >= 28
+                     and (states('sensor.living_room_ac_measured_value_of_room_relative_humidity') | float(0)) >= 65) }}
+          # Throttle 840 seconds (14 minutes). It is just under the 15
+          # minute clock, so every clock tick passes while the danger
+          # lasts, but a second trigger cannot double the message.
+          - condition: template
+            value_template: >-
+              {{ (as_timestamp(now())
+                  - as_timestamp(state_attr(this.entity_id, 'last_triggered'), default=0))
+                 > 840 }}
+        action:
+          # iOS critical alert: it sounds through silent mode, Do Not
+          # Disturb and Focus at the set volume. The notify group
+          # forwards data to all members; persistent_notification ignores
+          # it.
+          - service: notify.climate_alerts
+            data:
+              title: DOG HEAT CRITICAL
+              message: >-
+                Living room is
+                {{ states('sensor.living_room_ac_measured_value_of_room_temperature') }} °C
+                at
+                {{ states('sensor.living_room_ac_measured_value_of_room_relative_humidity') }} %
+                humidity. The dogs are at risk. Forcing the AC to cool.
+              data:
+                push:
+                  sound:
+                    name: default
+                    critical: 1
+                    volume: 1.0
+                  interruption-level: critical
+          - service: script.climate_guard_mark_action
+            data:
+              room: living_room
+          - service: climate.set_hvac_mode
+            target:
+              entity_id: climate.living_room_ac
+            data:
+              hvac_mode: cool
+          # Emergency setpoint 24, fixed and below the normal setpoint.
+          # It pulls the room down fast and does not depend on a helper a
+          # human may have raised.
+          - service: climate.set_temperature
+            target:
+              entity_id: climate.living_room_ac
+            data:
+              temperature: 24
+
+      # 9. Office overheat warning. Alert only, never gated.
+      - id: climate_guard_office_overheat_warning
+        alias: "Climate guard: office overheat warning"
+        mode: single
+        trigger:
+          - platform: numeric_state
+            entity_id: sensor.office_ac_measured_value_of_room_temperature
+            above: input_number.climate_guard_office_warning
+            for: "00:10:00"
+        condition:
+          # One warning per hour, same math as automation 7.
+          - condition: template
+            value_template: >-
+              {{ (as_timestamp(now())
+                  - as_timestamp(state_attr(this.entity_id, 'last_triggered'), default=0))
+                 > 3600 }}
+        action:
+          - service: notify.climate_alerts
+            data:
+              title: Office overheat warning
+              message: >-
+                Office is
+                {{ states('sensor.office_ac_measured_value_of_room_temperature') }} °C.
+                The computer equipment runs hot.
+
+      # 10. Office overheat CRITICAL. Mirror of 8, without humidity,
+      # because the office has no humidity sensor.
+      - id: climate_guard_office_overheat_critical
+        alias: "Climate guard: office overheat critical"
+        mode: single
+        trigger:
+          - platform: numeric_state
+            entity_id: sensor.office_ac_measured_value_of_room_temperature
+            above: input_number.climate_guard_office_critical
+            for: "00:05:00"
+            id: t_temp
+          - platform: time_pattern
+            minutes: "/15"
+            id: t_repeat
+        condition:
+          - condition: template
+            value_template: >-
+              {{ (states('sensor.office_ac_measured_value_of_room_temperature') | float(0))
+                 >= (states('input_number.climate_guard_office_critical') | float(32)) }}
+          # 840 seconds, just under the 15 minute clock. See automation 8.
+          - condition: template
+            value_template: >-
+              {{ (as_timestamp(now())
+                  - as_timestamp(state_attr(this.entity_id, 'last_triggered'), default=0))
+                 > 840 }}
+        action:
+          - service: notify.climate_alerts
+            data:
+              title: OFFICE OVERHEAT CRITICAL
+              message: >-
+                Office is
+                {{ states('sensor.office_ac_measured_value_of_room_temperature') }} °C.
+                The equipment is at risk. Forcing the AC to cool.
+              data:
+                push:
+                  sound:
+                    name: default
+                    critical: 1
+                    volume: 1.0
+                  interruption-level: critical
+          - service: script.climate_guard_mark_action
+            data:
+              room: office
+          - service: climate.set_hvac_mode
+            target:
+              entity_id: climate.office_ac
+            data:
+              hvac_mode: cool
+          # Emergency setpoint 24, fixed and below the normal setpoint.
+          - service: climate.set_temperature
+            target:
+              entity_id: climate.office_ac
+            data:
+              temperature: 24
+
+      # 11. Cooling-failure watchdog, living room.
+      # The guard ran the unit for 30 minutes and the room is still at or
+      # above the cool-on point. Something blocks the cooling: an open
+      # window, a blocked filter or a broken unit.
+      - id: climate_guard_lr_cooling_failure
+        alias: "Climate guard: living room cooling failure"
+        mode: single
+        trigger:
+          - platform: state
+            entity_id: input_boolean.climate_guard_lr_auto
+            to: "on"
+            for: "00:30:00"
+        condition:
+          # Template compare, because the rule needs 'at or above' and
+          # numeric_state 'above' is strict.
+          - condition: template
+            value_template: >-
+              {{ (states('sensor.living_room_ac_measured_value_of_room_temperature') | float(0))
+                 >= (states('input_number.climate_guard_lr_on_away') | float(27)) }}
+        action:
+          - service: notify.climate_alerts
+            data:
+              title: Cooling failure
+              message: >-
+                The living room AC has run 30 min but the room is not
+                cooling (check windows / unit). Room is
+                {{ states('sensor.living_room_ac_measured_value_of_room_temperature') }} °C.
+              data:
+                push:
+                  sound:
+                    name: default
+                    critical: 1
+                    volume: 1.0
+                  interruption-level: critical
+
+      # 12. Cooling-failure watchdog, office. Mirror of 11.
+      - id: climate_guard_office_cooling_failure
+        alias: "Climate guard: office cooling failure"
+        mode: single
+        trigger:
+          - platform: state
+            entity_id: input_boolean.climate_guard_office_auto
+            to: "on"
+            for: "00:30:00"
+        condition:
+          - condition: template
+            value_template: >-
+              {{ (states('sensor.office_ac_measured_value_of_room_temperature') | float(0))
+                 >= (states('input_number.climate_guard_office_on') | float(28)) }}
+        action:
+          - service: notify.climate_alerts
+            data:
+              title: Cooling failure
+              message: >-
+                The office AC has run 30 min but the room is not cooling
+                (check windows / unit). Room is
+                {{ states('sensor.office_ac_measured_value_of_room_temperature') }} °C.
+              data:
+                push:
+                  sound:
+                    name: default
+                    critical: 1
+                    volume: 1.0
+                  interruption-level: critical
+
+      # 13. AC adapter watchdog.
+      # Known issue: the ECHONET responder in the Daikin adapter gets
+      # stuck and stops answering. Home Assistant then shows the unit as
+      # unavailable. A power cycle at the breaker clears it.
+      - id: climate_guard_adapter_watchdog
+        alias: "Climate guard: AC adapter watchdog"
+        mode: single
+        trigger:
+          - platform: state
+            entity_id: climate.living_room_ac
+            to: unavailable
+            for: "00:15:00"
+            id: living_room
+          - platform: state
+            entity_id: climate.office_ac
+            to: unavailable
+            for: "00:15:00"
+            id: office
+        action:
+          - service: notify.climate_alerts
+            data:
+              title: AC adapter watchdog
+              message: >-
+                {{ 'Living room' if trigger.id == 'living_room' else 'Office' }}
+                AC is unavailable.
+                Adapter is silent. Known fix: power the unit off at the
+                breaker for 1 minute, then on.

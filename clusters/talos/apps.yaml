@@ -828,6 +828,6 @@ spec:
   prune: true
   sourceRef:
     kind: GitRepository
-    name: lab
+    name: home
   timeout: 15m
   wait: true

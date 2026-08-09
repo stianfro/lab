@@ -129,3 +129,16 @@ spec:
   ref:
     branch: env/prod
   url: https://github.com/stianfro/froystein.jp.git
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: home
+  namespace: flux-system
+spec:
+  interval: 1m
+  ref:
+    branch: main
+  secretRef:
+    name: home-deploy-key
+  url: ssh://git@github.com/stianfro/home

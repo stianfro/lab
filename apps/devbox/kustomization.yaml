@@ -8,3 +8,11 @@ resources:
   - service.yaml
   - node-exporter-service.yaml
   - servicemonitor.yaml
+configMapGenerator:
+  - name: devbox-grafana-dashboards
+    namespace: devbox
+    files:
+      - dashboards/agent-usage.json
+    options:
+      labels:
+        grafana_dashboard: "1"

@@ -315,6 +315,65 @@
     state: started
     daemon_reload: true
 
+- name: Allow devbox user to write Node Exporter textfile metrics
+  ansible.builtin.file:
+    path: /var/lib/prometheus/node-exporter
+    state: directory
+    owner: prometheus
+    group: "{{ devbox_user }}"
+    mode: "0770"
+
+- name: Install agent usage metrics service
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/devbox-ai-usage-metrics.service
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=Export local Claude and Codex usage metrics
+      After=prometheus-node-exporter.service
+      ConditionPathExists={{ devbox_home }}/.claude/scripts/usage-tracker.py
+
+      [Service]
+      Type=oneshot
+      User={{ devbox_user }}
+      Group={{ devbox_user }}
+      WorkingDirectory={{ devbox_home }}
+      Environment=HOME={{ devbox_home }}
+      ExecStart=/usr/bin/python3 {{ devbox_home }}/.claude/scripts/usage-tracker.py metrics --out /var/lib/prometheus/node-exporter/usage.prom
+      NoNewPrivileges=true
+      PrivateTmp=true
+  notify: Reload systemd daemon
+
+- name: Install agent usage metrics timer
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/devbox-ai-usage-metrics.timer
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=Refresh local Claude and Codex usage metrics
+
+      [Timer]
+      OnBootSec=1min
+      OnUnitActiveSec=1min
+      AccuracySec=10s
+      Persistent=true
+      Unit=devbox-ai-usage-metrics.service
+
+      [Install]
+      WantedBy=timers.target
+  notify: Reload systemd daemon
+
+- name: Enable agent usage metrics timer
+  ansible.builtin.systemd:
+    name: devbox-ai-usage-metrics.timer
+    enabled: true
+    state: started
+    daemon_reload: true
+
 - name: Create OpenCode configuration directory
   ansible.builtin.file:
     path: "{{ devbox_home }}/.config/opencode"

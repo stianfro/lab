@@ -1,0 +1,23 @@
+frr defaults traditional
+hostname {{ inventory_hostname }}
+log syslog informational
+service integrated-vtysh-config
+!
+router bgp {{ frr_local_asn }}
+ bgp router-id {{ frr_lan_ip }}
+ bgp listen range {{ frr_dynamic_neighbor_range }} peer-group CILIUM
+ neighbor CILIUM peer-group
+ neighbor CILIUM remote-as {{ frr_cluster_asn }}
+ neighbor CILIUM timers {{ frr_bgp_keepalive_seconds }} {{ frr_bgp_hold_seconds }}
+ !
+ address-family ipv4 unicast
+  neighbor CILIUM route-map CILIUM-IN in
+  neighbor CILIUM route-map DENY-ALL out
+ exit-address-family
+!
+ip prefix-list LB-PREFIXES seq 10 permit {{ frr_lb_prefix }} le 32
+!
+route-map CILIUM-IN permit 10
+ match ip address prefix-list LB-PREFIXES
+!
+route-map DENY-ALL deny 10

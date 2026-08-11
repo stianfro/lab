@@ -179,6 +179,10 @@ devbox-ansible-ping:
   mkdir -p .cache/ansible/tmp
   ANSIBLE_LOCAL_TEMP=.cache/ansible/tmp ANSIBLE_HOME=.cache/ansible ansible -i ansible/devbox/inventory.ini devboxes -m ping
 
+frr-router-converge:
+  mkdir -p .cache/ansible/tmp .cache/uv
+  ANSIBLE_LOCAL_TEMP=.cache/ansible/tmp ANSIBLE_HOME=.cache/ansible UV_CACHE_DIR=.cache/uv uvx --from ansible-core ansible-playbook -i ansible/frr-router/inventory.ini ansible/frr-router/playbook.yaml
+
 bench:
   python3 scripts/bench/run.py balanced
 

@@ -5,3 +5,5 @@ kubeconfig
 
 .cache/
 __pycache__/
+
+.claude/board.md

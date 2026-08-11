@@ -25,6 +25,7 @@ spec:
     kubeProxyReplacement: true
     bgpControlPlane:
       enabled: true
+    defaultLBServiceIPAM: none
     securityContext:
       privileged: true
       capabilities:

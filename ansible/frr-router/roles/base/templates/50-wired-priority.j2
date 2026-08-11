@@ -1,0 +1,20 @@
+#!/bin/sh
+# Prefer the wired LAN interface. NetworkManager runs this on every
+# interface event. When {{ frr_wired_interface }} gets link, drop the
+# wifi connection so {{ frr_lan_ip }} moves to the wire. When the wire
+# goes away, bring wifi back as fallback.
+iface="$1"
+action="$2"
+
+[ "$iface" = "{{ frr_wired_interface }}" ] || exit 0
+
+case "$action" in
+  up)
+    nmcli con down "{{ frr_nm_connection }}" || true
+    ;;
+  down)
+    nmcli con up "{{ frr_nm_connection }}" || true
+    ;;
+esac
+
+exit 0

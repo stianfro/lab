@@ -31,20 +31,30 @@ The owner must do these steps on the TP-Link BE19000:
 just frr-router-converge
 ```
 
-## Switch From Wifi To eth0
+## Wired Priority
 
-The Pi is on wifi (`wlan0`, NM connection `preconfigured`) today. To move it
-to a cable:
+The Pi is on wifi (`wlan0`, NM connection `preconfigured`) today. The
+playbook pre-provisions a wired profile `lan-wired` on `eth0` with the same
+static IP `192.168.1.159`. The IP follows the Pi, not the interface.
 
-1. Connect the ethernet cable to the Pi.
-2. Set these values in `group_vars/frr_routers.yaml`:
-   - `frr_lan_interface: eth0`
-   - `frr_nm_connection: "Wired connection 1"`
-3. Run `just frr-router-converge` again. This sets the static IP on the wired
-   profile and disables autoconnect on the wifi profile.
-4. Run `nmcli con down preconfigured` on the Pi, or reboot it. This completes
-   the switch. The playbook does not take wlan0 down, because you can be
-   connected through it.
+A NetworkManager dispatcher script
+(`/etc/NetworkManager/dispatcher.d/50-wired-priority`) prefers the wire
+automatically:
+
+- When `eth0` gets link, the script takes the wifi connection down. The IP
+  moves to the wire.
+- When `eth0` loses link, the script brings the wifi connection back as
+  fallback.
+
+To switch to the cable, plug it in. Wifi drops within seconds and `eth0`
+takes over the same IP. BGP sessions re-establish within the hold time
+(9 seconds). Unplug the cable to restore wifi.
+
+During the switch there is a brief window where both interfaces claim the
+IP. This is harmless, because both interfaces belong to the same host.
+
+The wifi profile stays configured as fallback. Delete it manually only if
+you want a wired-only setup.
 
 ## Validation
 

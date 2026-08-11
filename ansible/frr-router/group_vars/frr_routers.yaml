@@ -1,5 +1,7 @@
 frr_lan_interface: wlan0
 frr_nm_connection: preconfigured
+frr_wired_interface: eth0
+frr_wired_connection: lan-wired
 frr_lan_ip: 192.168.1.159
 frr_lan_prefix: 24
 frr_lan_gateway: 192.168.1.1

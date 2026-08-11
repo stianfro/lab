@@ -50,17 +50,53 @@
   ansible.builtin.command: nmcli device reapply {{ frr_lan_interface }}
   when: frr_nm_ipv4_mod is changed
 
-- name: Query wifi autoconnect state before the eth0 switch
-  ansible.builtin.command: nmcli -g connection.autoconnect con show preconfigured
-  register: frr_nm_wifi_autoconnect
+- name: Check whether the wired NM connection exists
+  ansible.builtin.command: >-
+    nmcli -g connection.id con show "{{ frr_wired_connection }}"
+  register: frr_nm_wired_exists
   changed_when: false
-  when: frr_lan_interface == "eth0"
+  failed_when: false
 
-- name: Disable wifi autoconnect once eth0 is the LAN interface
-  ansible.builtin.command: nmcli con mod preconfigured connection.autoconnect no
+- name: Create the wired NM connection with the same static IPv4
+  ansible.builtin.command: >-
+    nmcli con add type ethernet
+    ifname {{ frr_wired_interface }}
+    con-name "{{ frr_wired_connection }}"
+    autoconnect yes
+    connection.autoconnect-priority 100
+    ipv4.method manual
+    ipv4.addresses {{ frr_lan_ip }}/{{ frr_lan_prefix }}
+    ipv4.gateway {{ frr_lan_gateway }}
+    ipv4.dns {{ frr_lan_dns }}
+    ipv6.method auto
+  when: frr_nm_wired_exists.rc != 0
+
+- name: Query current IPv4 settings of the wired NM connection
+  ansible.builtin.command: >-
+    nmcli -g ipv4.method,ipv4.addresses,ipv4.gateway,ipv4.dns
+    con show "{{ frr_wired_connection }}"
+  register: frr_nm_wired_ipv4_state
+  changed_when: false
+  when: frr_nm_wired_exists.rc == 0
+
+- name: Set static IPv4 configuration on the wired NM connection
+  ansible.builtin.command: >-
+    nmcli con mod "{{ frr_wired_connection }}"
+    ipv4.method manual
+    ipv4.addresses {{ frr_lan_ip }}/{{ frr_lan_prefix }}
+    ipv4.gateway {{ frr_lan_gateway }}
+    ipv4.dns {{ frr_lan_dns }}
   when:
-    - frr_lan_interface == "eth0"
-    - frr_nm_wifi_autoconnect.stdout | trim != "no"
+    - frr_nm_wired_exists.rc == 0
+    - frr_nm_wired_ipv4_state.stdout_lines != frr_nm_desired_ipv4_state
+
+- name: Deploy the wired-priority NM dispatcher script
+  ansible.builtin.template:
+    src: 50-wired-priority.j2
+    dest: /etc/NetworkManager/dispatcher.d/50-wired-priority
+    owner: root
+    group: root
+    mode: "0755"
 
 - name: Check whether a reboot is required
   ansible.builtin.stat:

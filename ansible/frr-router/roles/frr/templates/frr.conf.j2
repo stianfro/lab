@@ -5,10 +5,10 @@ service integrated-vtysh-config
 !
 router bgp {{ frr_local_asn }}
  bgp router-id {{ frr_lan_ip }}
- bgp listen range {{ frr_dynamic_neighbor_range }} peer-group CILIUM
  neighbor CILIUM peer-group
  neighbor CILIUM remote-as {{ frr_cluster_asn }}
  neighbor CILIUM timers {{ frr_bgp_keepalive_seconds }} {{ frr_bgp_hold_seconds }}
+ bgp listen range {{ frr_dynamic_neighbor_range }} peer-group CILIUM
  !
  address-family ipv4 unicast
   neighbor CILIUM route-map CILIUM-IN in

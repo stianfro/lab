@@ -9,7 +9,7 @@ spec:
       peers:
         - name: frr-router
           peerASN: 64513
-          peerAddress: 192.168.1.159
+          peerAddress: 192.168.1.2
           peerConfigRef:
             name: frr-router
 ---

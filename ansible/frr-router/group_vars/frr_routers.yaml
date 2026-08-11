@@ -1,0 +1,12 @@
+frr_lan_interface: wlan0
+frr_nm_connection: preconfigured
+frr_lan_ip: 192.168.1.159
+frr_lan_prefix: 24
+frr_lan_gateway: 192.168.1.1
+frr_lan_dns: 192.168.1.1
+frr_local_asn: 64513
+frr_cluster_asn: 64512
+frr_dynamic_neighbor_range: 192.168.1.0/24
+frr_lb_prefix: 192.168.100.0/24
+frr_bgp_keepalive_seconds: 3
+frr_bgp_hold_seconds: 9

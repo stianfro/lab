@@ -1,0 +1,6 @@
+---
+frr_nm_desired_ipv4_state:
+  - manual
+  - "{{ frr_lan_ip }}/{{ frr_lan_prefix }}"
+  - "{{ frr_lan_gateway }}"
+  - "{{ frr_lan_dns }}"

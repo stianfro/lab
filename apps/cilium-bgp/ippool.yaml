@@ -1,0 +1,11 @@
+apiVersion: cilium.io/v2
+kind: CiliumLoadBalancerIPPool
+metadata:
+  name: bgp-default
+spec:
+  allowFirstLastIPs: "No"
+  blocks:
+    - cidr: 192.168.100.0/24
+  serviceSelector:
+    matchLabels:
+      lb-pool: bgp

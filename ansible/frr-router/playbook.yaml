@@ -1,0 +1,9 @@
+- name: Configure FRR BGP router for the lab cluster
+  hosts: frr_routers
+  become: true
+  gather_facts: true
+  roles:
+    - role: base
+      tags: base
+    - role: frr
+      tags: frr

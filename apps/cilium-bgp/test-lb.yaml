@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: bgp-test
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bgp-test
+  namespace: bgp-test
+  labels:
+    app: bgp-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bgp-test
+  template:
+    metadata:
+      labels:
+        app: bgp-test
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.27-alpine
+          ports:
+            - name: http
+              containerPort: 80
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 64Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bgp-test
+  namespace: bgp-test
+  labels:
+    lb-pool: bgp
+spec:
+  type: LoadBalancer
+  loadBalancerClass: io.cilium/bgp-control-plane
+  externalTrafficPolicy: Local
+  selector:
+    app: bgp-test
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80

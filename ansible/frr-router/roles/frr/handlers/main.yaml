@@ -1,0 +1,5 @@
+---
+- name: Restart frr
+  ansible.builtin.systemd:
+    name: frr
+    state: restarted

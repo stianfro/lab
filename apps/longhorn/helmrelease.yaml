@@ -23,6 +23,6 @@ spec:
     defaultSettings:
       backupTarget: nfs://192.168.1.10:/mnt/user/backup/longhorn
       backupTargetCredentialSecret: ""
-      storageOverProvisioningPercentage: 105
+      storageOverProvisioningPercentage: "105"
   driftDetection:
     mode: enabled

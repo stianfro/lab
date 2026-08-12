@@ -143,6 +143,27 @@ kubectl wait --for=delete vmi/ocp-upgrade-lab \
 Stop persistent StatefulSets. Stop the Prometheus operator before Prometheus,
 so the operator does not restore the StatefulSet replica count.
 
+First, confirm that Loki retains its PVC when it scales down. Do not scale Loki
+to zero if either value is `Delete`:
+
+```bash
+kubectl -n loki get sts loki -o json | jq \
+  '.spec.persistentVolumeClaimRetentionPolicy'
+```
+
+The expected values are:
+
+```json
+{
+  "whenDeleted": "Retain",
+  "whenScaled": "Retain"
+}
+```
+
+The Loki HelmRelease sets
+`singleBinary.persistence.enableStatefulSetAutoDeletePVC` to `false`. Fix and
+reconcile that setting before you continue if the live policy is not `Retain`.
+
 ```bash
 kubectl -n registry scale sts/registry --replicas=0
 kubectl -n loki scale sts/loki --replicas=0
@@ -337,4 +358,3 @@ The recovery is complete when:
 - both expected VMs are running;
 - the public smoke test passes;
 - the FRR router uses `lan-wired` and has three BGP sessions.
-

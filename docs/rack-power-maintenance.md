@@ -160,9 +160,9 @@ The expected values are:
 }
 ```
 
-The Loki HelmRelease sets
-`singleBinary.persistence.enableStatefulSetAutoDeletePVC` to `false`. Fix and
-reconcile that setting before you continue if the live policy is not `Retain`.
+The Loki HelmRelease sets `singleBinary.persistence.whenDeleted` and
+`singleBinary.persistence.whenScaled` to `Retain`. Fix and reconcile those
+settings before you continue if the live policy is not `Retain`.
 
 ```bash
 kubectl -n registry scale sts/registry --replicas=0

@@ -51,7 +51,9 @@ spec:
       replicas: 1
       persistence:
         enabled: true
-        enableStatefulSetAutoDeletePVC: false
+        enableStatefulSetAutoDeletePVC: true
+        whenDeleted: Retain
+        whenScaled: Retain
         storageClass: longhorn
         size: 50Gi
         accessModes:

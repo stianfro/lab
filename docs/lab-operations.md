@@ -46,6 +46,12 @@ talosctl --endpoints $CP_IPS logs <service>
 Talos files live under `talos/`. Cilium stays in Talos bootstrap because the
 cluster needs CNI before Flux can run.
 
+## Rack Power Maintenance
+
+Use [Rack Power Maintenance](rack-power-maintenance.md) for a full rack
+shutdown, power cable work, and recovery. Open the runbook on the Mac before
+you stop devbox. The devbox terminal disconnects when its KubeVirt VM stops.
+
 ## Gateway
 
 Internal services use the `eg` Gateway and `*.talos.froystein.jp`.

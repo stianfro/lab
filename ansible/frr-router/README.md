@@ -13,17 +13,21 @@ MetalLB.
 - FRR accepts only the LB prefix `192.168.100.0/24` (and its more specific
   routes, up to /32) from the cluster. FRR announces nothing to the cluster.
 - Timers: 3 seconds keepalive, 9 seconds hold.
-- Static IP: the Pi keeps `192.168.1.159`. This was its DHCP lease. The
-  playbook converts the NetworkManager connection to a static (manual)
-  configuration with the same address.
+- Static IP: the Pi uses `192.168.1.2`. This address is low in the subnet,
+  so it sits outside the usual DHCP pool. Verify the pool start in the
+  router UI. If the pool starts above `.2`, no DHCP reservation is needed.
+  The playbook configures the NetworkManager connection as a static
+  (manual) configuration with this address.
 
 ## Manual Router Steps (TP-Link BE19000)
 
 The owner must do these steps on the TP-Link BE19000:
 
-1. Add a static route: `192.168.100.0/24` with next hop `192.168.1.159`.
-2. Add a DHCP reservation for the Pi's MAC address, so no other device gets
-   `192.168.1.159`.
+1. Add a static route: `192.168.100.0/24` with next hop `192.168.1.2`.
+2. Verify that the DHCP pool starts above `192.168.1.2`. If it does, no
+   DHCP reservation is needed. If the pool includes `.2`, add a DHCP
+   reservation for the Pi's MAC address so no other device gets the
+   address.
 
 ## Converge
 
@@ -31,11 +35,23 @@ The owner must do these steps on the TP-Link BE19000:
 just frr-router-converge
 ```
 
+### Changing The LAN IP
+
+A converge that changes the LAN IP disconnects mid-play. NetworkManager
+reapplies the wifi or wired profile with the new address, and the SSH
+connection to the old address drops. Run the converge in two passes:
+
+1. Run pass 1 against the old address. Append
+   `-e ansible_host=<old-ip>` to the ansible-playbook command. Expect the
+   play to drop when the IP changes.
+2. Run the normal `just frr-router-converge`. It targets the new inventory
+   address and completes FRR and the remaining tasks.
+
 ## Wired Priority
 
 The Pi is on wifi (`wlan0`, NM connection `preconfigured`) today. The
 playbook pre-provisions a wired profile `lan-wired` on `eth0` with the same
-static IP `192.168.1.159`. The IP follows the Pi, not the interface.
+static IP `192.168.1.2`. The IP follows the Pi, not the interface.
 
 A NetworkManager dispatcher script
 (`/etc/NetworkManager/dispatcher.d/50-wired-priority`) prefers the wire

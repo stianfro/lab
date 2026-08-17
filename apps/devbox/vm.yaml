@@ -114,7 +114,7 @@ spec:
         storage:
           resources:
             requests:
-              storage: 140Gi
+              storage: 200Gi
           storageClassName: longhorn-devbox-local
         source:
           http:

@@ -4,7 +4,7 @@ metadata:
   name: ocp-upgrade-lab
   namespace: ocp-upgrade-lab
 spec:
-  running: true
+  runStrategy: Halted
   template:
     spec:
       domain:

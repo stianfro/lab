@@ -10,7 +10,7 @@ KubeVirt.
   local VNC).
 - `user-data`: cloud-init NoCloud user data. It matches the KubeVirt
   cloud-init config: user `stian` with SSH keys, SSH hardening, base
-  packages, and the netplan DHCP file for `en*` interfaces.
+  packages, and a static netplan config for `en*` interfaces.
 - `meta-data`: cloud-init NoCloud metadata (instance id and hostname).
 
 ## Sizing Note
@@ -23,9 +23,12 @@ at 8 (4 cores, 2 threads).
 ## Networking
 
 The domain attaches to bridge `br0` with fixed MAC
-`52:54:00:6d:15:51`. Add a DHCP reservation on the LAN that maps this
-MAC to `192.168.1.51`. The guest netplan config uses DHCP, so no guest
-change is needed.
+`52:54:00:6d:15:51`. The guest configures the static IP
+`192.168.1.51/24` itself (gateway and DNS `192.168.1.1`) through the
+netplan file that cloud-init writes on every boot. A DHCP reservation
+is not possible: `.51` sits outside the LAN DHCP pool (`.100`-`.249`).
+Make sure no other host claims `192.168.1.51`, including the cluster
+`devbox-ssh` Service (see `apps/devbox/README.md`).
 
 ## Prepare The Root Disk
 

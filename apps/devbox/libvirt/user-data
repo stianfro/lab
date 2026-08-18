@@ -10,10 +10,16 @@ bootcmd:
       '    lan:' \
       '      match:' \
       '        name: "en*"' \
-      '      dhcp4: true' \
+      '      dhcp4: false' \
       '      dhcp6: false' \
-      >/etc/netplan/50-devbox-lan.yaml
-    chmod 600 /etc/netplan/50-devbox-lan.yaml
+      '      addresses: [192.168.1.51/24]' \
+      '      routes:' \
+      '        - to: default' \
+      '          via: 192.168.1.1' \
+      '      nameservers:' \
+      '        addresses: [192.168.1.1]' \
+      >/etc/netplan/60-devbox-static.yaml
+    chmod 600 /etc/netplan/60-devbox-static.yaml
     netplan generate
     netplan apply
 users:

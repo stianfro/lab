@@ -4,7 +4,7 @@ metadata:
   name: devbox
   namespace: devbox
 spec:
-  runStrategy: Always
+  runStrategy: Halted
   template:
     metadata:
       labels:

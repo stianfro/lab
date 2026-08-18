@@ -1,0 +1,48 @@
+#cloud-config
+package_update: true
+package_upgrade: false
+bootcmd:
+  - |
+    printf '%s\n' \
+      'network:' \
+      '  version: 2' \
+      '  ethernets:' \
+      '    lan:' \
+      '      match:' \
+      '        name: "en*"' \
+      '      dhcp4: true' \
+      '      dhcp6: false' \
+      >/etc/netplan/50-devbox-lan.yaml
+    chmod 600 /etc/netplan/50-devbox-lan.yaml
+    netplan generate
+    netplan apply
+users:
+  - default
+  - name: stian
+    gecos: Stian Froystein
+    groups: sudo
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+    shell: /bin/bash
+    lock_passwd: true
+    ssh_authorized_keys:
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCjlNh4UPrDac9Yb8R5FOoyB3qo0UNYLS4oGYRY5Cg0gwth0tA0nxvOrirAMj0+RhJ0/O6rg+quh24PYt/Pes6gGUopOyYLvA+i4bHNOAgt91kkqBIjtNFESugcBqVSE565NvKDE+cD8+PLkf4bUMXaMceb1PnGtBwz+URvo9bDVAj/pokkMg11fskIaSikc9nFqYcCs4fXnF3+kOlNL2hdlXKCcD3H5osxgaXoN/O98lsGZZ2BeMcisGwYeGDIxgEFHSUgWrke5JuOod8WkKHF4j67FS6gbiwF7KVAGT2NtVlNbiJ1wu0E4cX05j4j9xo6Uu4HY5roJr+4B7x6f217Je+KwY0EULHCwtKlseNfyQwoDciOC+sDVYXbGsUq4Iya9awpReboeq9Sw6XRu6bq8I9pNBd5kmfezMLRjKCur1B92I92M7MQ0JwX196SKj0HpTa6drXQoln/z0dJatdOZ/WP2Wr7iYWDrjSYHRtgBlQC3kE8Q4lFag5V352fl0U=
+packages:
+  - ca-certificates
+  - curl
+  - gnupg
+  - openssh-server
+  - python3
+  - sudo
+ssh_pwauth: false
+disable_root: true
+write_files:
+  - path: /etc/ssh/sshd_config.d/99-devbox-hardening.conf
+    permissions: '0644'
+    owner: root:root
+    content: |
+      PasswordAuthentication no
+      PermitRootLogin no
+      PubkeyAuthentication yes
+runcmd:
+  - systemctl enable --now ssh
+  - systemctl restart ssh

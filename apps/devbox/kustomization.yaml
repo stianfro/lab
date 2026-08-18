@@ -5,7 +5,9 @@ resources:
   - storageclass-local.yaml
   - namespace.yaml
   - vm.yaml
-  - service.yaml
+  # service.yaml is intentionally not deployed: the primary devbox on the
+  # external libvirt host owns 192.168.1.51. Re-add it only when the standby
+  # VM must serve traffic (see README.md).
   - node-exporter-service.yaml
   - servicemonitor.yaml
 configMapGenerator:

@@ -24,3 +24,5 @@
       tags: agent-browser
     - role: herdr
       tags: herdr
+    - role: backup
+      tags: backup

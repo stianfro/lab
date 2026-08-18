@@ -74,6 +74,17 @@ spec:
                 regex: '([^:]+):\d+'
                 target_label: instance
                 replacement: '$1'
+          - job_name: devbox
+            static_configs:
+              - targets:
+                  - 192.168.1.51:9100
+                labels:
+                  job: node-exporter
+            relabel_configs:
+              - source_labels: [__address__]
+                regex: '([^:]+):\d+'
+                target_label: instance
+                replacement: '$1'
     grafana:
       plugins:
         - yesoreyeram-infinity-datasource 3.11.1

@@ -1,0 +1,15 @@
+# Managed by Ansible (devbox backup role).
+[Unit]
+Description=Devbox restic backup
+Wants=network-online.target
+After=network-online.target
+RequiresMountsFor={{ devbox_backup_mount_point }}
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/devbox-backup
+# A hung NFS server must fail the run visibly instead of blocking the
+# timer forever.
+TimeoutStartSec=4h
+Nice=10
+IOSchedulingClass=idle

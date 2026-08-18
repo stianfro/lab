@@ -17,7 +17,12 @@ machine:
   network: {}
   install:
     disk: /dev/nvme0n1
-    image: factory.talos.dev/installer/65cf8364cd0de4cf7b851dc7067a2db83d0ba04f11d8635c6cd3334be6ffb825:v1.12.4
+    # Image Factory schematic: amd-ucode, amdgpu, iscsi-tools,
+    # util-linux-tools, plus extraKernelArgs
+    # nvme_core.default_ps_max_latency_us=0 and pcie_aspm=off (NVMe
+    # controller dropout mitigation). Kernel args must live in the
+    # schematic because SDBoot ignores machine-config extraKernelArgs.
+    image: factory.talos.dev/installer/cb120f5908d584b52477963c9d095efa80750f4e4fdc48190eb68730cb749448:v1.12.4
     wipe: false
   features:
     rbac: true

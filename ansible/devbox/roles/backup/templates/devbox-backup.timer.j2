@@ -1,0 +1,11 @@
+# Managed by Ansible (devbox backup role).
+[Unit]
+Description=Daily devbox restic backup
+
+[Timer]
+OnCalendar={{ devbox_backup_on_calendar }}
+RandomizedDelaySec={{ devbox_backup_randomized_delay_sec }}
+Persistent=true
+
+[Install]
+WantedBy=timers.target

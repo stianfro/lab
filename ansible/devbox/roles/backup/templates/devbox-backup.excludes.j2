@@ -1,0 +1,20 @@
+# Managed by Ansible (devbox backup role).
+# Absolute excludes: caches and rebuildable tool state.
+{{ devbox_home }}/.cache
+{{ devbox_home }}/.local/share/Trash
+{{ devbox_home }}/.local/share/containers
+{{ devbox_home }}/.npm/_cacache
+{{ devbox_home }}/.cargo/registry
+{{ devbox_home }}/.rustup/toolchains
+{{ devbox_home }}/.agent-browser/browsers
+{{ devbox_home }}/go/pkg/mod
+{{ devbox_home }}/.vscode-server
+# Pattern excludes: dependency trees and build artifacts.
+**/node_modules
+**/__pycache__
+**/.venv
+**/.terraform
+**/.next
+**/dist
+**/target/debug
+**/target/release

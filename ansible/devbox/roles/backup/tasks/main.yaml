@@ -1,0 +1,124 @@
+---
+- name: Install backup packages
+  ansible.builtin.apt:
+    name:
+      - restic
+      - nfs-common
+    state: present
+    update_cache: true
+
+- name: Create restic config directory
+  ansible.builtin.file:
+    path: /etc/restic
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Check if restic repository password exists
+  ansible.builtin.stat:
+    path: "{{ devbox_backup_password_file }}"
+  register: _backup_password_stat
+
+- name: Generate restic repository password
+  ansible.builtin.shell: |
+    set -euo pipefail
+    umask 077
+    python3 -c 'import secrets; print(secrets.token_hex(32))' > {{ devbox_backup_password_file | quote }}
+  args:
+    executable: /bin/bash
+  when: not _backup_password_stat.stat.exists
+  changed_when: true
+  no_log: true
+
+- name: Remind operator to copy the restic password off the VM
+  ansible.builtin.debug:
+    msg: >-
+      A new restic password was generated at {{ devbox_backup_password_file }}.
+      Copy it to your password manager now. Without an off-VM copy the
+      backups are unreadable if the VM disk is lost.
+  when: not _backup_password_stat.stat.exists
+
+- name: Ensure restic password file mode and ownership
+  ansible.builtin.file:
+    path: "{{ devbox_backup_password_file }}"
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+
+- name: Install restic exclude file
+  ansible.builtin.template:
+    src: devbox-backup.excludes.j2
+    dest: /etc/restic/devbox-backup.excludes
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Install backup NFS mount unit
+  ansible.builtin.template:
+    src: backup.mount.j2
+    dest: "/etc/systemd/system/{{ devbox_backup_mount_unit }}"
+    owner: root
+    group: root
+    mode: "0644"
+  register: _backup_mount_unit
+
+- name: Check whether a backup run is active
+  ansible.builtin.command: systemctl is-active --quiet devbox-backup.service
+  register: _backup_service_active
+  failed_when: false
+  changed_when: false
+
+- name: Restart backup NFS mount after unit change
+  ansible.builtin.systemd_service:
+    name: "{{ devbox_backup_mount_unit }}"
+    state: restarted
+    daemon_reload: true
+  when: _backup_mount_unit.changed and _backup_service_active.rc != 0
+
+- name: Skip mount restart while a backup runs
+  ansible.builtin.debug:
+    msg: >-
+      The backup NFS mount unit changed but a backup run is active.
+      Apply the mount change later with:
+      systemctl daemon-reload && systemctl restart {{ devbox_backup_mount_unit }}
+  when: _backup_mount_unit.changed and _backup_service_active.rc == 0
+
+- name: Enable and start backup NFS mount
+  ansible.builtin.systemd_service:
+    name: "{{ devbox_backup_mount_unit }}"
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Install devbox-backup script
+  ansible.builtin.template:
+    src: devbox-backup.sh.j2
+    dest: /usr/local/bin/devbox-backup
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Install devbox-backup service unit
+  ansible.builtin.template:
+    src: devbox-backup.service.j2
+    dest: /etc/systemd/system/devbox-backup.service
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Install devbox-backup timer unit
+  ansible.builtin.template:
+    src: devbox-backup.timer.j2
+    dest: /etc/systemd/system/devbox-backup.timer
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Enable and start devbox-backup timer
+  ansible.builtin.systemd_service:
+    name: devbox-backup.timer
+    enabled: true
+    state: started
+    daemon_reload: true

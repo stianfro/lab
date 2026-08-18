@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Managed by Ansible (devbox backup role).
+set -euo pipefail
+
+export RESTIC_REPOSITORY="{{ devbox_backup_repo }}"
+export RESTIC_PASSWORD_FILE="{{ devbox_backup_password_file }}"
+
+if ! mountpoint -q "{{ devbox_backup_mount_point }}"; then
+  echo "backup mount {{ devbox_backup_mount_point }} is not mounted" >&2
+  exit 1
+fi
+
+if ! restic cat config >/dev/null 2>&1; then
+  restic init
+fi
+
+restic backup \
+{% for path in devbox_backup_paths %}
+  {{ path | quote }} \
+{% endfor %}
+  --exclude-file /etc/restic/devbox-backup.excludes \
+  --exclude-caches \
+  --tag devbox
+
+restic forget \
+  --keep-daily {{ devbox_backup_keep_daily }} \
+  --keep-weekly {{ devbox_backup_keep_weekly }} \
+  --keep-monthly {{ devbox_backup_keep_monthly }} \
+  --prune
+
+restic check
+
+# Publish success for the node-exporter textfile collector so stale
+# backups can alert in the monitoring stack.
+metric_dir=/var/lib/prometheus/node-exporter
+if [ -d "$metric_dir" ]; then
+  tmp="$metric_dir/backup.prom.$$"
+  printf '# TYPE devbox_backup_last_success_timestamp_seconds gauge\ndevbox_backup_last_success_timestamp_seconds %s\n' "$(date +%s)" > "$tmp"
+  mv "$tmp" "$metric_dir/backup.prom"
+fi

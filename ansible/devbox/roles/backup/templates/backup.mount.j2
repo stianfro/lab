@@ -1,0 +1,13 @@
+# Managed by Ansible (devbox backup role).
+[Unit]
+Description=Devbox backup NFS mount
+
+[Mount]
+What={{ devbox_backup_nfs_server }}:{{ devbox_backup_nfs_export }}
+Where={{ devbox_backup_mount_point }}
+Type=nfs
+Options=rw,noatime
+TimeoutSec=30
+
+[Install]
+WantedBy=multi-user.target

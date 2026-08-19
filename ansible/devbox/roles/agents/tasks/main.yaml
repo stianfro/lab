@@ -458,3 +458,18 @@
     enabled: true
     state: started
     daemon_reload: true
+
+- name: Check installed opencode2 version
+  ansible.builtin.command:
+    cmd: "{{ devbox_home }}/.opencode/bin/opencode2 --version"
+  become_user: "{{ devbox_user }}"
+  register: _oc2_installed_version
+  changed_when: false
+  failed_when: false
+
+- name: Install pinned opencode2 via curl installer
+  ansible.builtin.shell: "curl -fsSL https://opencode.ai/v2/install | bash -s -- --version {{ opencode2_version }}"
+  become_user: "{{ devbox_user }}"
+  environment:
+    HOME: "{{ devbox_home }}"
+  when: opencode2_version not in (_oc2_installed_version.stdout | default(''))

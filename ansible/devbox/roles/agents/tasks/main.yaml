@@ -458,3 +458,24 @@
     enabled: true
     state: started
     daemon_reload: true
+
+- name: Check installed opencode2 version
+  ansible.builtin.command:
+    cmd: /usr/bin/opencode2 --version
+  register: _oc2_installed_version
+  changed_when: false
+  failed_when: false
+
+- name: Install pinned opencode2 via npm
+  ansible.builtin.command:
+    cmd: npm install --global @opencode-ai/cli@{{ opencode2_version }}
+  when: >
+    _oc2_installed_version.rc != 0
+    or opencode2_version not in _oc2_installed_version.stdout
+  changed_when: true
+
+# npm-managed global install is canonical
+- name: Remove legacy curl-installed opencode2
+  ansible.builtin.file:
+    path: "{{ devbox_home }}/.opencode/bin/opencode2"
+    state: absent

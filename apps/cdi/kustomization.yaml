@@ -1,2 +1,2 @@
 resources:
-  - https://github.com/kubevirt/containerized-data-importer/releases/download/v1.63.1/cdi-operator.yaml
+  - https://github.com/kubevirt/containerized-data-importer/releases/download/v1.66.0/cdi-operator.yaml

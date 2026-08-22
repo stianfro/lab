@@ -1,0 +1,4 @@
+# Downloaded and generated at runtime by the assets init container.
+tftpboot/
+http/talos/
+http/nodes/

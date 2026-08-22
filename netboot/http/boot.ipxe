@@ -1,0 +1,7 @@
+#!ipxe
+# Entry point for every network boot.
+# Looks for a per-node script staged under nodes/<mac>.ipxe.
+# When none is staged, exit so the firmware falls through to the next
+# boot entry (the local disk). This makes network-first boot order safe.
+echo netboot: ${net0/mac}
+chain --replace http://192.168.1.10:8181/nodes/${net0/mac:hexhyp}.ipxe || exit

@@ -5,12 +5,17 @@
     dest: "{{ frr_apt_keyring }}"
     mode: "0644"
 
-- name: Add the FRRouting apt repository
-  ansible.builtin.apt_repository:
-    repo: "deb [signed-by={{ frr_apt_keyring }}] https://deb.frrouting.org/frr {{ ansible_distribution_release }} {{ frr_apt_channel }}"
-    filename: frrouting
-    state: present
+- name: Write the FRRouting apt source
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/frrouting.list
+    mode: "0644"
+    content: "deb [signed-by={{ frr_apt_keyring }}] https://deb.frrouting.org/frr {{ ansible_distribution_release }} {{ frr_apt_channel }}\n"
+  register: frr_apt_source
+
+- name: Refresh the apt cache
+  ansible.builtin.apt:
     update_cache: true
+  when: frr_apt_source.changed
 
 - name: Pin frr to the FRRouting repository
   ansible.builtin.copy:

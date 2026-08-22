@@ -26,12 +26,25 @@ HTTPS support during netboot.
 
 ## Deploy
 
-Copy this directory to the container host and run:
+Keep a checkout of this repository on the container host. This
+directory is the source of truth; do not copy the files out of it.
+
+Preferred: register `netboot/docker-compose.yaml` as a stack in the
+host's compose stack manager, pointed at the checkout path (an
+external or indirect stack path). That gives autostart with the host's
+storage lifecycle and a UI view, while git stays the only place the
+stack is defined. Update flow: `git pull`, then redeploy the stack.
+
+Fallback without a stack manager:
 
 ```bash
+cd netboot
 docker compose up -d
 docker compose logs assets    # confirm downloads succeeded
 ```
+
+The restart policies bring the containers back after a host reboot,
+but only the stack manager ties startup to storage availability.
 
 Port 8181 (HTTP) must be free on the host. TFTP (69/udp) and the
 proxy-DHCP ports (67/udp, 4011/udp) bind on the host network.

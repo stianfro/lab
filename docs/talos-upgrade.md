@@ -76,6 +76,17 @@ direnv exec . talosctl --nodes 192.168.1.100 get machineconfig v1alpha1 -o yaml 
   | grep -oE 'https://[^" ]+\.(yaml|yml)' | sort -u | xargs -I{} curl -s -o /dev/null -w '%{http_code} {}\n' {}
 ```
 
+The Cilium bootstrap manifest is rendered with `just render-cilium-bootstrap`
+from the Flux HelmRelease values, with the Helm-generated TLS Secrets
+(`cilium-ca`, `hubble-server-certs`, `hubble-relay-client-certs`) stripped.
+The repo is public, and the live secrets belong to the HelmRelease. The
+inventory from before 2026-08-22 still lists `cilium-ca` and
+`hubble-server-certs`, so the next `upgrade-k8s` prunes them once. If
+hubble-relay then crashloops with "unknown certificate authority": delete
+the three secrets, run `flux reconcile helmrelease cilium -n flux-system
+--force`, wait for Ready, then `kubectl -n kube-system rollout restart
+ds/cilium ds/cilium-envoy deploy/hubble-relay deploy/hubble-ui`.
+
 Recovery if the CNI is pruned anyway:
 `kubectl apply -f talos/manifests/cilium.yaml --server-side --force-conflicts`,
 then fix the URL in the live machine config (RFC 6902 replace on

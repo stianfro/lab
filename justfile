@@ -21,6 +21,23 @@ reconcile:
 validate:
   kustomize build clusters/talos | yq e 'true' -
 
+# Re-render the Talos Cilium bootstrap manifest from the Flux HelmRelease
+# chart version and values. Helm-generated TLS Secrets are stripped: the
+# repo is public and the Flux HelmRelease owns those secrets in the live
+# cluster. Never kubectl apply the result; Flux owns the live objects.
+render-cilium-bootstrap:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  version="$(yq '.spec.chart.spec.version' apps/cilium/helmrelease.yaml)"
+  values="$(mktemp)"
+  trap 'rm -f "$values"' EXIT
+  yq '.spec.values' apps/cilium/helmrelease.yaml > "$values"
+  helm repo add cilium https://helm.cilium.io >/dev/null 2>&1 || true
+  helm repo update cilium >/dev/null
+  helm template cilium cilium/cilium --version "$version" --namespace kube-system \
+    --values "$values" | yq 'select(.kind != "Secret")' > talos/manifests/cilium.yaml
+  yq -N 'select(.kind=="DaemonSet" or .kind=="Deployment" or (.kind=="ConfigMap" and .metadata.name=="cilium-config")) | .kind + "/" + .metadata.name' talos/manifests/cilium.yaml
+
 controller-decommission-preflight pattern:
   scripts/controller-decommission-preflight.sh "{{pattern}}"
 

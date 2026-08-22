@@ -23,7 +23,7 @@ fetch() {
 }
 
 fetch /tftpboot/undionly.kpxe https://boot.ipxe.org/undionly.kpxe
-fetch /tftpboot/snponly.efi   https://boot.ipxe.org/snponly.efi
+fetch /tftpboot/snponly.efi   https://boot.ipxe.org/x86_64-efi/snponly.efi
 
 fetch "/http/talos/$VERSION/kernel-amd64" \
   "$FACTORY/image/$SCHEMATIC/$VERSION/kernel-amd64"

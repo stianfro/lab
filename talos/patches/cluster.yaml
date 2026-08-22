@@ -7,7 +7,10 @@
   value:
     listen-metrics-urls: http://0.0.0.0:2381
 
-- op: replace
+# Use "add" instead of "replace" below: these paths do not exist in a
+# fresh machine config, and RFC 6902 replace fails on missing paths.
+# add creates the member and also overwrites it when it already exists.
+- op: add
   path: /machine/kubelet/extraMounts
   value:
     - destination: /var/lib/longhorn
@@ -18,12 +21,14 @@
         - rshared
         - rw
 
-- op: replace
-  path: /machine/sysctls/vm.nr_hugepages
-  value: "1024"
-
-- op: replace
-  path: /machine/kernel/modules
+- op: add
+  path: /machine/sysctls
   value:
-    - name: nvme_tcp
-    - name: vfio_pci
+    vm.nr_hugepages: "1024"
+
+- op: add
+  path: /machine/kernel
+  value:
+    modules:
+      - name: nvme_tcp
+      - name: vfio_pci

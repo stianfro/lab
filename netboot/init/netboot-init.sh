@@ -6,7 +6,7 @@ set -eu
 
 # Keep these in sync with talos/controlplane.yaml (install.image).
 SCHEMATIC=cb120f5908d584b52477963c9d095efa80750f4e4fdc48190eb68730cb749448
-VERSION=v1.12.4
+VERSION=v1.13.9
 SERVER=http://192.168.1.10:8181
 FACTORY=https://pxe.factory.talos.dev
 

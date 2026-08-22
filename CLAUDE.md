@@ -5,7 +5,7 @@ This repository manages a local Talos Kubernetes homelab with Flux.
 ## Architecture
 
 - OS: Talos Linux
-- Kubernetes: v1.34.1
+- Kubernetes: v1.35.4
 - Control plane endpoint: `https://talos.froystein.jp:6443`
 - Nodes: `192.168.1.100`, `192.168.1.101`, `192.168.1.102`
 - CNI: Cilium, bootstrapped by Talos from `talos/manifests/cilium.yaml`

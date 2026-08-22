@@ -9,7 +9,7 @@
 # the installed system.
 set -eu
 
-VERSION=${2:-v1.12.4}
+VERSION=${2:-v1.13.9}
 DIR=$(dirname "$0")
 
 [ $# -ge 1 ] || { echo "usage: $0 <mac> [version]" >&2; exit 1; }

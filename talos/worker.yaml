@@ -18,7 +18,7 @@ machine:
 
     # Used to provide additional options to the kubelet.
     kubelet:
-        image: ghcr.io/siderolabs/kubelet:v1.34.1 # The `image` field is an optional reference to an alternative kubelet image.
+        image: ghcr.io/siderolabs/kubelet:v1.35.4 # The `image` field is an optional reference to an alternative kubelet image.
         defaultRuntimeSeccompProfileEnabled: true # Enable container runtime default Seccomp profile.
         disableManifestsDirectory: true # The `disableManifestsDirectory` field configures the kubelet to get static pod manifests from the /etc/kubernetes/manifests directory.
         
@@ -189,7 +189,7 @@ machine:
     # Used to provide instructions for installations.
     install:
         disk: /dev/sda # The disk used for installations.
-        image: factory.talos.dev/installer/cb120f5908d584b52477963c9d095efa80750f4e4fdc48190eb68730cb749448:v1.12.4 # Allows for supplying the image used to perform the installation.
+        image: factory.talos.dev/installer/cb120f5908d584b52477963c9d095efa80750f4e4fdc48190eb68730cb749448:v1.13.9 # Allows for supplying the image used to perform the installation.
         wipe: false # Indicates if the installation disk should be wiped at installation time.
         
         # # Look up disk using disk attributes like model, size, serial and others.

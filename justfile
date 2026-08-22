@@ -24,6 +24,20 @@ validate:
 controller-decommission-preflight pattern:
   scripts/controller-decommission-preflight.sh "{{pattern}}"
 
+# Upgrade one Talos node. Use a talosctl client that matches the SERVER
+# version (newer clients kill the long upgrade RPC against older apid),
+# and pass the IP of a node that is NOT being upgraded as endpoint via
+# TALOS_ENDPOINT (defaults to 192.168.1.100). See docs/talos-upgrade.md.
+upgrade-node ip version:
+  just env
+  direnv exec . talosctl --endpoints ${TALOS_ENDPOINT:-192.168.1.100} --nodes {{ip}} upgrade --image factory.talos.dev/installer/cb120f5908d584b52477963c9d095efa80750f4e4fdc48190eb68730cb749448:{{version}}
+
+# Upgrade Kubernetes across the cluster, one minor at a time. Read the
+# bootstrap-manifest pruning warning in docs/talos-upgrade.md first.
+upgrade-k8s to:
+  just env
+  direnv exec . talosctl --nodes 192.168.1.100 upgrade-k8s --to {{to}}
+
 smoke-public-sites:
   scripts/smoke-public-sites.sh
 

@@ -12,3 +12,11 @@ frr_dynamic_neighbor_range: 192.168.1.0/24
 frr_lb_prefix: 192.168.100.0/24
 frr_bgp_keepalive_seconds: 3
 frr_bgp_hold_seconds: 9
+# FRR package source. The Raspberry Pi OS / Debian bookworm package is
+# FRR 8.4.4, whose bgpd crashes in bgp_graceful_restart_timer_expire when
+# all Cilium agents restart at once (seen 2026-08-22). Use the FRRouting
+# apt repository, pinned to one release channel.
+frr_apt_channel: frr-10.7
+frr_apt_keyring: /usr/share/keyrings/frrouting.gpg
+frr_apt_key_url: https://deb.frrouting.org/frr/keys.gpg
+frr_package_version: 10.7.0-0~deb12u1

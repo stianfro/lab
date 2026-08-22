@@ -1,10 +1,34 @@
 ---
+- name: Install the FRRouting apt signing key
+  ansible.builtin.get_url:
+    url: "{{ frr_apt_key_url }}"
+    dest: "{{ frr_apt_keyring }}"
+    mode: "0644"
+
+- name: Add the FRRouting apt repository
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by={{ frr_apt_keyring }}] https://deb.frrouting.org/frr {{ ansible_distribution_release }} {{ frr_apt_channel }}"
+    filename: frrouting
+    state: present
+    update_cache: true
+
+- name: Pin frr to the FRRouting repository
+  ansible.builtin.copy:
+    dest: /etc/apt/preferences.d/frrouting
+    mode: "0644"
+    content: |
+      Package: frr frr-*
+      Pin: origin deb.frrouting.org
+      Pin-Priority: 1001
+
 - name: Install FRR packages
   ansible.builtin.apt:
     name:
-      - frr
-      - frr-pythontools
+      - "frr={{ frr_package_version }}"
+      - "frr-pythontools={{ frr_package_version }}"
     state: present
+    allow_change_held_packages: true
+  notify: Restart frr
 
 - name: Enable the bgpd daemon
   ansible.builtin.lineinfile:

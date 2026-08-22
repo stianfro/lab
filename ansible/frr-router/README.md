@@ -29,6 +29,15 @@ The owner must do these steps on the TP-Link BE19000:
    reservation for the Pi's MAC address so no other device gets the
    address.
 
+## FRR Version
+
+FRR comes from the FRRouting apt repository (`deb.frrouting.org`), channel
+`frr_apt_channel`, package version `frr_package_version` in
+`group_vars/frr_routers.yaml`. The Debian bookworm package (8.4.4) is not
+used: its bgpd crashed when all three Cilium agents restarted at the same
+time. To move to a new FRR release, bump both variables and converge. The
+package upgrade restarts frr, so the BGP sessions drop for a few seconds.
+
 ## Converge
 
 ```bash

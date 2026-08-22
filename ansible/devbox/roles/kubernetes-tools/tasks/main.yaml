@@ -15,13 +15,26 @@
     state: link
     force: true
 
+- name: Create flux versioned directory
+  ansible.builtin.file:
+    path: "/usr/local/lib/flux-{{ flux_version }}"
+    state: directory
+    mode: "0755"
+
 - name: Install flux archive
   ansible.builtin.unarchive:
     src: "https://github.com/fluxcd/flux2/releases/download/v{{ flux_version }}/flux_{{ flux_version }}_linux_amd64.tar.gz"
-    dest: /usr/local/bin
+    dest: "/usr/local/lib/flux-{{ flux_version }}"
     remote_src: true
-    creates: /usr/local/bin/flux
+    creates: "/usr/local/lib/flux-{{ flux_version }}/flux"
     mode: "0755"
+
+- name: Link flux
+  ansible.builtin.file:
+    src: "/usr/local/lib/flux-{{ flux_version }}/flux"
+    dest: /usr/local/bin/flux
+    state: link
+    force: true
 
 - name: Install helm archive
   ansible.builtin.unarchive:

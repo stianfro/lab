@@ -1,9 +1,19 @@
 ---
+# Version-pinned binaries download to a versioned path and get a
+# symlink. A plain get_url to the final path never re-downloads when
+# the file exists, so version bumps in group_vars silently do nothing.
 - name: Install kubectl
   ansible.builtin.get_url:
     url: "https://dl.k8s.io/release/{{ kubectl_version }}/bin/linux/amd64/kubectl"
-    dest: /usr/local/bin/kubectl
+    dest: "/usr/local/bin/kubectl-{{ kubectl_version }}"
     mode: "0755"
+
+- name: Link kubectl
+  ansible.builtin.file:
+    src: "/usr/local/bin/kubectl-{{ kubectl_version }}"
+    dest: /usr/local/bin/kubectl
+    state: link
+    force: true
 
 - name: Install flux archive
   ansible.builtin.unarchive:
@@ -38,27 +48,56 @@
 - name: Install talosctl
   ansible.builtin.get_url:
     url: "https://github.com/siderolabs/talos/releases/download/{{ talosctl_version }}/talosctl-linux-amd64"
-    dest: /usr/local/bin/talosctl
+    dest: "/usr/local/bin/talosctl-{{ talosctl_version }}"
     mode: "0755"
+
+- name: Link talosctl
+  ansible.builtin.file:
+    src: "/usr/local/bin/talosctl-{{ talosctl_version }}"
+    dest: /usr/local/bin/talosctl
+    state: link
+    force: true
 
 - name: Install virtctl
   ansible.builtin.get_url:
     url: "https://github.com/kubevirt/kubevirt/releases/download/{{ kubevirt_version }}/virtctl-{{ kubevirt_version }}-linux-amd64"
-    dest: /usr/local/bin/virtctl
+    dest: "/usr/local/bin/virtctl-{{ kubevirt_version }}"
     mode: "0755"
+
+- name: Link virtctl
+  ansible.builtin.file:
+    src: "/usr/local/bin/virtctl-{{ kubevirt_version }}"
+    dest: /usr/local/bin/virtctl
+    state: link
+    force: true
 
 - name: Install Argo CD CLI
   ansible.builtin.get_url:
     url: "https://github.com/argoproj/argo-cd/releases/download/{{ argocd_version }}/argocd-linux-amd64"
-    dest: /usr/local/bin/argocd
+    dest: "/usr/local/bin/argocd-{{ argocd_version }}"
     mode: "0755"
+
+- name: Link Argo CD CLI
+  ansible.builtin.file:
+    src: "/usr/local/bin/argocd-{{ argocd_version }}"
+    dest: /usr/local/bin/argocd
+    state: link
+    force: true
 
 - name: Install Cilium CLI archive
   ansible.builtin.unarchive:
     src: "https://github.com/cilium/cilium-cli/releases/download/{{ cilium_cli_version }}/cilium-linux-amd64.tar.gz"
     dest: /usr/local/bin
     remote_src: true
-    creates: /usr/local/bin/cilium
+    creates: "/usr/local/bin/.cilium-cli-{{ cilium_cli_version }}"
+
+- name: Mark installed Cilium CLI version
+  ansible.builtin.file:
+    path: "/usr/local/bin/.cilium-cli-{{ cilium_cli_version }}"
+    state: touch
+    mode: "0644"
+    modification_time: preserve
+    access_time: preserve
     mode: "0755"
 
 - name: Install k3d

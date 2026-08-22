@@ -1,7 +1,7 @@
 # Talos And Kubernetes Upgrade Runbook
 
 Validated on the 2026-08-22 upgrades: Talos 1.12.4 to 1.13.9,
-Kubernetes 1.34.1 to 1.35.4, and Kubernetes 1.35.4 to 1.36.3.
+Kubernetes 1.34.1 to 1.35.4, 1.35.4 to 1.36.3, and 1.36.3 to 1.36.4.
 
 ## Rules
 

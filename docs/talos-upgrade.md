@@ -1,7 +1,7 @@
 # Talos And Kubernetes Upgrade Runbook
 
-Validated on the 2026-08-22 upgrade: Talos 1.12.4 to 1.13.9 and
-Kubernetes 1.34.1 to 1.35.4.
+Validated on the 2026-08-22 upgrades: Talos 1.12.4 to 1.13.9,
+Kubernetes 1.34.1 to 1.35.4, and Kubernetes 1.35.4 to 1.36.3.
 
 ## Rules
 
@@ -50,8 +50,12 @@ Rollback for a node that misbehaves on the new image:
 ## Kubernetes upgrade
 
 ```bash
-just upgrade-k8s 1.35.4
+direnv exec . talosctl --nodes 192.168.1.100 upgrade-k8s --to <version> --dry-run
+just upgrade-k8s <version>
 ```
+
+Always read the dry-run first. It prints the full manifest diff; expect
+only `Pruned`, `configured`, and `unchanged` lines that you can explain.
 
 Then verify: `kubectl get nodes` shows the new version on all nodes,
 coredns runs, Cilium DaemonSet is 3/3 (see warning below), Longhorn
@@ -60,29 +64,50 @@ volumes healthy, Flux green, and a scratch PVC pod works.
 ## WARNING: bootstrap manifest pruning can delete Cilium
 
 `talosctl upgrade-k8s` re-applies the Talos bootstrap manifests with
-inventory-based pruning (Talos 1.13+). It fetches
-`cluster.network.cni.urls` and `cluster.extraManifests` at that moment.
-If a URL is wrong or unreachable, the objects it previously created
-are PRUNED from the cluster. On 2026-08-22 this deleted the live
-Cilium DaemonSet and operator because the live machine config carried
-a stale CNI URL (`/manifests/cilium.yaml` instead of
-`/talos/manifests/cilium.yaml`).
+inventory-based pruning (Talos 1.13+, inventory in the ConfigMap
+`kube-system/talos-bootstrap-manifests-inventory`). It applies the
+`Manifest` resources that Talos already holds (`talosctl get manifests`),
+NOT a fresh download: Talos fetches `cluster.network.cni.urls` and
+`cluster.extraManifests` when the machine config changes, then caches
+the result. On 2026-08-22 a stale CNI URL in the live machine config
+(`/manifests/cilium.yaml` instead of `/talos/manifests/cilium.yaml`)
+made that cache empty, and the upgrade pruned the live Cilium DaemonSet
+and operator. Later the same day the cache still held an old render
+(chart 1.18.3) after the repo had moved to 1.20.1; the dry-run showed
+it would downgrade Cilium.
 
 Before every `upgrade-k8s`:
 
 ```bash
 # every URL must return 200
 direnv exec . talosctl --nodes 192.168.1.100 get machineconfig v1alpha1 -o yaml \
-  | grep -oE 'https://[^" ]+\.(yaml|yml)' | sort -u | xargs -I{} curl -s -o /dev/null -w '%{http_code} {}\n' {}
+  | grep -oE 'https://[^" ]+\.(yaml|yml)' | sort -u | xargs -I{} curl -sL -o /dev/null -w '%{http_code} {}\n' {}
+
+# the cached Cilium manifest must match main (image tag and object list)
+direnv exec . talosctl --nodes 192.168.1.100 get manifests \
+  '05-https://raw.githubusercontent.com/stianfro/lab/refs/heads/main/talos/manifests/cilium.yaml' -o yaml \
+  | grep -oE 'quay.io/cilium/cilium:v[0-9.]+' | sort -u
 ```
+
+If the cache is stale, force a refetch on all nodes: RFC 6902 `replace`
+`/cluster/network/cni/urls/0` with a commit-pinned URL
+(`https://raw.githubusercontent.com/stianfro/lab/<sha>/talos/manifests/cilium.yaml`),
+wait for the new `Manifest` to appear, then `replace` it back to the
+`refs/heads/main` URL. Both patches apply with `--mode=no-reboot`. Then
+re-run the dry-run.
 
 The Cilium bootstrap manifest is rendered with `just render-cilium-bootstrap`
 from the Flux HelmRelease values, with the Helm-generated TLS Secrets
 (`cilium-ca`, `hubble-server-certs`, `hubble-relay-client-certs`) stripped.
 The repo is public, and the live secrets belong to the HelmRelease. The
-inventory from before 2026-08-22 still lists `cilium-ca` and
-`hubble-server-certs`, so the next `upgrade-k8s` prunes them once. If
-hubble-relay then crashloops with "unknown certificate authority": delete
+1.36.3 upgrade pruned `cilium-ca` and `hubble-server-certs` once (they were
+in the old inventory); Flux drift correction recreated both from the Helm
+release storage within a minute, with the same data, so Hubble stayed
+consistent. They are no longer in the inventory. `helm template` also
+renders an extra empty `--k8s-api-server-urls=` agent arg that the live
+Helm release lacks; Talos applies it and Flux drift correction reverts it,
+so expect two Cilium agent rollouts during `upgrade-k8s`. If hubble-relay
+still crashloops with "unknown certificate authority" afterwards: delete
 the three secrets, run `flux reconcile helmrelease cilium -n flux-system
 --force`, wait for Ready, then `kubectl -n kube-system rollout restart
 ds/cilium ds/cilium-envoy deploy/hubble-relay deploy/hubble-ui`.

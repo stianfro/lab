@@ -141,6 +141,18 @@ guest-vm-connection:
   printf 'Server public key: %s\n' "$public_key"
   printf 'Server tunnel address: 10.203.77.1/32\n'
   printf 'Remote tunnel address: 10.203.77.2/32\n'
+  printf '\nWireGuard client configuration:\n'
+  cat <<EOF
+  [Interface]
+  PrivateKey = <set-on-remote-device>
+  Address = 10.203.77.2/32
+
+  [Peer]
+  PublicKey = $public_key
+  Endpoint = $endpoint:$port
+  AllowedIPs = 10.203.77.1/32
+  PersistentKeepalive = 25
+  EOF
 
 # Re-render the Talos Cilium bootstrap manifest from the Flux HelmRelease
 # chart version and values. Helm-generated TLS Secrets are stripped: the

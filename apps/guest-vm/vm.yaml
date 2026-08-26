@@ -20,6 +20,15 @@ spec:
         nameservers:
           - 1.1.1.1
           - 1.0.0.1
+      accessCredentials:
+        - sshPublicKey:
+            source:
+              secret:
+                secretName: guest-vm-guest-ssh
+            propagationMethod:
+              qemuGuestAgent:
+                users:
+                  - guest
       domain:
         cpu:
           cores: 4

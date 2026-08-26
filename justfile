@@ -78,6 +78,15 @@ guest-vm-validate:
       )
   ' "$tmpdir/rendered.yaml" >/dev/null
 
+  yq eval -e '
+    select(.kind == "VirtualMachine" and .metadata.name == "guest-vm")
+    | .spec.template.spec.accessCredentials[]
+    | select(
+        .sshPublicKey.source.secret.secretName == "guest-vm-guest-ssh"
+        and .sshPublicKey.propagationMethod.qemuGuestAgent.users[0] == "guest"
+      )
+  ' "$tmpdir/rendered.yaml" >/dev/null
+
   validation_namespace=kube-system
   yq eval 'select(.kind == "Namespace")' "$tmpdir/rendered.yaml" > "$tmpdir/namespace.yaml"
   VALIDATION_NAMESPACE="$validation_namespace" \
@@ -101,6 +110,7 @@ guest-vm-deploy:
     vaultstaticsecret/guest-vm-vpn \
     vaultstaticsecret/guest-vm-wireguard \
     vaultstaticsecret/guest-vm-cloud-init \
+    vaultstaticsecret/guest-vm-guest-ssh \
     vaultstaticsecret/guest-vm-connection \
     --timeout=5m
   kubectl -n guest-vm rollout status deployment/guest-vm-gateway --timeout=10m

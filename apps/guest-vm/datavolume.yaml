@@ -1,0 +1,19 @@
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: DataVolume
+metadata:
+  name: guest-vm-root
+  namespace: guest-vm
+  labels:
+    app.kubernetes.io/name: guest-vm
+    app.kubernetes.io/component: virtual-machine
+spec:
+  source:
+    http:
+      url: https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img
+  storage:
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: 16Gi
+    storageClassName: longhorn

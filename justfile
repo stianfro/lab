@@ -58,6 +58,16 @@ guest-vm-validate:
   kustomize build apps/guest-vm > "$tmpdir/rendered.yaml"
   yq eval 'true' "$tmpdir/rendered.yaml" >/dev/null
 
+  yq eval -e '
+    select(.kind == "CiliumNetworkPolicy" and .metadata.name == "guest-vm")
+    | .spec.ingress[]
+    | .fromEndpoints[]?
+    | select(
+        .matchLabels."k8s:io.kubernetes.pod.namespace" == "kubevirt"
+        and .matchLabels."k8s:kubevirt.io" == "virt-api"
+      )
+  ' "$tmpdir/rendered.yaml" >/dev/null
+
   validation_namespace=kube-system
   yq eval 'select(.kind == "Namespace")' "$tmpdir/rendered.yaml" > "$tmpdir/namespace.yaml"
   VALIDATION_NAMESPACE="$validation_namespace" \

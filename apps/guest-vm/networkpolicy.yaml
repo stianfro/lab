@@ -19,7 +19,7 @@ spec:
     - fromEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: kubevirt
-            k8s:kubevirt.io: virt-handler
+            k8s:kubevirt.io: virt-api
       toPorts:
         - ports:
             - port: "22"

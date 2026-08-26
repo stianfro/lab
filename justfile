@@ -68,6 +68,16 @@ guest-vm-validate:
       )
   ' "$tmpdir/rendered.yaml" >/dev/null
 
+  yq eval -e '
+    select(.kind == "VirtualMachine" and .metadata.name == "guest-vm")
+    | .spec.template.spec
+    | select(
+        .dnsPolicy == "None"
+        and .dnsConfig.nameservers[0] == "1.1.1.1"
+        and .dnsConfig.nameservers[1] == "1.0.0.1"
+      )
+  ' "$tmpdir/rendered.yaml" >/dev/null
+
   validation_namespace=kube-system
   yq eval 'select(.kind == "Namespace")' "$tmpdir/rendered.yaml" > "$tmpdir/namespace.yaml"
   VALIDATION_NAMESPACE="$validation_namespace" \

@@ -21,6 +21,117 @@ reconcile:
 validate:
   kustomize build clusters/talos | yq e 'true' -
 
+guest-vm-validate:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  tmpdir="$(mktemp -d)"
+  trap 'rm -rf "$tmpdir"' EXIT
+
+  while IFS= read -r -d '' yaml_file; do
+    yq eval '.' "$yaml_file" >/dev/null
+  done < <(find apps/guest-vm -name '*.yaml' -print0 | sort -z)
+
+  bash -n scripts/guest-vm-configure.sh
+
+  cloud_init_template="$(
+    yq eval-all -r \
+      'select(.kind == "VaultStaticSecret" and .metadata.name == "guest-vm-cloud-init") | .spec.destination.transformation.templates.userdata.text' \
+      apps/guest-vm/vaultstaticsecrets.yaml
+  )"
+  owner_public_key="$(
+    printf '%s\n' "$cloud_init_template" \
+      | yq -r '.users[] | select(.name == "stian") | .ssh_authorized_keys[]'
+  )"
+  left_brace='{'
+  right_brace='}'
+  guest_key_placeholder="${left_brace}${left_brace} .Secrets.guest_ssh_public_key ${right_brace}${right_brace}"
+  cloud_init="${cloud_init_template//$guest_key_placeholder/$owner_public_key}"
+  printf '%s\n' "$cloud_init" | yq eval '.' - >/dev/null
+
+  while IFS= read -r public_key; do
+    printf '%s\n' "$public_key" | ssh-keygen -lf - >/dev/null
+  done < <(
+    printf '%s\n' "$cloud_init" \
+      | yq -r '.users[].ssh_authorized_keys[]'
+  )
+
+  kustomize build apps/guest-vm > "$tmpdir/rendered.yaml"
+  yq eval 'true' "$tmpdir/rendered.yaml" >/dev/null
+
+  validation_namespace=kube-system
+  yq eval 'select(.kind == "Namespace")' "$tmpdir/rendered.yaml" > "$tmpdir/namespace.yaml"
+  VALIDATION_NAMESPACE="$validation_namespace" \
+    yq eval 'select(.kind != "Namespace") | .metadata.namespace = strenv(VALIDATION_NAMESPACE)' \
+    "$tmpdir/rendered.yaml" > "$tmpdir/namespaced.yaml"
+  kubectl apply --server-side --dry-run=server --validate=strict \
+    -f "$tmpdir/namespace.yaml" >/dev/null
+  kubectl apply --server-side --dry-run=server --validate=strict \
+    -f "$tmpdir/namespaced.yaml" >/dev/null
+
+guest-vm-configure *args:
+  scripts/guest-vm-configure.sh {{args}}
+
+guest-vm-deploy:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  just reconcile
+  flux reconcile kustomization guest-vm -n flux-system --with-source
+  kubectl -n guest-vm wait \
+    --for=condition=Healthy=True \
+    vaultstaticsecret/guest-vm-vpn \
+    vaultstaticsecret/guest-vm-wireguard \
+    vaultstaticsecret/guest-vm-cloud-init \
+    vaultstaticsecret/guest-vm-connection \
+    --timeout=5m
+  kubectl -n guest-vm rollout status deployment/guest-vm-gateway --timeout=10m
+  kubectl -n guest-vm wait \
+    --for=jsonpath='{.status.phase}'=Succeeded \
+    datavolume/guest-vm-root \
+    --timeout=20m
+  vmi_deadline=$((SECONDS + 600))
+  until kubectl -n guest-vm get vmi/guest-vm >/dev/null 2>&1; do
+    if ((SECONDS >= vmi_deadline)); then
+      printf 'Timed out while waiting for vmi/guest-vm to be created.\n' >&2
+      exit 1
+    fi
+    sleep 5
+  done
+  kubectl -n guest-vm wait --for=condition=Ready vmi/guest-vm --timeout=10m
+  just guest-vm-status
+
+guest-vm-setup *args:
+  just guest-vm-configure {{args}}
+  just guest-vm-deploy
+
+guest-vm-status:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  kubectl -n guest-vm get vm,vmi,dv,pvc,deployment,pod
+  kubectl -n guest-vm exec deployment/guest-vm-gateway -c outer-vpn -- \
+    /gluetun-entrypoint healthcheck
+  kubectl -n guest-vm exec deployment/guest-vm-gateway -c wireguard -- \
+    wg show wg0
+
+guest-vm-owner-ssh *args:
+  virtctl ssh stian@vm/guest-vm/guest-vm {{args}}
+
+guest-vm-connection:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  secret=guest-vm-connection
+  namespace=guest-vm
+  read_value() {
+    kubectl -n "$namespace" get secret "$secret" \
+      -o "jsonpath={.data.${1}}" | base64 --decode
+  }
+  endpoint="$(read_value endpoint)"
+  port="$(read_value forwarded_port)"
+  public_key="$(read_value server_public_key)"
+  printf 'Endpoint: %s:%s\n' "$endpoint" "$port"
+  printf 'Server public key: %s\n' "$public_key"
+  printf 'Server tunnel address: 10.203.77.1/32\n'
+  printf 'Remote tunnel address: 10.203.77.2/32\n'
+
 # Re-render the Talos Cilium bootstrap manifest from the Flux HelmRelease
 # chart version and values. Helm-generated TLS Secrets are stripped: the
 # repo is public and the Flux HelmRelease owns those secrets in the live

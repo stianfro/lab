@@ -1,0 +1,60 @@
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: guest-vm
+  namespace: guest-vm
+  labels:
+    app.kubernetes.io/name: guest-vm
+    app.kubernetes.io/component: virtual-machine
+spec:
+  runStrategy: Always
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: guest-vm
+        app.kubernetes.io/component: virtual-machine
+        guest-vm.froystein.jp/role: guest
+    spec:
+      domain:
+        cpu:
+          cores: 4
+        memory:
+          guest: 2Gi
+        resources:
+          requests:
+            memory: 2Gi
+        devices:
+          disks:
+            - name: rootdisk
+              disk:
+                bus: virtio
+              bootOrder: 1
+            - name: cloudinitdisk
+              disk:
+                bus: virtio
+          interfaces:
+            - name: podnet
+              masquerade: {}
+              ports:
+                - name: ssh
+                  port: 22
+                  protocol: TCP
+      networks:
+        - name: podnet
+          pod: {}
+      volumes:
+        - name: rootdisk
+          dataVolume:
+            name: guest-vm-root
+        - name: cloudinitdisk
+          cloudInitNoCloud:
+            secretRef:
+              name: guest-vm-cloud-init
+            networkData: |-
+              version: 2
+              ethernets:
+                podnet:
+                  match:
+                    name: en*
+                  dhcp4: true
+                  dhcp6: false

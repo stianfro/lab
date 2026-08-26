@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: guest-vm-ssh
+  namespace: guest-vm
+  labels:
+    app.kubernetes.io/name: guest-vm
+    app.kubernetes.io/component: virtual-machine
+spec:
+  type: ClusterIP
+  selector:
+    guest-vm.froystein.jp/role: guest
+  ports:
+    - name: ssh
+      port: 22
+      targetPort: 22
+      protocol: TCP

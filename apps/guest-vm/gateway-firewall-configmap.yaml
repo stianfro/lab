@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: guest-vm-gateway-firewall
+  namespace: guest-vm
+  labels:
+    app.kubernetes.io/name: guest-vm-gateway
+    app.kubernetes.io/component: remote-access
+data:
+  post-rules.txt: |
+    iptables --append INPUT -i wg0 -p tcp -m tcp --dport 22 -j ACCEPT

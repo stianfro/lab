@@ -1,0 +1,263 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: guest-vm-gateway
+  namespace: guest-vm
+  labels:
+    app.kubernetes.io/name: guest-vm-gateway
+    app.kubernetes.io/component: remote-access
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: guest-vm-gateway
+      app.kubernetes.io/component: remote-access
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: guest-vm-gateway
+        app.kubernetes.io/component: remote-access
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+        sysctls:
+          - name: net.ipv4.ip_unprivileged_port_start
+            value: "0"
+      initContainers:
+        - name: wireguard-config
+          image: docker.io/library/busybox:1.37.0@sha256:9db7b59979c38555a39def84a31fb98b5296952f9e3afd4f6f11f05b07adfab0
+          command:
+            - /bin/sh
+            - -ec
+          args:
+            - |
+              cp /secret/wg0.conf /writable/wg0.conf
+              chmod 0600 /writable/wg0.conf
+          resources:
+            requests:
+              cpu: 1m
+              memory: 2Mi
+            limits:
+              cpu: 20m
+              memory: 16Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: false
+            runAsUser: 0
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: wireguard-secret
+              mountPath: /secret
+              readOnly: true
+            - name: wireguard-config
+              mountPath: /writable
+      containers:
+        - name: outer-vpn
+          image: docker.io/qmcgaw/gluetun:v3.41.3@sha256:fa19cc76b2af13d57a8d3dc3066f2ada061b1c761b8aecf989b3877c0486e027
+          env:
+            - name: VPN_TYPE
+              value: wireguard
+            - name: VPN_INTERFACE
+              value: vpn0
+            - name: WIREGUARD_IMPLEMENTATION
+              value: kernelspace
+            - name: SERVER_COUNTRIES
+              value: Norway
+            - name: FIREWALL_OUTBOUND_SUBNETS
+              value: 10.96.0.0/12,10.244.0.0/16
+            - name: HTTP_CONTROL_SERVER_ADDRESS
+              value: 127.0.0.1:8000
+            - name: TZ
+              value: Etc/UTC
+          envFrom:
+            - secretRef:
+                name: guest-vm-vpn
+          resources:
+            requests:
+              cpu: 20m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: false
+            runAsUser: 0
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - CHOWN
+                - DAC_OVERRIDE
+                - NET_ADMIN
+                - SETGID
+                - SETUID
+          startupProbe:
+            exec:
+              command:
+                - /gluetun-entrypoint
+                - healthcheck
+            failureThreshold: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            exec:
+              command:
+                - /gluetun-entrypoint
+                - healthcheck
+            failureThreshold: 3
+            periodSeconds: 10
+            timeoutSeconds: 5
+          readinessProbe:
+            exec:
+              command:
+                - /gluetun-entrypoint
+                - healthcheck
+            failureThreshold: 3
+            periodSeconds: 10
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: tunnel-device
+              mountPath: /dev/net/tun
+            - name: gluetun-state
+              mountPath: /gluetun
+            - name: gluetun-tmp
+              mountPath: /tmp
+            - name: firewall-rules
+              mountPath: /iptables
+              readOnly: true
+        - name: wireguard
+          image: lscr.io/linuxserver/wireguard:1.0.20260223-r0-ls120@sha256:3abfd4b82212106e357989750b9c0c9859aa511f5305a9a55c18c8de7198b655
+          command:
+            - /bin/sh
+            - -ec
+          args:
+            - |
+              config=/config/wg_confs/wg0.conf
+              cleanup() {
+                wg-quick down "$config" || true
+              }
+              trap 'exit 0' TERM INT
+              trap cleanup EXIT
+              wg-quick down "$config" >/dev/null 2>&1 || true
+              wg-quick up "$config"
+              while true; do
+                sleep 3600 &
+                wait $!
+              done
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: false
+            runAsUser: 0
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - NET_ADMIN
+          startupProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -ec
+                - wg show wg0 >/dev/null
+            failureThreshold: 30
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -ec
+                - wg show wg0 >/dev/null
+            failureThreshold: 3
+            periodSeconds: 15
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -ec
+                - wg show wg0 >/dev/null
+            failureThreshold: 3
+            periodSeconds: 10
+          volumeMounts:
+            - name: tunnel-device
+              mountPath: /dev/net/tun
+            - name: wireguard-config
+              mountPath: /config/wg_confs
+        - name: ssh-proxy
+          image: docker.io/alpine/socat:1.8.0.3@sha256:beb4a68d9e4fe6b0f21ea774a0fde6c31f580dde6368939ed70100c5385b015e
+          command:
+            - /bin/sh
+            - -ec
+          args:
+            - exec socat TCP-LISTEN:22,bind=10.203.77.1,reuseaddr,fork TCP:guest-vm-ssh.guest-vm.svc.cluster.local:22
+          ports:
+            - name: ssh
+              containerPort: 22
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 5m
+              memory: 8Mi
+            limits:
+              cpu: 100m
+              memory: 32Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            capabilities:
+              drop:
+                - ALL
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -ec
+                - kill -0 1
+            failureThreshold: 3
+            periodSeconds: 15
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -ec
+                - kill -0 1
+            failureThreshold: 3
+            periodSeconds: 10
+      volumes:
+        - name: tunnel-device
+          hostPath:
+            path: /dev/net/tun
+            type: CharDevice
+        - name: wireguard-secret
+          secret:
+            secretName: guest-vm-wireguard
+            defaultMode: 0440
+        - name: wireguard-config
+          emptyDir: {}
+        - name: gluetun-state
+          emptyDir: {}
+        - name: gluetun-tmp
+          emptyDir: {}
+        - name: firewall-rules
+          configMap:
+            name: guest-vm-gateway-firewall

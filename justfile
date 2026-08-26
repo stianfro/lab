@@ -32,6 +32,7 @@ guest-vm-validate:
   done < <(find apps/guest-vm -name '*.yaml' -print0 | sort -z)
 
   bash -n scripts/guest-vm-configure.sh
+  bash -n scripts/guest-vm-e2e.sh
 
   cloud_init_template="$(
     yq eval-all -r \
@@ -65,6 +66,15 @@ guest-vm-validate:
     | select(
         .matchLabels."k8s:io.kubernetes.pod.namespace" == "kubevirt"
         and .matchLabels."k8s:kubevirt.io" == "virt-api"
+      )
+  ' "$tmpdir/rendered.yaml" >/dev/null
+
+  yq eval -e '
+    select(.kind == "VaultStaticSecret" and .metadata.name == "guest-vm-wireguard")
+    | .spec.destination.transformation.templates."wg0.conf".text
+    | select(
+        contains("PostUp = ip rule del priority 97 to 10.203.77.0/24 lookup main")
+        and contains("PostDown = ip rule del priority 97 to 10.203.77.0/24 lookup main")
       )
   ' "$tmpdir/rendered.yaml" >/dev/null
 
@@ -145,6 +155,9 @@ guest-vm-status:
 guest-vm-owner-ssh *args:
   virtctl ssh stian@vm/guest-vm/guest-vm {{args}}
 
+guest-vm-e2e:
+  scripts/guest-vm-e2e.sh
+
 guest-vm-connection:
   #!/usr/bin/env bash
   set -euo pipefail
@@ -172,6 +185,7 @@ guest-vm-connection:
   Endpoint = $endpoint:$port
   AllowedIPs = 10.203.77.1/32
   PersistentKeepalive = 25
+  PostUp = endpoint_ipv4="\$(getent ahostsv4 $endpoint | awk 'NR == 1 { print \$1; exit }')"; test -n "\$endpoint_ipv4"; wg set %i peer $public_key endpoint "\$endpoint_ipv4:$port"
   EOF
 
 # Re-render the Talos Cilium bootstrap manifest from the Flux HelmRelease

@@ -227,6 +227,7 @@ smoke-public-sites:
 
 devbox_host := "192.168.1.51"
 devbox_hostname := "devbox"
+devbox_tailscale_hostname := "devbox.bone-vimba.ts.net"
 devbox_user := "stian"
 devbox_ssh_target := devbox_user + "@" + devbox_host
 devbox_ssh_control_path := ".cache/ssh/devbox-%C"
@@ -249,7 +250,7 @@ devbox-tmux:
 
 # Attach to tmux through the devbox Tailscale hostname instead of its LAN IP.
 devbox-tmux-tailscale:
-  just --set devbox_host {{devbox_hostname}} devbox-tmux
+  just --set devbox_host {{devbox_tailscale_hostname}} devbox-tmux
 
 devbox-herdr:
   mkdir -p .cache/ssh

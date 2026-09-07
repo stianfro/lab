@@ -59,14 +59,14 @@ Attach to the persistent tmux session:
 just devbox-tmux
 ```
 
-To connect through Tailscale instead of the LAN IP, use the `devbox` hostname:
+To connect through Tailscale instead of the LAN IP, use `devbox.bone-vimba.ts.net`:
 
 ```bash
 just devbox-tmux-tailscale
 ```
 
 This keeps the same tmux session and port forwards. Tailscale must be connected
-and able to resolve `devbox` through MagicDNS.
+and able to resolve `devbox.bone-vimba.ts.net` through MagicDNS.
 
 Attach to the persistent Herdr session:
 

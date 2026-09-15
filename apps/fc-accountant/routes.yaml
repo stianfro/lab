@@ -8,7 +8,7 @@ spec:
     - name: eg-public
       namespace: envoy-gateway-system
   hostnames:
-    - www.froystein.jp
+    - accounting.froystein.jp
   rules:
     - matches:
         - path:

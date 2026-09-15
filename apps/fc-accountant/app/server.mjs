@@ -14,7 +14,9 @@ const html=(title,body)=>`<!doctype html><html lang="ja"><meta charset="utf-8"><
 const cookieName='__Secure-fc_portal';
 function headers(res){
  res.setHeader('Cache-Control','private, no-store, max-age=0');res.setHeader('Pragma','no-cache');
- res.setHeader('X-Robots-Tag','noindex, nofollow, noarchive');res.setHeader('Referrer-Policy','no-referrer');
+ // HTML form POSTs under no-referrer send Origin: null. Keep the real
+ // same-origin value for CSRF validation without leaking referrers off-site.
+ res.setHeader('X-Robots-Tag','noindex, nofollow, noarchive');res.setHeader('Referrer-Policy','same-origin');
  res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('X-Frame-Options','DENY');
  res.setHeader('Content-Security-Policy',"default-src 'none'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'; sandbox allow-forms allow-same-origin allow-downloads");
  res.setHeader('Strict-Transport-Security','max-age=31536000');

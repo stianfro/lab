@@ -1,0 +1,19 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: portal
+  namespace: fc-accountant
+spec:
+  parentRefs:
+    - name: eg-public
+      namespace: envoy-gateway-system
+  hostnames:
+    - www.froystein.jp
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /accountant
+      backendRefs:
+        - name: portal
+          port: 8080

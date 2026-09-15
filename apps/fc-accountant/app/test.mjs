@@ -8,7 +8,7 @@ import {spawn} from 'node:child_process';
 
 test('all document endpoints require a session; unsafe originals are downloads; logout revokes access',async()=>{
  const root=mkdtempSync(join(tmpdir(),'fc-portal-test-'));mkdirSync(join(root,'files'));
- const link='a'.repeat(44),base='/accountant/'+link,origin='https://accounting.froystein.jp';
+ const link='a'.repeat(44),base='/accountant/'+link,origin='https://www.froystein.jp';
  writeFileSync(join(root,'auth.json'),JSON.stringify({link,origin,users:[{username:'test',salt:'test-salt',hash:scryptSync('test-password','test-salt',64).toString('hex')}]}));
  writeFileSync(join(root,'manifest.json'),JSON.stringify({updated:'test',questions:['<script>'],documents:[{id:'one',file:'one.pdf',name:'日本語.pdf',mime:'application/pdf',title:'<script>alert(1)</script>',group:'経費・請求書・領収証'},{id:'two',file:'two.html',name:'original.html',mime:'text/html',group:'区分・重複の確認用'}]}));
  writeFileSync(join(root,'files/one.pdf'),'%PDF-test-original');writeFileSync(join(root,'files/two.html'),'<script>evil()</script>');writeFileSync(join(root,'all.zip'),'zip-test');
@@ -27,7 +27,7 @@ test('all document endpoints require a session; unsafe originals are downloads; 
   const set=logged.headers.get('set-cookie');for(const flag of ['HttpOnly','Secure','SameSite=Strict'])assert.ok(set.includes(flag));const Cookie=set.split(';')[0];
   const page=await get(base+'/',{headers:{Cookie}});const content=await page.text();assert.ok(content.includes('&lt;script&gt;'));assert.ok(!content.includes('<script>'));
   const pdf=await get(base+'/file/one',{headers:{Cookie}});assert.equal(await pdf.text(),'%PDF-test-original');assert.match(pdf.headers.get('content-disposition'),/^inline/);
-  const unsafe=await get(base+'/file/two',{headers:{Cookie}});assert.match(unsafe.headers.get('content-disposition'),/^attachment/);assert.match(unsafe.headers.get('content-security-policy'),/sandbox/);
+  const unsafe=await get(base+'/file/two',{headers:{Cookie}});assert.match(unsafe.headers.get('content-disposition'),/^attachment/);assert.match(unsafe.headers.get('content-security-policy'),/sandbox/);assert.equal(unsafe.headers.get('content-type'),'application/octet-stream');assert.match(unsafe.headers.get('cache-control'),/no-transform/);
   assert.equal(await(await get(base+'/all.zip',{headers:{Cookie}})).text(),'zip-test');
   assert.equal((await get(base+'/file/unknown',{headers:{Cookie}})).status,404);
   await get(base+'/logout',{method:'POST',headers:{Origin:origin,Cookie},redirect:'manual'});assert.match(await(await get(base+'/file/one',{headers:{Cookie}})).text(),/ログイン/);

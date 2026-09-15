@@ -13,7 +13,7 @@ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const html=(title,body)=>`<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive"><title>${esc(title)}</title><body>${body}</body></html>`;
 const cookieName='__Secure-fc_portal';
 function headers(res){
- res.setHeader('Cache-Control','private, no-store, max-age=0');res.setHeader('Pragma','no-cache');
+ res.setHeader('Cache-Control','private, no-store, no-transform, max-age=0');res.setHeader('Pragma','no-cache');
  // HTML form POSTs under no-referrer send Origin: null. Keep the real
  // same-origin value for CSRF validation without leaking referrers off-site.
  res.setHeader('X-Robots-Tag','noindex, nofollow, noarchive');res.setHeader('Referrer-Policy','same-origin');
@@ -30,7 +30,7 @@ function file(res,doc,download){
  const path=resolve(dataDir,'files',doc.file);if(!path.startsWith(dataDir+'/files/')||!statSync(path).isFile())throw Error('Invalid document path');
  const safeInline=['application/pdf','image/png','image/jpeg'].includes(doc.mime);
  res.setHeader('Content-Disposition',`${download||!safeInline?'attachment':'inline'}; filename="document.${doc.file.split('.').pop()}"; filename*=UTF-8''${encodeURIComponent(doc.name)}`);
- res.writeHead(200,{'Content-Type':doc.mime,'Content-Length':statSync(path).size});createReadStream(path).pipe(res);
+ res.writeHead(200,{'Content-Type':safeInline?doc.mime:'application/octet-stream','Content-Length':statSync(path).size});createReadStream(path).pipe(res);
 }
 function index(res,url){
  const q=(url.searchParams.get('q')||'').slice(0,150);const docs=manifest.documents.filter(d=>[d.title,d.date,d.note,d.name].join(' ').toLowerCase().includes(q.toLowerCase()));

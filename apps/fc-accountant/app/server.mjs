@@ -33,9 +33,10 @@ function file(res,doc,download){
  res.writeHead(200,{'Content-Type':safeInline?doc.mime:'application/octet-stream','Content-Length':statSync(path).size});createReadStream(path).pipe(res);
 }
 function index(res,url){
- const q=(url.searchParams.get('q')||'').slice(0,150);const docs=manifest.documents.filter(d=>[d.title,d.date,d.note,d.name].join(' ').toLowerCase().includes(q.toLowerCase()));
- const table=group=>`<h2>${esc(group)}</h2><table border="1" cellpadding="5"><thead><tr><th>日付</th><th>資料</th><th>金額（原通貨）</th><th>確認事項</th><th>操作</th></tr></thead><tbody>${docs.filter(d=>d.group===group).map(d=>`<tr><td>${esc(d.date||'未確認')}</td><td>${esc(d.title)}</td><td>${esc(d.amount||'—')}</td><td>${esc(d.note)}</td><td><a href="${base}/file/${d.id}">開く</a> <a href="${base}/file/${d.id}?download=1">保存</a></td></tr>`).join('')}</tbody></table>`;
- send(res,200,html('FC3 決算資料',`<h1>株式会社フロイスタインコンサルティング 第3期 決算資料</h1><p>対象期間：2025年8月1日〜2026年7月31日</p><p><strong>準備中・税理士確認用</strong> — ${esc(manifest.updated)}時点。申告・承認済みの決算書ではありません。</p><p>原本${manifest.documents.length}件。第4期の資料は含みません。金額は原通貨の資料記載額であり、経費合計・損金算入額を表しません。</p><p><a href="${base}/all.zip">全資料をまとめて保存（ZIP）</a></p><form method="get" action="${base}/"><label>資料を検索 <input name="q" value="${esc(q)}"></label> <button>検索</button> <a href="${base}/">すべて表示</a></form><h2>確認をお願いしたいこと</h2><ul>${manifest.questions.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>${['通帳・銀行原本','経費・請求書・領収証','区分・重複の確認用'].map(table).join('')}<p>原本は変更せず保存しています。検索中もZIPには全資料が入ります。CSV・HTML・HEIFはダウンロードしてご確認ください。</p><form method="post" action="${base}/logout"><button>ログアウト</button></form>`));
+ const q=(url.searchParams.get('q')||'').slice(0,150);
+ const docs=manifest.documents.filter(d=>[d.title,d.date,d.name].join(' ').toLowerCase().includes(q.toLowerCase()));
+ const table=group=>`<h2>${esc(group)}</h2><table border="1" cellpadding="5"><thead><tr><th>日付</th><th>資料</th><th>操作</th></tr></thead><tbody>${docs.filter(d=>d.group===group).map(d=>`<tr><td>${esc(d.date||'—')}</td><td>${esc(d.title)}</td><td><a href="${base}/file/${d.id}">開く</a> <a href="${base}/file/${d.id}?download=1">保存</a></td></tr>`).join('')}</tbody></table>`;
+ send(res,200,html('FC3 決算資料',`<h1>株式会社フロイスタインコンサルティング 第3期 決算資料</h1><p>2025年8月1日〜2026年7月31日</p><p><a href="${base}/all.zip">全資料をまとめて保存（ZIP・${manifest.documents.length}件）</a></p><form method="get" action="${base}/"><label>資料を検索 <input name="q" value="${esc(q)}"></label> <button>検索</button> <a href="${base}/">すべて表示</a></form>${['通帳・銀行原本','経費・請求書・領収証'].map(table).join('')}<form method="post" action="${base}/logout"><p><button>ログアウト</button></p></form>`));
 }
 const server=http.createServer(async(req,res)=>{
  headers(res);

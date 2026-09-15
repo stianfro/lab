@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: document-loader
+  namespace: fc-accountant
+spec:
+  restartPolicy: Never
+  automountServiceAccountToken: false
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: loader
+      image: registry.talos.froystein.jp/fc-accountant@sha256:31f8fdcf5efefb66608b3605e9573c7f09f9dcf84533f0442e7260098e6c6b98
+      command: [node, -e, "setInterval(()=>{},60000)"]
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop: [ALL]
+      volumeMounts:
+        - name: documents
+          mountPath: /data
+  volumes:
+    - name: documents
+      persistentVolumeClaim:
+        claimName: documents

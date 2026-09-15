@@ -25,7 +25,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: portal
-          image: registry.talos.froystein.jp/fc-accountant@sha256:c1b6b2b67fc1d226061de51bb36513e91d40784593cc546204fb2b831b1dae7b
+          image: registry.talos.froystein.jp/fc-accountant@sha256:58c04dbab1b30466057b4bf1f035bc3478afa6a7a79c3c99604bac6497e63dd3
           ports:
             - name: http
               containerPort: 8080

@@ -33,14 +33,14 @@ function file(res,doc,download){
  res.writeHead(200,{'Content-Type':safeInline?doc.mime:'application/octet-stream','Content-Length':statSync(path).size});createReadStream(path).pipe(res);
 }
 function amount(doc){
- if(doc.group==='通帳・銀行原本')return '—';
+ if(doc.group!=='経費・請求書・領収証')return '—';
  return Number.isFinite(doc.amount_jpy)?'¥'+doc.amount_jpy.toLocaleString('ja-JP'):'未確認';
 }
 function index(res,url){
  const q=(url.searchParams.get('q')||'').slice(0,150);
  const docs=manifest.documents.filter(d=>[d.title,d.date,d.name].join(' ').toLowerCase().includes(q.toLowerCase()));
  const table=group=>`<h2>${esc(group)}</h2><table border="1" cellpadding="5"><thead><tr><th>日付</th><th>資料</th><th>金額（円・手数料別）</th><th>操作</th></tr></thead><tbody>${docs.filter(d=>d.group===group).map(d=>`<tr><td>${esc(d.date||'—')}</td><td>${esc(d.title)}</td><td>${esc(amount(d))}</td><td><a href="${base}/file/${d.id}">開く</a> <a href="${base}/file/${d.id}?download=1">保存</a></td></tr>`).join('')}</tbody></table>`;
- send(res,200,html('FC3 決算資料',`<h1>株式会社フロイスタインコンサルティング 第3期 決算資料</h1><p>2025年8月1日〜2026年7月31日</p><p><a href="${base}/all.zip">全資料をまとめて保存（ZIP・${manifest.documents.length}件）</a></p><form method="get" action="${base}/"><label>資料を検索 <input name="q" value="${esc(q)}"></label> <button>検索</button> <a href="${base}/">すべて表示</a></form>${['通帳・銀行原本','経費・請求書・領収証'].map(table).join('')}<form method="post" action="${base}/logout"><p><button>ログアウト</button></p></form>`));
+ send(res,200,html('FC3 決算資料',`<h1>株式会社フロイスタインコンサルティング 第3期 決算資料</h1><p>2025年8月1日〜2026年7月31日</p><p><a href="${base}/all.zip">全資料をまとめて保存（ZIP・${manifest.documents.length}件）</a></p><form method="get" action="${base}/"><label>資料を検索 <input name="q" value="${esc(q)}"></label> <button>検索</button> <a href="${base}/">すべて表示</a></form>${['一覧表・精算記録','通帳・銀行原本','経費・請求書・領収証'].map(table).join('')}<form method="post" action="${base}/logout"><p><button>ログアウト</button></p></form>`));
 }
 const server=http.createServer(async(req,res)=>{
  headers(res);

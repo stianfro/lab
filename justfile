@@ -33,6 +33,7 @@ guest-vm-validate:
 
   bash -n scripts/guest-vm-configure.sh
   bash -n scripts/guest-vm-e2e.sh
+  just guest-vm-gateway-test
 
   cloud_init_template="$(
     yq eval-all -r \
@@ -106,6 +107,9 @@ guest-vm-validate:
     -f "$tmpdir/namespace.yaml" >/dev/null
   kubectl apply --server-side --dry-run=server --validate=strict \
     -f "$tmpdir/namespaced.yaml" >/dev/null
+
+guest-vm-gateway-test:
+  bash scripts/guest-vm-gateway-test.sh
 
 guest-vm-configure *args:
   scripts/guest-vm-configure.sh {{args}}

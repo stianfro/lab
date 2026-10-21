@@ -3,3 +3,5 @@
 !nginx.conf
 !site/
 !site/**
+!retained/
+!retained/**

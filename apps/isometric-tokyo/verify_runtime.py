@@ -10,6 +10,8 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+from release_context import verify_context
+
 
 def request(base, path):
     request = urllib.request.Request(
@@ -131,13 +133,22 @@ def verify_payload(base, context):
             assert "no-cache" in cache_directives(headers), record["path"]
         return len(body), refreshed_policy
 
+    retained = []
+    manifest = context / "runtime-release.json"
+    if manifest.exists():
+        retained = verify_context(context)["retained"]
     with ThreadPoolExecutor(max_workers=6) as pool:
         sizes = list(pool.map(check_asset, expected["assets"]))
+        retained_sizes = list(pool.map(check_asset, retained))
     return {
         "release": expected["id"],
         "verified_files": len(sizes) + 1,
         "verified_bytes": sum(size for size, _ in sizes) + len(expected_bytes),
-        "refreshed_policy_files": sum(refreshed for _, refreshed in sizes),
+        "refreshed_policy_files": sum(
+            refreshed for _, refreshed in sizes + retained_sizes
+        ),
+        "retained_files": len(retained_sizes),
+        "retained_bytes": sum(size for size, _ in retained_sizes),
     }
 
 

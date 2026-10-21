@@ -426,23 +426,47 @@ isometric-tokyo-validate:
 isometric-tokyo-runtime-prepare bundle verifier context:
   "${PYTHON:-python3}" apps/isometric-tokyo/prepare_bundle.py '{{bundle}}' '{{verifier}}' '{{context}}'
 
+isometric-tokyo-runtime-stage-initial current current_verifier next next_verifier output:
+  "${PYTHON:-python3}" apps/isometric-tokyo/stage_release.py '{{current}}' '{{current_verifier}}' '{{next}}' '{{next_verifier}}' '{{output}}' --bootstrap
+
+isometric-tokyo-runtime-stage current current_verifier next next_verifier previous output:
+  "${PYTHON:-python3}" apps/isometric-tokyo/stage_release.py '{{current}}' '{{current_verifier}}' '{{next}}' '{{next_verifier}}' '{{output}}' --current-context '{{previous}}'
+
 isometric-tokyo-runtime-lint:
   "${RUFF:-ruff}" check apps/isometric-tokyo/*.py
   "${RUFF:-ruff}" format --check apps/isometric-tokyo/*.py
   python3 -m unittest discover -s apps/isometric-tokyo -p 'test_*.py'
 
+isometric-tokyo-runtime-fixtures output:
+  python3 apps/isometric-tokyo/test_native.py '{{output}}'
+
 isometric-tokyo-runtime-validate context:
-  docker buildx build --load -t isometric-runtime-check:local '{{context}}'
+  #!/usr/bin/env bash
+  set -euo pipefail
+  context_id=$(python3 apps/isometric-tokyo/release_context.py '{{context}}' | jq -er '.context_id')
+  docker buildx build --load --build-arg "RUNTIME_CONTEXT_ID=$context_id" -t isometric-runtime-check:local '{{context}}'
   docker run --rm --read-only --tmpfs /tmp:rw,noexec,nosuid,size=16m --cap-drop ALL --security-opt no-new-privileges --entrypoint nginx isometric-runtime-check:local -t
   python3 apps/isometric-tokyo/verify_runtime.py '{{context}}'
 
 isometric-tokyo-runtime-build context image:
-  docker buildx build --platform linux/amd64 --load -t '{{image}}' '{{context}}'
+  #!/usr/bin/env bash
+  set -euo pipefail
+  context_id=$(python3 apps/isometric-tokyo/release_context.py '{{context}}' | jq -er '.context_id')
+  docker buildx build --platform linux/amd64 --load --build-arg "RUNTIME_CONTEXT_ID=$context_id" -t '{{image}}' '{{context}}'
+  test "$(python3 apps/isometric-tokyo/release_context.py '{{context}}' | jq -er '.context_id')" = "$context_id"
 
 isometric-tokyo-runtime-publish context image:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  context_id=$(python3 apps/isometric-tokyo/release_context.py '{{context}}' | jq -er '.context_id')
+  test "$(docker image inspect '{{image}}' | jq -er '.[0].Config.Labels["isometric.tokyo/runtime-context"]')" = "$context_id"
   docker image save --platform linux/amd64 -o '{{context}}/preview-amd64.tar' '{{image}}'
   crane push '{{context}}/preview-amd64.tar' '{{image}}' --image-refs '{{context}}/image-references.txt'
   crane digest '{{image}}'
 
 isometric-tokyo-runtime-probe context url:
+  python3 apps/isometric-tokyo/release_context.py '{{context}}'
   python3 apps/isometric-tokyo/verify_runtime.py '{{context}}' --url '{{url}}'
+
+isometric-tokyo-runtime-activation-gate transition image url:
+  python3 apps/isometric-tokyo/release_gate.py '{{transition}}' '{{image}}' '{{url}}'

@@ -1,0 +1,96 @@
+"""Offline contract tests for the isolated runtime packaging and probes."""
+
+import hashlib
+import json
+import tempfile
+import unittest
+from pathlib import Path
+from unittest.mock import patch
+
+import prepare_bundle
+import verify_runtime
+
+
+class RuntimeTests(unittest.TestCase):
+    def test_context_must_be_outside_repository(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / ".git").mkdir()
+            with self.assertRaisesRegex(ValueError, "outside source repositories"):
+                prepare_bundle.outside_repository(root / "context")
+
+    def test_context_symlink_rejected(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "real").mkdir()
+            (root / "link").symlink_to(root / "real", target_is_directory=True)
+            with self.assertRaisesRegex(ValueError, "symlink"):
+                prepare_bundle.outside_repository(root / "link")
+
+    def test_empty_context_outside_repository_allowed(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            target = Path(temporary) / "context"
+            self.assertEqual(
+                prepare_bundle.outside_repository(target), target.resolve()
+            )
+
+    def test_payload_checks_every_file_and_cache_policy(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            context = Path(temporary)
+            (context / "site").mkdir()
+            payload = b"export const fixture = true;"
+            metadata = {
+                "id": "web-fixture",
+                "assets": [
+                    {
+                        "path": "assets/app-hash.js",
+                        "bytes": len(payload),
+                        "sha256": hashlib.sha256(payload).hexdigest(),
+                    }
+                ],
+            }
+            inventory = json.dumps(metadata).encode()
+            (context / "site" / "web-release.json").write_bytes(inventory)
+            responses = {
+                "/web-release.json": (200, {"cache-control": "no-cache"}, inventory),
+                "/assets/app-hash.js": (
+                    200,
+                    {"cache-control": "public, max-age=31536000, immutable"},
+                    payload,
+                ),
+            }
+            with patch.object(
+                verify_runtime,
+                "request",
+                side_effect=lambda base, path: responses[path],
+            ):
+                result = verify_runtime.verify_payload(
+                    "http://fixture.invalid", context
+                )
+            self.assertEqual(result["verified_files"], 2)
+            self.assertEqual(result["verified_bytes"], len(inventory) + len(payload))
+            responses["/assets/app-hash.js"] = (
+                200,
+                {"cache-control": "public, immutable"},
+                b"wrong",
+            )
+            with (
+                patch.object(
+                    verify_runtime,
+                    "request",
+                    side_effect=lambda base, path: responses[path],
+                ),
+                self.assertRaises(AssertionError),
+            ):
+                verify_runtime.verify_payload("http://fixture.invalid", context)
+
+    def test_missing_inventory_is_not_success(self):
+        with (
+            tempfile.TemporaryDirectory() as temporary,
+            self.assertRaises(FileNotFoundError),
+        ):
+            verify_runtime.verify_payload("http://fixture.invalid", Path(temporary))
+
+
+if __name__ == "__main__":
+    unittest.main()

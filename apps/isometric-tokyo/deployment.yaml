@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: isometric-tokyo
+  namespace: isometric-tokyo
+  labels:
+    app.kubernetes.io/name: isometric-tokyo
+spec:
+  replicas: 2
+  minReadySeconds: 5
+  progressDeadlineSeconds: 180
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: isometric-tokyo
+  template:
+    metadata:
+      annotations:
+        isometric.tokyo/web-release: web-1219ddbe1b3c320c4d46bd14
+      labels:
+        app.kubernetes.io/name: isometric-tokyo
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        fsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: isometric-tokyo
+      containers:
+        - name: web
+          image: registry.talos.froystein.jp/isometric-tokyo:web-1219ddbe1b3c320c4d46bd14@sha256:15e4b4ce4377badf21aa772b77190017d5a154af84f4ddcf6035eba81f686eab
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 15
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 16Mi
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: isometric-tokyo
+  namespace: isometric-tokyo
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: isometric-tokyo

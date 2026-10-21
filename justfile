@@ -406,3 +406,43 @@ bench-compare left right:
 
 bench-clean:
   rm -rf .cache/bench
+
+isometric-tokyo-validate:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  for yaml_file in apps/isometric-tokyo/*.yaml; do
+    yq eval '.' "$yaml_file" >/dev/null
+  done
+  yq eval '.' clusters/talos/apps.yaml >/dev/null
+  kustomize build apps/isometric-tokyo | yq eval '.' - >/dev/null
+  test "$(yq eval -r 'select(.kind == "Deployment") | .spec.template.spec | [.automountServiceAccountToken, .securityContext.runAsNonRoot, .containers[0].securityContext.readOnlyRootFilesystem, .containers[0].securityContext.allowPrivilegeEscalation] | join(" ")' apps/isometric-tokyo/deployment.yaml)" = "false true true false"
+  yq eval -e '.spec.policyTypes | contains(["Ingress", "Egress"])' apps/isometric-tokyo/networkpolicy.yaml >/dev/null
+  test "$(yq eval -r '.spec.egress | length' apps/isometric-tokyo/networkpolicy.yaml)" = "0"
+  test "$(yq eval -r '.metadata.labels."pod-security.kubernetes.io/enforce"' apps/isometric-tokyo/namespace.yaml)" = "restricted"
+  test "$(yq eval -r '.spec.ingress[0].from[0].namespaceSelector.matchLabels."kubernetes.io/metadata.name"' apps/isometric-tokyo/networkpolicy.yaml)" = "envoy-gateway-system"
+  test "$(yq eval -r '.spec.ingress[0].ports[0].port' apps/isometric-tokyo/networkpolicy.yaml)" = "8080"
+  test "$(yq eval -r '.spec.hostnames[0]' apps/isometric-tokyo/httproute.yaml)" = "isometric.froystein.jp"
+
+isometric-tokyo-runtime-prepare bundle verifier context:
+  "${PYTHON:-python3}" apps/isometric-tokyo/prepare_bundle.py '{{bundle}}' '{{verifier}}' '{{context}}'
+
+isometric-tokyo-runtime-lint:
+  "${RUFF:-ruff}" check apps/isometric-tokyo/*.py
+  "${RUFF:-ruff}" format --check apps/isometric-tokyo/*.py
+  python3 -m unittest discover -s apps/isometric-tokyo -p 'test_*.py'
+
+isometric-tokyo-runtime-validate context:
+  docker buildx build --load -t isometric-runtime-check:local '{{context}}'
+  docker run --rm --read-only --tmpfs /tmp:rw,noexec,nosuid,size=16m --cap-drop ALL --security-opt no-new-privileges --entrypoint nginx isometric-runtime-check:local -t
+  python3 apps/isometric-tokyo/verify_runtime.py '{{context}}'
+
+isometric-tokyo-runtime-build context image:
+  docker buildx build --platform linux/amd64 --load -t '{{image}}' '{{context}}'
+
+isometric-tokyo-runtime-publish context image:
+  docker image save --platform linux/amd64 -o '{{context}}/preview-amd64.tar' '{{image}}'
+  crane push '{{context}}/preview-amd64.tar' '{{image}}' --image-refs '{{context}}/image-references.txt'
+  crane digest '{{image}}'
+
+isometric-tokyo-runtime-probe context url:
+  python3 apps/isometric-tokyo/verify_runtime.py '{{context}}' --url '{{url}}'

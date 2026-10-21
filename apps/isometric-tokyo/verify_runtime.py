@@ -12,8 +12,15 @@ from pathlib import Path
 
 
 def request(base, path):
+    request = urllib.request.Request(
+        base + path,
+        headers={
+            "User-Agent": "isometric-tokyo-release-verifier/1.0 (+https://github.com/stianfro/isometric-tokyo)",
+            "Accept": "*/*",
+        },
+    )
     try:
-        with urllib.request.urlopen(base + path, timeout=10) as response:
+        with urllib.request.urlopen(request, timeout=10) as response:
             return (
                 response.status,
                 {key.lower(): value for key, value in response.headers.items()},

@@ -12,6 +12,23 @@ import verify_runtime
 
 
 class RuntimeTests(unittest.TestCase):
+    def test_probe_identifies_its_client(self):
+        with patch.object(verify_runtime.urllib.request, "urlopen") as opener:
+            response = opener.return_value.__enter__.return_value
+            response.status = 200
+            response.headers = {"Cache-Control": "no-store"}
+            response.read.return_value = b"ok\n"
+            status, headers, body = verify_runtime.request(
+                "http://fixture.invalid", "/healthz"
+            )
+        request = opener.call_args.args[0]
+        self.assertIn(
+            "isometric-tokyo-release-verifier", request.get_header("User-agent")
+        )
+        self.assertEqual(
+            (status, headers, body), (200, {"cache-control": "no-store"}, b"ok\n")
+        )
+
     def test_context_must_be_outside_repository(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

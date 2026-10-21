@@ -36,7 +36,7 @@ spec:
               app.kubernetes.io/name: isometric-tokyo
       containers:
         - name: web
-          image: registry.talos.froystein.jp/isometric-tokyo:web-1219ddbe1b3c320c4d46bd14@sha256:15e4b4ce4377badf21aa772b77190017d5a154af84f4ddcf6035eba81f686eab
+          image: registry.talos.froystein.jp/isometric-tokyo:web-1219ddbe1b3c320c4d46bd14-runtime2@sha256:f2778ab32a5ec757a39c5014a290642efcc89c93c526669c383ffab0c8a97836
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

@@ -29,6 +29,12 @@ class RuntimeTests(unittest.TestCase):
             (status, headers, body), (200, {"cache-control": "no-store"}, b"ok\n")
         )
 
+    def test_cache_directive_parser_is_order_independent(self):
+        directives = verify_runtime.cache_directives(
+            {"cache-control": "public, no-cache, no-transform"}
+        )
+        self.assertEqual(directives, {"public", "no-cache", "no-transform"})
+
     def test_context_must_be_outside_repository(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -69,10 +75,16 @@ class RuntimeTests(unittest.TestCase):
             inventory = json.dumps(metadata).encode()
             (context / "site" / "web-release.json").write_bytes(inventory)
             responses = {
-                "/web-release.json": (200, {"cache-control": "no-cache"}, inventory),
+                "/web-release.json": (
+                    200,
+                    {"cache-control": "public, no-cache, no-transform"},
+                    inventory,
+                ),
                 "/assets/app-hash.js": (
                     200,
-                    {"cache-control": "public, max-age=31536000, immutable"},
+                    {
+                        "cache-control": "public, max-age=31536000, immutable, no-transform"
+                    },
                     payload,
                 ),
             }
@@ -88,7 +100,7 @@ class RuntimeTests(unittest.TestCase):
             self.assertEqual(result["verified_bytes"], len(inventory) + len(payload))
             responses["/assets/app-hash.js"] = (
                 200,
-                {"cache-control": "public, immutable"},
+                {"cache-control": "public, immutable, no-transform"},
                 b"wrong",
             )
             with (
@@ -97,6 +109,50 @@ class RuntimeTests(unittest.TestCase):
                     "request",
                     side_effect=lambda base, path: responses[path],
                 ),
+                self.assertRaises(AssertionError),
+            ):
+                verify_runtime.verify_payload("http://fixture.invalid", context)
+
+    def test_old_cached_headers_require_fresh_policy_and_identical_bytes(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            context = Path(temporary)
+            (context / "site").mkdir()
+            (context / "nginx.conf").write_text("fixture policy")
+            payload = b"fixture"
+            metadata = {
+                "id": "web-fixture",
+                "assets": [
+                    {
+                        "path": "assets/app.js",
+                        "bytes": len(payload),
+                        "sha256": hashlib.sha256(payload).hexdigest(),
+                    }
+                ],
+            }
+            inventory = json.dumps(metadata).encode()
+            (context / "site" / "web-release.json").write_bytes(inventory)
+            fresh_cache = "public, immutable, no-transform"
+
+            def response(base, path):
+                if path == "/web-release.json":
+                    return (
+                        200,
+                        {"cache-control": "public, no-cache, no-transform"},
+                        inventory,
+                    )
+                if "?runtime-policy=" in path:
+                    return 200, {"cache-control": fresh_cache}, payload
+                return 200, {"cache-control": "public, immutable", "age": "32"}, payload
+
+            with patch.object(verify_runtime, "request", side_effect=response):
+                result = verify_runtime.verify_payload(
+                    "http://fixture.invalid", context
+                )
+            self.assertEqual(result["refreshed_policy_files"], 1)
+            self.assertEqual(result["verified_files"], 2)
+            fresh_cache = "public, immutable"
+            with (
+                patch.object(verify_runtime, "request", side_effect=response),
                 self.assertRaises(AssertionError),
             ):
                 verify_runtime.verify_payload("http://fixture.invalid", context)

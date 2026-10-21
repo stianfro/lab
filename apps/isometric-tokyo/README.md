@@ -40,6 +40,9 @@ before allowing Flux to reconcile. Use a new release tag for each bundle.
 - `/healthz` returns a small uncached response.
 - HTML and JSON require revalidation. Built assets have immutable cache headers.
 - Image tiles have bounded caching. Missing files are not cached.
+- All responses forbid intermediary transformations. The browser entry point
+  remains unchanged and automatic script injection is not accepted by the CSP.
+- `/favicon.ico` returns 204 for the browser's implicit icon request.
 - Missing tiles and unknown paths return errors, never the browser entry point.
 - Access logs are disabled. Error logs go to stderr without request bodies.
 
@@ -52,3 +55,9 @@ just isometric-tokyo-runtime-probe CONTEXT URL
 The probe checks all asset byte lengths and SHA-256 hashes, release identity,
 health, security/cache headers, and missing-file behavior. It does not operate a
 browser or claim geographic approval of AI imagery.
+
+When an older cached image or built asset still has its original cache headers,
+the probe checks the canonical URL's bytes first, then checks a runtime-keyed
+URL for the current response policy. HTML and JSON never use this fallback.
+The report counts these extra policy checks separately. No shared cache purge
+is needed for an unchanged bundle.

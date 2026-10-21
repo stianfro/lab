@@ -14,6 +14,9 @@ MAX_RELEASES = 8
 CONFIGS = ("Dockerfile", "nginx.conf", ".dockerignore")
 WEB_ID = re.compile(r"web-[0-9a-f]{24}\Z")
 PREVIEW_ID = re.compile(r"shinjuku-(?:preview|map)-[0-9a-f]{24}\Z")
+PUBLIC_MARKER = re.compile(
+    r"preview/releases/shinjuku-map-[0-9a-f]{24}/pyramid/\.chunk-pyramid\Z"
+)
 
 
 def digest(data):
@@ -31,7 +34,11 @@ def safe_path(name):
         or not name
         or path.is_absolute()
         or path.as_posix() != name
-        or any(part in (".", "..") or part.startswith(".") for part in path.parts)
+        or any(part in (".", "..") for part in path.parts)
+        or (
+            any(part.startswith(".") for part in path.parts)
+            and not PUBLIC_MARKER.fullmatch(name)
+        )
         or not re.fullmatch(r"[A-Za-z0-9_./-]+", name)
     ):
         raise ValueError(f"Unsafe asset path: {name!r}")

@@ -30,6 +30,10 @@ def bundle(root, letter, shared=b"shared", extra=None, kind="preview"):
         "preview/releases/" + preview_id + "/credits.json": b'{"fixture":true}',
         **(extra or {}),
     }
+    if kind == "map":
+        files["preview/releases/" + preview_id + "/pyramid/.chunk-pyramid"] = (
+            b"rgba-box2-sparse-v1\n\n"
+        )
     for name, payload in files.items():
         path = site / name
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -159,6 +163,18 @@ class RetentionTests(unittest.TestCase):
             "preview/releases/not-a-release/file",
         ):
             self.assertFalse(context.retained_path(path))
+
+    def test_only_inventoried_versioned_map_marker_may_be_hidden(self):
+        prefix = "preview/releases/shinjuku-map-" + "a" * 24 + "/pyramid/"
+        self.assertTrue(context.retained_path(prefix + ".chunk-pyramid"))
+        for name in (
+            prefix + ".env",
+            prefix + ".chunk-pyramid/secret",
+            "assets/.chunk-pyramid",
+            "preview/.chunk-pyramid",
+        ):
+            with self.subTest(path=name), self.assertRaises(ValueError):
+                context.retained_path(name)
 
     def test_symlinks_are_not_copied_into_retention(self):
         (self.a / "assets/link.js").symlink_to(self.a / "assets/shared.js")

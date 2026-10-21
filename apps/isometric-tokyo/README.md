@@ -56,7 +56,9 @@ Retained files are limited to built `assets/`, versioned `preview/releases/`
 (`shinjuku-preview-<24hex>` and `shinjuku-map-<24hex>`), and
 `retained-notices/WEB_ID/` containing the corresponding code/dependency licences
 and original web inventory. Mutable entry points, current manifests, and root
-licence files never use retained fallback. A context is capped at 1 GiB, 100,000
+licence files never use retained fallback. The public, inventoried
+`shinjuku-map-<24hex>/pyramid/.chunk-pyramid` format marker is the only allowed
+hidden file; all other hidden paths remain denied. A context is capped at 1 GiB, 100,000
 files and eight non-selected releases. Exceeding a limit fails without deleting
 history. Archival or expiry needs an explicit policy decision before continuing.
 Keep the activated context and both source bundles outside Git for subsequent

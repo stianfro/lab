@@ -90,6 +90,8 @@ def main(directory):
                 assert status == 200 and body == letter.encode()
             for path in (
                 "/assets/.env",
+                "/assets/.chunk-pyramid",
+                "/preview/releases/shinjuku-map-" + "b" * 24 + "/pyramid/.env",
                 "/assets/missing.js",
                 "/retained-notices/missing/LICENSE",
             ):

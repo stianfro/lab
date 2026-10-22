@@ -15,8 +15,8 @@ spec:
   template:
     metadata:
       annotations:
-        isometric.tokyo/web-release: web-ff90eabf58d2ed8b35719925
-        isometric.tokyo/runtime-context: runtime-96720850d869e78f133ce9ce
+        isometric.tokyo/web-release: web-1b127a1c4c8240fc40af2b9b
+        isometric.tokyo/runtime-context: runtime-cbe1671f35bdae8152b49ece
       labels:
         app.kubernetes.io/name: isometric-tokyo
     spec:
@@ -37,7 +37,7 @@ spec:
               app.kubernetes.io/name: isometric-tokyo
       containers:
         - name: web
-          image: registry.talos.froystein.jp/isometric-tokyo:web-1b127a1c4c8240fc40af2b9b-compat1@sha256:83a3a31bc25a672a0f7746da5ba52b44b30b72149a93c4e9c5cb59e181164278
+          image: registry.talos.froystein.jp/isometric-tokyo:web-1b127a1c4c8240fc40af2b9b-active1@sha256:3b05f75f086a5379602c1a182741c654bf84e845adf01e9781a9f825ff943a6b
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

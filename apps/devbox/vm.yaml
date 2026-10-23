@@ -41,6 +41,12 @@ spec:
                 - name: node-exporter
                   port: 9100
                   protocol: TCP
+                - name: link-agent
+                  port: 7443
+                  protocol: TCP
+                - name: link-caller
+                  port: 7444
+                  protocol: TCP
       networks:
         - name: podnet
           pod: {}

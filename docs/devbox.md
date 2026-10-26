@@ -453,3 +453,44 @@ If the devbox is rebuilt from scratch for IO testing:
 5. Run `just bench` and compare with the saved benchmark results.
 
 NVMe PCI passthrough was investigated but is not suitable with the current hardware layout. Each node has one 1 TB NVMe device, and that device is the Talos install disk and Longhorn backing disk. Passing it through to the VM would break the host. NVMe passthrough would require a second dedicated NVMe device or a dedicated bare-metal devbox.
+
+## Rex personal server
+
+The `rex` Ansible role manages a systemd user service for `devbox_user`.
+Lingering starts the user manager at boot and keeps it running after logout.
+Rex runs as the normal development account, not the package's shared `rex`
+system account. The packaged system-wide Rex services are not enabled by this role.
+
+Install the Rex Linux package separately using the private vendor instructions.
+Package repository credentials, enrollment keys, and the contents of
+`~/.local/state/rex` must never be committed to this public repository.
+The role intentionally does not download or enroll Rex. For a new installation,
+follow the login link reported by `rex server status` or the service journal.
+
+Apply and check from the Mac:
+
+```sh
+just devbox-validate
+just devbox-rex-converge --check --diff
+just devbox-rex-converge
+just devbox-rex-check
+```
+
+For initial migration from `rex server start`, first save work and run
+`rex server stop` on devbox. Stopping Rex ends its sessions and programs.
+Then converge the role. It reuses the personal Unix socket, state directory,
+and embedded Tailscale identity, so existing clients keep the same address.
+
+The role reloads systemd and starts a stopped service, but does not restart a
+running service when its unit changes. After saving work, apply pending command
+changes on devbox with `systemctl --user restart rex.service`.
+Use `journalctl --user -u rex.service -f` for logs. The service restarts on failure;
+an intentional stop stays stopped until started again or the next boot.
+Systemd keeps the server available, not running terminals across a reboot.
+
+The role defaults to owner-only Tailscale access. Devbox explicitly preserves
+its existing `rex_tailscale_allow_tailnet_members: true` setting, which grants
+every tailnet member allowed by ACLs access to run programs as the devbox user.
+Set it to `false` and restart to restrict access to the node's owner.
+The Mac still needs its system Tailscale VPN connected for outgoing access;
+Rex's “Serve over Tailscale” setting exposes the Mac's own server instead.

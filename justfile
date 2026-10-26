@@ -470,3 +470,20 @@ isometric-tokyo-runtime-probe context url:
 
 isometric-tokyo-runtime-activation-gate transition image url:
   python3 apps/isometric-tokyo/release_gate.py '{{transition}}' '{{image}}' '{{url}}'
+
+# Manage only Rex. Private package installation and Tailscale login are manual.
+devbox-rex-converge *args:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  mkdir -p .cache/ansible/tmp .cache/uv
+  inventory=ansible/devbox/inventory.ini
+  connection_args=(-e ansible_host=devbox)
+  if [[ "$(hostname -s)" == "{{devbox_hostname}}" ]]; then
+    just _devbox-local-inventory
+    inventory=.cache/ansible/local-inventory.ini
+    connection_args=()
+  fi
+  ANSIBLE_LOCAL_TEMP=.cache/ansible/tmp ANSIBLE_HOME=.cache/ansible UV_CACHE_DIR=.cache/uv uvx --from ansible-core ansible-playbook -i "$inventory" ansible/devbox/playbook.yaml --tags rex "${connection_args[@]}" {{args}}
+
+devbox-rex-check:
+  ssh devbox 'systemctl --user is-enabled rex.service && systemctl --user is-active rex.service && test "$(loginctl show-user "$USER" -p Linger --value)" = yes && systemd-analyze --user verify "$HOME/.config/systemd/user/rex.service" && rex --autostart=false server status --json'

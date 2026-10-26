@@ -16,6 +16,8 @@
       tags: containers
     - role: tailscale
       tags: tailscale
+    - role: rex
+      tags: rex
     - role: kubernetes-tools
       tags: kubernetes-tools
     - role: agents

@@ -1,0 +1,4 @@
+---
+rex_tailscale_hostname: rex
+# Owner-only unless explicitly enabled for a trusted tailnet.
+rex_tailscale_allow_tailnet_members: false

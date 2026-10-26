@@ -1,0 +1,73 @@
+---
+- name: Check for the privately installed Rex package
+  ansible.builtin.stat:
+    path: /usr/bin/rex
+  register: rex_binary
+
+- name: Require Rex installation outside the public repository
+  ansible.builtin.assert:
+    that:
+      - rex_binary.stat.exists
+      - rex_binary.stat.executable | default(false)
+    fail_msg: >-
+      Install the Rex Linux package using its private installation instructions
+      first. Never put package tokens or Tailscale credentials in this repository.
+
+- name: Look up the devbox account
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ devbox_user }}"
+
+- name: Enable lingering for the personal server
+  ansible.builtin.command:
+    argv:
+      - loginctl
+      - enable-linger
+      - "{{ devbox_user }}"
+    creates: "/var/lib/systemd/linger/{{ devbox_user }}"
+
+- name: Start the user service manager
+  ansible.builtin.systemd_service:
+    name: "user@{{ ansible_facts.getent_passwd[devbox_user][1] }}.service"
+    state: started
+
+- name: Create the user unit directory
+  ansible.builtin.file:
+    path: "{{ devbox_home }}/.config/systemd/user"
+    state: directory
+    owner: "{{ devbox_user }}"
+    group: "{{ devbox_user }}"
+    mode: "0755"
+
+- name: Install the personal Rex service
+  ansible.builtin.template:
+    src: rex.service.j2
+    dest: "{{ devbox_home }}/.config/systemd/user/rex.service"
+    owner: "{{ devbox_user }}"
+    group: "{{ devbox_user }}"
+    mode: "0644"
+
+- name: Validate the installed unit
+  ansible.builtin.command:
+    argv:
+      - systemd-analyze
+      - --user
+      - verify
+      - "{{ devbox_home }}/.config/systemd/user/rex.service"
+  become_user: "{{ devbox_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts.getent_passwd[devbox_user][1] }}"
+  changed_when: false
+  when: not ansible_check_mode
+
+# Do not restart on template changes: that would kill active terminals.
+- name: Enable and start the personal Rex server without restarting sessions
+  ansible.builtin.systemd_service:
+    name: rex.service
+    scope: user
+    enabled: true
+    state: started
+    daemon_reload: true
+  become_user: "{{ devbox_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts.getent_passwd[devbox_user][1] }}"

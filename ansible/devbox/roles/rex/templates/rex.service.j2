@@ -1,0 +1,19 @@
+# Managed by Ansible. Restart manually when no Rex sessions need preserving.
+[Unit]
+Description=Personal Rex Server
+Documentation=https://www.superlogical.com/rex/docs/linux/remote-access
+
+[Service]
+Type=notify
+NotifyAccess=main
+WorkingDirectory=%h
+Environment=GODEBUG=
+ExecStart=/usr/bin/rex server run --listen unix://%t/rex/server.sock --state-dir %h/.local/state/rex --socket-mode 0600 --tailscale --tailscale-hostname {{ rex_tailscale_hostname }}{% if rex_tailscale_allow_tailnet_members | bool %} --tailscale-allow-tailnet-members{% endif %} --log-format text
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=30s
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target

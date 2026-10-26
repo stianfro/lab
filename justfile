@@ -285,7 +285,7 @@ devbox-converge-local-base: _devbox-local-inventory
 devbox-converge-local-tailscale: _devbox-local-inventory
   ANSIBLE_LOCAL_TEMP=.cache/ansible/tmp ANSIBLE_HOME=.cache/ansible UV_CACHE_DIR=.cache/uv uvx --from ansible-core ansible-playbook -i .cache/ansible/local-inventory.ini ansible/devbox/playbook.yaml --tags tailscale
 
-devbox-validate:
+devbox-validate: devbox-prompt-test
   #!/usr/bin/env bash
   set -euo pipefail
   tmpdir="$(mktemp -d)"
@@ -470,3 +470,41 @@ isometric-tokyo-runtime-probe context url:
 
 isometric-tokyo-runtime-activation-gate transition image url:
   python3 apps/isometric-tokyo/release_gate.py '{{transition}}' '{{image}}' '{{url}}'
+
+# Manage only Rex. Private package installation and Tailscale login are manual.
+devbox-rex-converge *args:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  mkdir -p .cache/ansible/tmp .cache/uv
+  inventory=ansible/devbox/inventory.ini
+  connection_args=(-e ansible_host=devbox)
+  if [[ "$(hostname -s)" == "{{devbox_hostname}}" ]]; then
+    just _devbox-local-inventory
+    inventory=.cache/ansible/local-inventory.ini
+    connection_args=()
+  fi
+  ANSIBLE_LOCAL_TEMP=.cache/ansible/tmp ANSIBLE_HOME=.cache/ansible UV_CACHE_DIR=.cache/uv uvx --from ansible-core ansible-playbook -i "$inventory" ansible/devbox/playbook.yaml --tags rex "${connection_args[@]}" {{args}}
+
+devbox-rex-check:
+  ssh devbox 'systemctl --user is-enabled rex.service && systemctl --user is-active rex.service && test "$(loginctl show-user "$USER" -p Linger --value)" = yes && systemd-analyze --user verify "$HOME/.config/systemd/user/rex.service" && rex --autostart=false server status --json'
+
+# Pure prompt tests need fish, without loading personal shell configuration.
+devbox-prompt-test:
+  fish --no-execute ansible/devbox/files/devbox-prompt.fish
+  fish --no-execute scripts/test-devbox-prompt.fish
+  fish_indent --check ansible/devbox/files/devbox-prompt.fish scripts/test-devbox-prompt.fish
+  fish --no-config --interactive scripts/test-devbox-prompt.fish ansible/devbox/files/devbox-prompt.fish
+  fish --no-config -c 'source ansible/devbox/files/devbox-prompt.fish; not functions --query _pure_prompt_ssh'
+
+devbox-prompt-converge *args:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  mkdir -p .cache/ansible/tmp .cache/uv
+  inventory=ansible/devbox/inventory.ini
+  connection_args=(-e ansible_host=devbox)
+  if [[ "$(hostname -s)" == "{{devbox_hostname}}" ]]; then
+    just _devbox-local-inventory
+    inventory=.cache/ansible/local-inventory.ini
+    connection_args=()
+  fi
+  ANSIBLE_LOCAL_TEMP=.cache/ansible/tmp ANSIBLE_HOME=.cache/ansible UV_CACHE_DIR=.cache/uv uvx --from ansible-core ansible-playbook -i "$inventory" ansible/devbox/playbook.yaml --tags devbox-prompt "${connection_args[@]}" {{args}}

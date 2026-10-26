@@ -85,3 +85,6 @@ apt_daily_upgrade_on_calendar: "*-*-* 03:00 Asia/Tokyo"
 agent_browser_version: "0.32.4"
 opencode2_version: "0.0.0-beta-17595"
 apt_daily_randomized_delay_sec: 30m
+# Preserve the existing personal Rex server's tailnet access policy.
+# Every permitted tailnet member can run programs as devbox_user.
+rex_tailscale_allow_tailnet_members: true

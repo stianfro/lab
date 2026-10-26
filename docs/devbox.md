@@ -492,5 +492,25 @@ The role defaults to owner-only Tailscale access. Devbox explicitly preserves
 its existing `rex_tailscale_allow_tailnet_members: true` setting, which grants
 every tailnet member allowed by ACLs access to run programs as the devbox user.
 Set it to `false` and restart to restrict access to the node's owner.
-The Mac still needs its system Tailscale VPN connected for outgoing access;
-Rex's “Serve over Tailscale” setting exposes the Mac's own server instead.
+Direct Tailscale access from the Mac needs its system Tailscale VPN connected.
+Alternatively, a Mac-local SSH tunnel can forward a loopback TCP port to
+`/run/user/1000/rex/server.sock` without adding a network listener on devbox.
+The Mac can then use that localhost HTTP address while other devices keep
+using the Tailscale endpoint. Rex's “Serve over Tailscale” setting exposes
+the Mac's own server instead of providing outgoing connectivity.
+
+## Fish prompt identity
+
+The devbox Pure prompt always shows `user@host`, including in Rex terminals
+where `SSH_CONNECTION` is absent. Ansible installs the override at
+`/etc/fish/conf.d/devbox-prompt.fish`, outside the personal config sync's
+`rsync --delete` destination. It reuses Pure's user/host colors and preserves
+its optional SSH prefix only for actual SSH shells. No SSH variables are faked.
+
+Run `just devbox-prompt-converge` to deploy only this setting, and
+`just devbox-prompt-test` for syntax, formatting, and behavior checks.
+New fish shells pick it up automatically. In an existing shell, run:
+
+```fish
+source /etc/fish/conf.d/devbox-prompt.fish
+```

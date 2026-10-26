@@ -46,6 +46,17 @@
     owner: root
     group: root
     mode: "0755"
+  tags: devbox-prompt
+
+- name: Show user and hostname in the devbox Pure prompt
+  ansible.builtin.copy:
+    src: devbox-prompt.fish
+    dest: /etc/fish/conf.d/devbox-prompt.fish
+    owner: root
+    group: root
+    mode: "0644"
+    validate: /usr/bin/fish --no-execute %s
+  tags: devbox-prompt
 
 - name: Install devbox browser opener
   ansible.builtin.copy:

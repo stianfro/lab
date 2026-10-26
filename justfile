@@ -285,7 +285,7 @@ devbox-converge-local-base: _devbox-local-inventory
 devbox-converge-local-tailscale: _devbox-local-inventory
   ANSIBLE_LOCAL_TEMP=.cache/ansible/tmp ANSIBLE_HOME=.cache/ansible UV_CACHE_DIR=.cache/uv uvx --from ansible-core ansible-playbook -i .cache/ansible/local-inventory.ini ansible/devbox/playbook.yaml --tags tailscale
 
-devbox-validate: devbox-prompt-test
+devbox-validate: devbox-prompt-test devbox-claude-wrapper-test
   #!/usr/bin/env bash
   set -euo pipefail
   tmpdir="$(mktemp -d)"
@@ -508,3 +508,24 @@ devbox-prompt-converge *args:
     connection_args=()
   fi
   ANSIBLE_LOCAL_TEMP=.cache/ansible/tmp ANSIBLE_HOME=.cache/ansible UV_CACHE_DIR=.cache/uv uvx --from ansible-core ansible-playbook -i "$inventory" ansible/devbox/playbook.yaml --tags devbox-prompt "${connection_args[@]}" {{args}}
+
+# Only patches the known existing launcher. No personal configuration is copied.
+devbox-claude-wrapper-converge *args:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  mkdir -p .cache/ansible/tmp .cache/uv
+  inventory=ansible/devbox/inventory.ini
+  connection_args=(-e ansible_host=devbox)
+  if [[ "$(hostname -s)" == "{{devbox_hostname}}" ]]; then
+    just _devbox-local-inventory
+    inventory=.cache/ansible/local-inventory.ini
+    connection_args=()
+  fi
+  ANSIBLE_LOCAL_TEMP=.cache/ansible/tmp ANSIBLE_HOME=.cache/ansible UV_CACHE_DIR=.cache/uv uvx --from ansible-core ansible-playbook -i "$inventory" ansible/devbox/playbook.yaml --tags devbox-claude-wrapper "${connection_args[@]}" {{args}}
+
+devbox-claude-wrapper-test:
+  yq eval '.' ansible/devbox/roles/shell/tasks/claude-wrapper.yaml >/dev/null
+  mkdir -p .cache/uv
+  UV_CACHE_DIR=.cache/uv uvx ruff check scripts/test-devbox-claude-wrapper.py
+  UV_CACHE_DIR=.cache/uv uvx ruff format --check scripts/test-devbox-claude-wrapper.py
+  python3 scripts/test-devbox-claude-wrapper.py

@@ -514,3 +514,21 @@ New fish shells pick it up automatically. In an existing shell, run:
 ```fish
 source /etc/fish/conf.d/devbox-prompt.fish
 ```
+
+## Claude foreground detection
+
+An existing personal launcher at `~/.bun/bin/claude` can leave an intermediate
+fish process in front of Claude. Rex then reports `fish` rather than `claude`.
+The shell role changes only the known launcher's final `command` invocation to
+`exec`, replacing that intermediate shell after its environment is prepared.
+It preserves the outer interactive shell, arguments, and exported environment.
+This is specific to the Linux launcher, which has no post-Claude cleanup.
+
+Run `just devbox-claude-wrapper-converge` to apply only this fix. Ansible backs
+up a modified launcher and validates its Bash syntax before saving. Missing
+launchers, symlinks, and unrelated launcher contents are left alone. The role
+does not install Claude or copy private settings. No Rex restart is needed;
+existing Claude processes stay untouched and the change applies on next launch.
+
+`just devbox-claude-wrapper-test` checks the patch and process replacement with
+isolated fixtures, without starting Claude or loading personal shell settings.

@@ -1,0 +1,18 @@
+---
+# Patch only the known personal launcher. Do not install a wrapper, copy private
+# configuration, follow package-manager symlinks, or replace other launchers.
+- name: Inspect the optional personal Claude launcher
+  ansible.builtin.stat:
+    path: "{{ devbox_home }}/.bun/bin/claude"
+    follow: false
+    get_checksum: false
+  register: devbox_claude_wrapper
+
+- name: Replace the launcher shell with Claude after its environment is prepared
+  ansible.builtin.replace:
+    path: "{{ devbox_home }}/.bun/bin/claude"
+    regexp: 'function claude; command "\$REAL_CLAUDE" \$argv; end; cla \$argv'
+    replace: 'function claude; exec "$REAL_CLAUDE" $argv; end; cla $argv'
+    backup: true
+    validate: /bin/bash -n %s
+  when: devbox_claude_wrapper.stat.isreg | default(false)

@@ -1,4 +1,8 @@
 ---
+- name: Keep the existing Claude launcher visible to terminal process detection
+  ansible.builtin.import_tasks: claude-wrapper.yaml
+  tags: devbox-claude-wrapper
+
 - name: Ensure compatibility directory for workstation tmux shell path exists
   ansible.builtin.file:
     path: /opt/homebrew/bin

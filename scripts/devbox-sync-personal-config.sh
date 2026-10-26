@@ -160,6 +160,11 @@ filtered = {
     if key in cfg
 }
 
+# The old Herdr/SSH selection workaround also disables fullscreen wheel
+# scrolling in Rex. Keep workstation preferences local, not on the devbox.
+if isinstance(filtered.get("env"), dict):
+    filtered["env"].pop("CLAUDE_CODE_DISABLE_MOUSE", None)
+
 # Linux-safe hooks only: register the SessionStart execution-engine hook.
 # The macOS afplay Notification/Stop hooks are intentionally dropped. The
 # statusLine scripts are cross-platform and synced by this script.
@@ -189,7 +194,11 @@ filtered["hooks"] = {
 dest.write_text(json.dumps(filtered, indent=2, sort_keys=True) + "\n")
 PY
 
-  rsync "${rsync_flags[@]}" "$dest" "$target:~/.claude/settings.json"
+  if [[ -n "${DEVBOX_SYNC_CLAUDE_OUTPUT:-}" ]]; then
+    cp "$dest" "$DEVBOX_SYNC_CLAUDE_OUTPUT"
+  else
+    rsync "${rsync_flags[@]}" "$dest" "$target:~/.claude/settings.json"
+  fi
 }
 
 generate_proxy_service() {
@@ -219,6 +228,11 @@ UNIT
 
 if [[ -n "${DEVBOX_SYNC_CODEX_OUTPUT:-}" ]]; then
   generate_codex_config
+  exit 0
+fi
+
+if [[ -n "${DEVBOX_SYNC_CLAUDE_OUTPUT:-}" ]]; then
+  generate_claude_settings
   exit 0
 fi
 

@@ -532,3 +532,22 @@ existing Claude processes stay untouched and the change applies on next launch.
 
 `just devbox-claude-wrapper-test` checks the patch and process replacement with
 isolated fixtures, without starting Claude or loading personal shell settings.
+
+## Claude mouse scrolling in Rex
+
+The personal-config sync omits the workstation's legacy
+`env.CLAUDE_CODE_DISABLE_MOUSE` setting from devbox's Claude settings. That
+Herdr/SSH selection workaround disables wheel scrolling as well as clicks in
+Claude's fullscreen renderer. Workstation settings and other devbox preferences
+are left alone. No mouse escape-sequence hooks or terminal-name overrides are
+needed for Rex.
+
+For an existing devbox, remove only `CLAUDE_CODE_DISABLE_MOUSE` from the `env`
+object in `~/.claude/settings.json`, then exit and resume Claude when convenient.
+Removing a settings entry does not unset it inside an already running process.
+No Rex server restart is needed. Fullscreen Claude handles wheel scrolling;
+hold Shift while dragging for Rex's native text selection. If clicks are
+unwanted, `CLAUDE_CODE_DISABLE_MOUSE_CLICKS=1` keeps wheel scrolling enabled.
+
+Run `just devbox-claude-settings-test` to check offline settings generation.
+See the [Claude mouse documentation](https://code.claude.com/docs/en/fullscreen#keep-native-text-selection).

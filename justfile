@@ -285,7 +285,7 @@ devbox-converge-local-base: _devbox-local-inventory
 devbox-converge-local-tailscale: _devbox-local-inventory
   ANSIBLE_LOCAL_TEMP=.cache/ansible/tmp ANSIBLE_HOME=.cache/ansible UV_CACHE_DIR=.cache/uv uvx --from ansible-core ansible-playbook -i .cache/ansible/local-inventory.ini ansible/devbox/playbook.yaml --tags tailscale
 
-devbox-validate: devbox-prompt-test devbox-claude-wrapper-test
+devbox-validate: devbox-prompt-test devbox-claude-wrapper-test devbox-claude-settings-test
   #!/usr/bin/env bash
   set -euo pipefail
   tmpdir="$(mktemp -d)"
@@ -529,3 +529,11 @@ devbox-claude-wrapper-test:
   UV_CACHE_DIR=.cache/uv uvx ruff check scripts/test-devbox-claude-wrapper.py
   UV_CACHE_DIR=.cache/uv uvx ruff format --check scripts/test-devbox-claude-wrapper.py
   python3 scripts/test-devbox-claude-wrapper.py
+
+devbox-claude-settings-test:
+  bash -n scripts/devbox-sync-personal-config.sh
+  shellcheck scripts/devbox-sync-personal-config.sh
+  mkdir -p .cache/uv
+  UV_CACHE_DIR=.cache/uv uvx ruff check scripts/test-devbox-claude-settings.py
+  UV_CACHE_DIR=.cache/uv uvx ruff format --check scripts/test-devbox-claude-settings.py
+  python3 scripts/test-devbox-claude-settings.py
